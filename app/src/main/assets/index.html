@@ -18,76 +18,91 @@
             --border: rgba(255, 255, 255, 0.09);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 10px; }
-        .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
+        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 8px; }
+        .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 9px; }
         
-        /* شريط التبويبات الأربعة */
-        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--panel); padding: 5px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 9px 2px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        /* شريط التبويبات الخمسة */
+        .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
 
-        .tab-content { display: none; flex-direction: column; gap: 10px; }
+        .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        /* شاشة عرض الملاكم */
+        /* شاشة العرض الرئيسية */
         .stage-box { width: 100%; height: 265px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        canvas { width: 100%; height: 100%; display: block; }
-        .badge-stance { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: var(--accent); font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
-        .badge-action { position: absolute; top: 10px; right: 10px; background: rgba(245,158,11,0.18); color: #fff; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; font-weight: 800; direction: ltr; }
+        canvas, #custom-vid, #custom-img { position: absolute; width: 100%; height: 100%; object-fit: contain; }
+        #custom-vid, #custom-img { display: none; background: #090d16; }
 
-        .panel { background: var(--panel); border-radius: 16px; padding: 13px; border: 1px solid var(--border); }
-        .status-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
-        .timer { text-align: center; font-size: 2.5rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
+        .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
+        .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
+
+        .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
+        .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
+        .timer { text-align: center; font-size: 2.4rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
         
-        .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 11px; text-align: center; min-height: 84px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
-        .combo-display h2 { color: var(--accent); font-size: 1.25rem; font-weight: 900; line-height: 1.4; }
-        .combo-display span { font-size: 0.75rem; color: var(--muted); margin-top: 4px; direction: rtl; }
+        .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 10px; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
+        .combo-display h2 { color: var(--accent); font-size: 1.2rem; font-weight: 900; line-height: 1.35; }
+        .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
-        .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; }
+        .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 9px; }
+        .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px; font-size: 0.92rem; font-weight: 800; cursor: pointer; }
         .btn.danger { background: var(--danger); color: #fff; }
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-        .btn.small { padding: 8px 12px; font-size: 0.8rem; border-radius: 8px; }
+        .btn.small { padding: 8px 10px; font-size: 0.78rem; border-radius: 8px; }
 
-        /* عناصر التحكم */
-        .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-        .setting-header { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
+        /* بطاقات تخصيص الفيديو/الصور لكل حركة (مثل الصورة المرجعية) */
+        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 460px; overflow-y: auto; padding-left: 2px; }
+        .media-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 9px; display: flex; flex-direction: column; gap: 7px; }
+        .media-card.active-slot { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); }
+        .mc-top { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
+        .mc-title { font-size: 0.75rem; font-weight: 800; color: var(--text); }
+        .mc-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 6px; font-weight: 800; background: rgba(255,255,255,0.08); color: var(--muted); white-space: nowrap; }
+        .mc-tag.on { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+        .mc-actions { display: flex; gap: 5px; }
+        .mc-pick { flex: 1; background: #111827; border: 1px solid var(--border); color: var(--text); padding: 6px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; text-align: center; cursor: pointer; }
+        .mc-del { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 0 9px; border-radius: 8px; font-weight: 900; cursor: pointer; display: none; }
+        .media-card.active-slot .mc-del { display: block; }
+
+        /* عناصر التحكم الأخرى */
+        .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 11px; }
+        .setting-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
-        select { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.85rem; width: 100%; }
+        select { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.82rem; width: 100%; }
 
-        .cat-title { font-size: 0.75rem; color: var(--accent); font-weight: 800; margin-top: 8px; margin-bottom: 4px; }
+        .cat-title { font-size: 0.74rem; color: var(--accent); font-weight: 800; margin-top: 7px; margin-bottom: 4px; }
         .move-chips { display: flex; flex-wrap: wrap; gap: 5px; direction: ltr; }
-        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 6px 9px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; }
+        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 6px 8px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
         .chip.head { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
         .chip.foot { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
-        .chip:active { background: var(--accent); color: #000; }
         
-        .builder-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 10px; border-radius: 10px; min-height: 44px; font-size: 0.85rem; color: var(--accent); font-weight: 700; direction: ltr; display: flex; align-items: center; margin-top: 8px; }
-        .saved-list { display: flex; flex-direction: column; gap: 7px; max-height: 210px; overflow-y: auto; margin-top: 8px; }
-        .saved-item { background: var(--card); padding: 9px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; direction: ltr; gap: 6px; }
-        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 5px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
-        .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 5px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
-        
-        .upload-label { display: block; text-align: center; background: var(--card); border: 1px dashed var(--accent); padding: 12px; border-radius: 12px; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
+        .builder-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 9px; border-radius: 10px; min-height: 42px; font-size: 0.82rem; color: var(--accent); font-weight: 700; direction: ltr; display: flex; align-items: center; margin-top: 8px; }
+        .saved-list { display: flex; flex-direction: column; gap: 6px; max-height: 190px; overflow-y: auto; margin-top: 7px; }
+        .saved-item { background: var(--card); padding: 8px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; direction: ltr; gap: 5px; }
+        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
+        .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="app">
-    <!-- التبويبات الأربعة -->
+    <!-- التبويبات الخمسة -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
+        <button class="tab-btn" onclick="switchTab('media', this)">🎬 الوسائط</button>
         <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
-        <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبوهات</button>
-        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
+        <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبو</button>
+        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
-    <!-- التبويب 1: شاشة التدريب الرئيسية -->
+    <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
             <span class="badge-stance">ORTHODOX</span>
             <span class="badge-action" id="live-move-badge">GUARD</span>
             <canvas id="boxerCanvas" width="420" height="265"></canvas>
+            <video id="custom-vid" playsinline muted></video>
+            <img id="custom-img" alt="Move Frame" />
         </div>
 
         <div class="panel">
@@ -108,11 +123,23 @@
         </div>
     </div>
 
-    <!-- التبويب 2: تبويب تكرار الكومبو للإتقان (Drill Mode) -->
+    <!-- التبويب 2: بطاقات الفيديو / الصور لكل حركة -->
+    <div id="tab-media" class="tab-content">
+        <div class="panel">
+            <div style="font-size: 0.82rem; font-weight: 800; color: var(--info); margin-bottom: 4px;">🎬 تخصيص مقاطع فيديو أو صور حقيقية لكل حركة</div>
+            <p style="font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; line-height: 1.45;">
+                أضف فيديو (MP4/WebM) أو صورة (GIF/JPG/PNG) من هاتفك لأي حركة أدناه وسيشغلها التطبيق تلقائياً عند نطقها، أو اتركها لاستخدام الملاكم المفصلي المدمج.
+            </p>
+            <div class="media-grid" id="media-slots-grid"></div>
+            <button class="btn danger small" style="width: 100%; margin-top: 10px;" onclick="clearAllCustomMedia()">العودة للمحرك المدمج (مسح جميع الملفات)</button>
+        </div>
+    </div>
+
+    <!-- التبويب 3: الإتقان بالتكرار -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
-                <span class="setting-header"><span>تفعيل وضع التكرار للإتقان:</span></span>
+                <span class="setting-header"><span>وضع التكرار للإتقان:</span></span>
                 <select id="drill-enabled" onchange="updateModeBadge()">
                     <option value="off">متوقف (تدريب متنوع تلقائي)</option>
                     <option value="on">مُفعّل (تكرار الكومبو المختار لإتقانه)</option>
@@ -126,7 +153,7 @@
 
             <div class="setting-item">
                 <div class="setting-header">
-                    <span>عدد التكرارات المطلوبة للإتقان:</span>
+                    <span>عدد التكرارات المطلوبة:</span>
                     <span id="drill-target-val" style="color: var(--accent);">10 مرات</span>
                 </div>
                 <select id="drill-reps-target" onchange="updateDrillTarget()">
@@ -139,17 +166,17 @@
             </div>
 
             <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
-                <div style="font-size: 0.8rem; color: var(--muted);">تقدم الإتقان الحالي:</div>
-                <div id="drill-counter-display" style="font-size: 1.6rem; font-weight: 900; color: var(--success); margin-top: 4px;">0 / 10</div>
+                <div style="font-size: 0.78rem; color: var(--muted);">تقدم الإتقان الحالي:</div>
+                <div id="drill-counter-display" style="font-size: 1.5rem; font-weight: 900; color: var(--success); margin-top: 4px;">0 / 10</div>
                 <button class="btn secondary small" style="margin-top: 8px;" onclick="resetDrillCounter()">تصفير العداد</button>
             </div>
         </div>
     </div>
 
-    <!-- التبويب 3: بناء كومبوهات اختيارية (لكم + رأس + قدمين) -->
+    <!-- التبويب 4: بناء الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
-            <div class="setting-header"><span>مصدر الكومبوهات في الوضع العادي:</span></div>
+            <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
             <select id="combo-source" style="margin-top: 5px;" onchange="updateModeBadge()">
                 <option value="mixed_all">توليد شامل (لكم + رأس + قدمين)</option>
                 <option value="custom">كومبوهاتي المحفوظة فقط</option>
@@ -158,28 +185,28 @@
 
             <div class="cat-title">🥊 اللكمات (Punches):</div>
             <div class="move-chips">
-                <button class="chip" onclick="addStep('JAB')">1 Jab</button>
-                <button class="chip" onclick="addStep('CROSS')">2 Cross</button>
-                <button class="chip" onclick="addStep('L_HOOK')">3 Lead Hook</button>
-                <button class="chip" onclick="addStep('R_HOOK')">4 Rear Hook</button>
-                <button class="chip" onclick="addStep('L_UPPER')">5 Lead Upper</button>
-                <button class="chip" onclick="addStep('R_UPPER')">6 Rear Upper</button>
+                <button class="chip" onclick="addAndPreview('JAB')">1 Jab</button>
+                <button class="chip" onclick="addAndPreview('CROSS')">2 Cross</button>
+                <button class="chip" onclick="addAndPreview('L_HOOK')">3 Lead Hook</button>
+                <button class="chip" onclick="addAndPreview('R_HOOK')">4 Rear Hook</button>
+                <button class="chip" onclick="addAndPreview('L_UPPER')">5 Lead Upper</button>
+                <button class="chip" onclick="addAndPreview('R_UPPER')">6 Rear Upper</button>
             </div>
 
             <div class="cat-title">🛡️ حركة الرأس (Head Movement):</div>
             <div class="move-chips">
-                <button class="chip head" onclick="addStep('SLIP_L')">Slip Left</button>
-                <button class="chip head" onclick="addStep('SLIP_R')">Slip Right</button>
-                <button class="chip head" onclick="addStep('ROLL')">Roll</button>
-                <button class="chip head" onclick="addStep('PULL')">Pull Back</button>
+                <button class="chip head" onclick="addAndPreview('SLIP_L')">Slip Left</button>
+                <button class="chip head" onclick="addAndPreview('SLIP_R')">Slip Right</button>
+                <button class="chip head" onclick="addAndPreview('ROLL')">Roll</button>
+                <button class="chip head" onclick="addAndPreview('PULL')">Pull Back</button>
             </div>
 
             <div class="cat-title">👟 حركة القدمين (Footwork):</div>
             <div class="move-chips">
-                <button class="chip foot" onclick="addStep('STEP_IN')">Step In</button>
-                <button class="chip foot" onclick="addStep('STEP_BACK')">Step Back</button>
-                <button class="chip foot" onclick="addStep('PIVOT_L')">Pivot Left</button>
-                <button class="chip foot" onclick="addStep('PIVOT_R')">Pivot Right</button>
+                <button class="chip foot" onclick="addAndPreview('STEP_IN')">Step In</button>
+                <button class="chip foot" onclick="addAndPreview('STEP_BACK')">Step Back</button>
+                <button class="chip foot" onclick="addAndPreview('PIVOT_L')">Pivot Left</button>
+                <button class="chip foot" onclick="addAndPreview('PIVOT_R')">Pivot Right</button>
             </div>
 
             <div class="builder-box" id="builder-preview">اضغط على الحركات لبناء الكومبو...</div>
@@ -195,7 +222,7 @@
         </div>
     </div>
 
-    <!-- التبويب 4: التحكم بسرعة النطق ورفع الصورة الحقيقية -->
+    <!-- التبويب 5: الإعدادات -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -235,15 +262,6 @@
                 </div>
             </div>
         </div>
-
-        <div class="panel">
-            <div class="setting-header" style="margin-bottom: 8px;"><span>صورة الملاكم الحقيقية (تتحرك تلقائياً بدون كرات):</span></div>
-            <label class="upload-label">
-                📷 رفع صورة ملاكم من الهاتف
-                <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
-            </label>
-            <button class="btn secondary small" style="width: 100%; margin-top: 8px;" onclick="resetBoxerImage()">استعادة الملاكم الافتراضي</button>
-        </div>
     </div>
 </div>
 
@@ -255,25 +273,302 @@
         btn.classList.add('active');
     }
 
-    // --- قاموس الحركات الكامل (لكم + رأس + قدمين) ---
-    const MOVES = {
-        JAB:       { label: '1 Jab',       say: 'Jab',           cat: 'punch' },
-        CROSS:     { label: '2 Cross',     say: 'Cross',         cat: 'punch' },
-        L_HOOK:    { label: '3 Lead Hook', say: 'Lead Hook',     cat: 'punch' },
-        R_HOOK:    { label: '4 Rear Hook', say: 'Rear Hook',     cat: 'punch' },
-        L_UPPER:   { label: '5 Lead Upper',say: 'Lead Uppercut', cat: 'punch' },
-        R_UPPER:   { label: '6 Rear Upper',say: 'Rear Uppercut', cat: 'punch' },
-        SLIP_L:    { label: 'Slip Left',   say: 'Slip Left',     cat: 'head'  },
-        SLIP_R:    { label: 'Slip Right',  say: 'Slip Right',    cat: 'head'  },
-        ROLL:      { label: 'Roll',        say: 'Roll',          cat: 'head'  },
-        PULL:      { label: 'Pull Back',   say: 'Pull Back',     cat: 'head'  },
-        STEP_IN:   { label: 'Step In',     say: 'Step In',       cat: 'foot'  },
-        STEP_BACK: { label: 'Step Back',   say: 'Step Back',     cat: 'foot'  },
-        PIVOT_L:   { label: 'Pivot Left',  say: 'Pivot Left',    cat: 'foot'  },
-        PIVOT_R:   { label: 'Pivot Right', say: 'Pivot Right',   cat: 'foot'  }
+    // --- قائمة الحركات الكاملة (15 بطاقة قابلة للتخصيص بالفيديو أو الصورة) ---
+    const MOVE_SLOTS = [
+        { key: 'GUARD',     ar: '1. الوقفة (Guard)',          en: 'GUARD',         say: '' },
+        { key: 'JAB',       ar: '2. الجاب (1 Jab)',           en: '1 Jab',         say: 'Jab' },
+        { key: 'CROSS',     ar: '3. الكروس (2 Cross)',        en: '2 Cross',       say: 'Cross' },
+        { key: 'L_HOOK',    ar: '4. هوك أمامي (3 Hook)',      en: '3 Lead Hook',   say: 'Lead Hook' },
+        { key: 'R_HOOK',    ar: '5. هوك خلفي (4 Hook)',       en: '4 Rear Hook',   say: 'Rear Hook' },
+        { key: 'L_UPPER',   ar: '6. أبركت أمامي (5 Upper)',   en: '5 Lead Upper',  say: 'Lead Uppercut' },
+        { key: 'R_UPPER',   ar: '7. أبركت خلفي (6 Upper)',    en: '6 Rear Upper',  say: 'Rear Uppercut' },
+        { key: 'SLIP_L',    ar: '8. تفادي يسار (Slip L)',     en: 'Slip Left',     say: 'Slip Left' },
+        { key: 'SLIP_R',    ar: '9. تفادي يمين (Slip R)',     en: 'Slip Right',    say: 'Slip Right' },
+        { key: 'ROLL',      ar: '10. تغطيس (Roll)',           en: 'Roll',          say: 'Roll' },
+        { key: 'PULL',      ar: '11. سحب للخلف (Pull)',       en: 'Pull Back',     say: 'Pull Back' },
+        { key: 'STEP_IN',   ar: '12. خطوة للأمام (Step In)',  en: 'Step In',       say: 'Step In' },
+        { key: 'STEP_BACK', ar: '13. خطوة للخلف (Step Back)', en: 'Step Back',     say: 'Step Back' },
+        { key: 'PIVOT_L',   ar: '14. بيفوت يسار (Pivot L)',   en: 'Pivot Left',    say: 'Pivot Left' },
+        { key: 'PIVOT_R',   ar: '15. بيفوت يمين (Pivot R)',   en: 'Pivot Right',   say: 'Pivot Right' }
+    ];
+
+    const MOVES = {};
+    MOVE_SLOTS.forEach(s => { MOVES[s.key] = s; });
+
+    // --- قاعدة بيانات IndexedDB لتخزين الفيديوهات والصور بشكل دائم في الهاتف ---
+    let db = null;
+    const customMediaMap = {}; // key -> { url, isVideo }
+
+    const dbReq = indexedDB.open('BoxingMediaDB', 1);
+    dbReq.onupgradeneeded = e => {
+        e.target.result.createObjectStore('slots');
+    };
+    dbReq.onsuccess = e => {
+        db = e.target.result;
+        loadAllSavedMedia();
     };
 
-    // كومبوهات احترافية جاهزة للتدريب والإتقان
+    function loadAllSavedMedia() {
+        if (!db) return;
+        const tx = db.transaction('slots', 'readonly');
+        const store = tx.objectStore('slots');
+        MOVE_SLOTS.forEach(slot => {
+            const req = store.get(slot.key);
+            req.onsuccess = () => {
+                if (req.result) {
+                    const blob = req.result;
+                    customMediaMap[slot.key] = {
+                        url: URL.createObjectURL(blob),
+                        isVideo: blob.type.startsWith('video/')
+                    };
+                    updateCardUI(slot.key, true);
+                    if (slot.key === 'GUARD') showMoveMedia('GUARD', 0);
+                }
+            };
+        });
+    }
+
+    function saveSlotFile(key, file) {
+        if (!db || !file) return;
+        const tx = db.transaction('slots', 'readwrite');
+        tx.objectStore('slots').put(file, key);
+        tx.oncomplete = () => {
+            if (customMediaMap[key]) URL.revokeObjectURL(customMediaMap[key].url);
+            customMediaMap[key] = {
+                url: URL.createObjectURL(file),
+                isVideo: file.type.startsWith('video/')
+            };
+            updateCardUI(key, true);
+            showMoveMedia(key, 1200); // معاينة فورية بعد الاختيار
+        };
+    }
+
+    function deleteSlotFile(key) {
+        if (!db) return;
+        const tx = db.transaction('slots', 'readwrite');
+        tx.objectStore('slots').delete(key);
+        tx.oncomplete = () => {
+            if (customMediaMap[key]) {
+                URL.revokeObjectURL(customMediaMap[key].url);
+                delete customMediaMap[key];
+            }
+            updateCardUI(key, false);
+            showMoveMedia('GUARD', 0);
+        };
+    }
+
+    function clearAllCustomMedia() {
+        if (!db) return;
+        const tx = db.transaction('slots', 'readwrite');
+        tx.objectStore('slots').clear();
+        tx.oncomplete = () => {
+            Object.keys(customMediaMap).forEach(k => {
+                URL.revokeObjectURL(customMediaMap[k].url);
+                delete customMediaMap[k];
+                updateCardUI(k, false);
+            });
+            showMoveMedia('GUARD', 0);
+        };
+    }
+
+    // بناء شبكة بطاقات الوسائط
+    const mediaGrid = document.getElementById('media-slots-grid');
+    MOVE_SLOTS.forEach(slot => {
+        const card = document.createElement('div');
+        card.className = 'media-card';
+        card.id = 'card-' + slot.key;
+        card.innerHTML = `
+            <div class="mc-top">
+                <span class="mc-title">${slot.ar}</span>
+                <span class="mc-tag" id="tag-${slot.key}">مدمج</span>
+            </div>
+            <div class="mc-actions">
+                <label class="mc-pick" id="btn-${slot.key}">
+                    + اختر فيديو/صورة
+                    <input type="file" accept="video/*,image/*" style="display:none;" onchange="saveSlotFile('${slot.key}', this.files[0])">
+                </label>
+                <button class="mc-del" onclick="deleteSlotFile('${slot.key}')">×</button>
+            </div>
+        `;
+        mediaGrid.appendChild(card);
+    });
+
+    function updateCardUI(key, isCustom) {
+        const card = document.getElementById('card-' + key);
+        const tag = document.getElementById('tag-' + key);
+        const btn = document.getElementById('btn-' + key);
+        if (!card) return;
+        if (isCustom) {
+            card.classList.add('active-slot');
+            tag.className = 'mc-tag on';
+            tag.textContent = 'مُفعّل ✓';
+            btn.childNodes[0].textContent = 'تغيير ';
+        } else {
+            card.classList.remove('active-slot');
+            tag.className = 'mc-tag';
+            tag.textContent = 'مدمج';
+            btn.childNodes[0].textContent = '+ اختر فيديو/صورة ';
+        }
+    }
+
+    // --- محرك العرض الهجين (يشغّل الفيديو/الصورة المخصصة أو الملاكم المفصلي المدمج) ---
+    const canvas = document.getElementById('boxerCanvas');
+    const ctx = canvas.getContext('2d');
+    const customVid = document.getElementById('custom-vid');
+    const customImg = document.getElementById('custom-img');
+    let currentAnim = null;
+    let animProgress = 0;
+    let guardReturnTimer = null;
+
+    function showMoveMedia(moveKey, durationMs = 520) {
+        clearTimeout(guardReturnTimer);
+        const badge = document.getElementById('live-move-badge');
+        badge.textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
+
+        const media = customMediaMap[moveKey];
+        if (media) {
+            canvas.style.display = 'none';
+            if (media.isVideo) {
+                customImg.style.display = 'none';
+                customVid.src = media.url;
+                customVid.loop = (moveKey === 'GUARD');
+                customVid.style.display = 'block';
+                customVid.currentTime = 0;
+                customVid.play().catch(() => {});
+            } else {
+                customVid.style.display = 'none';
+                customVid.pause();
+                customImg.src = media.url;
+                customImg.style.display = 'block';
+            }
+        } else {
+            // استخدام المحرك المفصلي المدمج إذا لم يضف المستخدم ملفاً لهذه الحركة
+            customVid.style.display = 'none';
+            customVid.pause();
+            customImg.style.display = 'none';
+            canvas.style.display = 'block';
+            if (moveKey !== 'GUARD') {
+                currentAnim = moveKey;
+                animProgress = 0;
+            }
+        }
+
+        if (moveKey !== 'GUARD' && durationMs > 0) {
+            guardReturnTimer = setTimeout(() => {
+                showMoveMedia('GUARD', 0);
+            }, durationMs);
+        }
+    }
+
+    // رسم الملاكم المفصلي المدمج كاحتياطي لأي حركة بدون فيديو
+    function drawLimbSegment(x1, y1, x2, y2, w1, w2, color) {
+        const angle = Math.atan2(y2 - y1, x2 - x1);
+        const perp = angle + Math.PI / 2;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(x1 + Math.cos(perp) * w1, y1 + Math.sin(perp) * w1);
+        ctx.lineTo(x2 + Math.cos(perp) * w2, y2 + Math.sin(perp) * w2);
+        ctx.lineTo(x2 - Math.cos(perp) * w2, y2 - Math.sin(perp) * w2);
+        ctx.lineTo(x1 - Math.cos(perp) * w1, y1 - Math.sin(perp) * w1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(x1, y1, w1, 0, Math.PI * 2);
+        ctx.arc(x2, y2, w2, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawBoxingGlove(x, y, angle, scale, mainColor) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(angle);
+        ctx.scale(scale, scale);
+        ctx.fillStyle = '#111827';
+        ctx.beginPath();
+        ctx.roundRect(-10, -4, 20, 11, 4);
+        ctx.fill();
+        ctx.fillStyle = mainColor;
+        ctx.beginPath();
+        ctx.ellipse(0, -13, 14, 16, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    function renderArticulatedBoxer() {
+        if (canvas.style.display !== 'none') {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const bounce = Math.abs(Math.sin(Date.now() * 0.006)) * 5;
+            let wave = 0;
+            if (currentAnim) {
+                animProgress += 0.065;
+                if (animProgress >= 1) currentAnim = null;
+                else wave = Math.sin(animProgress * Math.PI);
+            }
+
+            let hipX = 210, hipY = 148 - bounce, torsoAngle = -0.06;
+            let headOffsetX = 0, headOffsetY = 0;
+            let frontFootX = 180, frontFootY = 238, backFootX = 248, backFootY = 232, bodyScale = 1;
+            let lElbowX = 172, lElbowY = 112 - bounce, lHandX = 182, lHandY = 74 - bounce, lGloveScale = 1.05, lGloveAngle = 0.15;
+            let rElbowX = 236, rElbowY = 110 - bounce, rHandX = 218, rHandY = 72 - bounce, rGloveScale = 0.95, rGloveAngle = -0.2;
+
+            switch (currentAnim) {
+                case 'JAB': hipX -= 8*wave; torsoAngle = -0.14*wave; lElbowX -= 22*wave; lElbowY -= 24*wave; lHandX -= 38*wave; lHandY -= 6*wave; lGloveScale += 0.42*wave; break;
+                case 'CROSS': hipX -= 12*wave; torsoAngle = -0.22*wave; rElbowX -= 48*wave; rElbowY -= 22*wave; rHandX -= 68*wave; rHandY -= 4*wave; rGloveScale += 0.5*wave; break;
+                case 'L_HOOK': torsoAngle = 0.12*wave; lElbowX -= 18*wave; lElbowY -= 34*wave; lHandX += 24*wave; lGloveScale += 0.3*wave; lGloveAngle = 1.1*wave; break;
+                case 'R_HOOK': torsoAngle = -0.2*wave; rElbowX -= 20*wave; rElbowY -= 34*wave; rHandX -= 44*wave; rGloveScale += 0.35*wave; rGloveAngle = -1.1*wave; break;
+                case 'L_UPPER': hipY += 12*wave; lElbowY += 12*wave; lHandY -= 22*wave; lGloveScale += 0.32*wave; break;
+                case 'R_UPPER': hipY += 12*wave; rElbowX -= 28*wave; rHandX -= 32*wave; rHandY -= 24*wave; rGloveScale += 0.38*wave; break;
+                case 'SLIP_L': torsoAngle = -0.32*wave; headOffsetX = -22*wave; headOffsetY = 10*wave; hipY += 10*wave; break;
+                case 'SLIP_R': torsoAngle = 0.28*wave; headOffsetX = 24*wave; headOffsetY = 10*wave; hipY += 10*wave; break;
+                case 'ROLL': hipY += 28*wave; torsoAngle = Math.sin(animProgress*Math.PI*2)*0.25; headOffsetX = Math.sin(animProgress*Math.PI*2)*20; headOffsetY = 16*wave; break;
+                case 'PULL': hipX += 16*wave; torsoAngle = 0.26*wave; headOffsetX = 18*wave; break;
+                case 'STEP_IN': hipX -= 28*wave; frontFootX -= 32*wave; backFootX -= 26*wave; bodyScale += 0.08*wave; break;
+                case 'STEP_BACK': hipX += 28*wave; frontFootX += 26*wave; backFootX += 32*wave; bodyScale -= 0.06*wave; break;
+                case 'PIVOT_L': hipX -= 18*wave; backFootX -= 42*wave; backFootY += 10*wave; torsoAngle = -0.18*wave; break;
+                case 'PIVOT_R': hipX += 18*wave; backFootX += 38*wave; backFootY -= 8*wave; torsoAngle = 0.18*wave; break;
+            }
+
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+            ctx.beginPath();
+            ctx.ellipse(210, 244, 115, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.save();
+            ctx.translate(210, 240);
+            ctx.scale(bodyScale, bodyScale);
+            ctx.translate(-210, -240);
+
+            const skin = '#c88a55', skinD = '#a36b3c';
+            drawLimbSegment(hipX+12, hipY+10, (hipX+12+backFootX)/2+8, (hipY+backFootY)/2, 12, 9, skinD);
+            drawLimbSegment((hipX+12+backFootX)/2+8, (hipY+backFootY)/2, backFootX, backFootY, 9, 6, skinD);
+            drawLimbSegment(hipX-10, hipY+10, (hipX-10+frontFootX)/2-8, (hipY+frontFootY)/2, 13, 9.5, skin);
+            drawLimbSegment((hipX-10+frontFootX)/2-8, (hipY+frontFootY)/2, frontFootX, frontFootY, 9.5, 6.5, skin);
+
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath(); ctx.roundRect(hipX-24, hipY-8, 48, 34, 8); ctx.fill();
+            ctx.fillStyle = '#f59e0b'; ctx.fillRect(hipX-24, hipY-10, 48, 6);
+
+            const shX = hipX + Math.sin(torsoAngle)*58, shY = hipY - Math.cos(torsoAngle)*58;
+            drawLimbSegment(hipX, hipY-6, shX, shY, 21, 27, skin);
+            drawLimbSegment(shX+18, shY+4, rElbowX, rElbowY, 9.5, 8, skinD);
+            drawLimbSegment(rElbowX, rElbowY, rHandX, rHandY, 8, 6.5, skinD);
+            drawBoxingGlove(rHandX, rHandY, rGloveAngle, rGloveScale, '#b91c1c');
+
+            const hX = shX - 4 + headOffsetX, hY = shY - 26 + headOffsetY;
+            drawLimbSegment(shX, shY, hX, hY+12, 8, 7, skin);
+            ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hX, hY, 15, 18, 0, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(hX+2, hY-4, 15, Math.PI*0.9, Math.PI*2.1); ctx.fill();
+
+            drawLimbSegment(shX-18, shY+4, lElbowX, lElbowY, 10, 8.5, skin);
+            drawLimbSegment(lElbowX, lElbowY, lHandX, lHandY, 8.5, 7, skin);
+            drawBoxingGlove(lHandX, lHandY, lGloveAngle, lGloveScale, '#ef4444');
+            ctx.restore();
+        }
+        requestAnimationFrame(renderArticulatedBoxer);
+    }
+    requestAnimationFrame(renderArticulatedBoxer);
+
+    // --- إدارة الكومبوهات ووضع الإتقان ---
     const PRESET_DRILLS = [
         ['JAB', 'CROSS', 'L_HOOK'],
         ['JAB', 'JAB', 'CROSS', 'SLIP_L'],
@@ -283,281 +578,26 @@
         ['JAB', 'PULL', 'CROSS', 'PIVOT_L']
     ];
 
-    // --- محرك التحريك الواقعي للصورة الحقيقية ---
-    const canvas = document.getElementById('boxerCanvas');
-    const ctx = canvas.getContext('2d');
-    let customImg = null;
-    let currentAnim = null;
-    let animProgress = 0;
-
-    const savedPhoto = localStorage.getItem('boxer_custom_photo');
-    if (savedPhoto) {
-        const img = new Image();
-        img.onload = () => { customImg = img; };
-        img.src = savedPhoto;
-    }
-
-    function handleImageUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(evt) {
-            const img = new Image();
-            img.onload = function() {
-                const tmp = document.createElement('canvas');
-                const scale = Math.min(450 / img.width, 450 / img.height, 1);
-                tmp.width = img.width * scale;
-                tmp.height = img.height * scale;
-                tmp.getContext('2d').drawImage(img, 0, 0, tmp.width, tmp.height);
-                const dataUrl = tmp.toDataURL('image/jpeg', 0.88);
-                localStorage.setItem('boxer_custom_photo', dataUrl);
-                customImg = img;
-            };
-            img.src = evt.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-
-    function resetBoxerImage() {
-        localStorage.removeItem('boxer_custom_photo');
-        customImg = null;
-    }
-
-    function triggerAnimation(type) {
-        currentAnim = type;
-        animProgress = 0;
-        document.getElementById('live-move-badge').textContent = MOVES[type] ? MOVES[type].label.toUpperCase() : 'GUARD';
-    }
-
-    function renderLoop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const cx = canvas.width / 2;
-        const cy = canvas.height / 2 + 8;
-        const t = Date.now();
-        // حركة تنفس وارتداد قدمين مستمرة
-        const idleBounceY = Math.sin(t * 0.0085) * 4.5;
-        const idleSwayX = Math.cos(t * 0.004) * 3;
-
-        let wave = 0;
-        if (currentAnim) {
-            animProgress += 0.068;
-            if (animProgress >= 1) {
-                currentAnim = null;
-                document.getElementById('live-move-badge').textContent = 'GUARD';
-            } else {
-                wave = Math.sin(animProgress * Math.PI);
-            }
-        }
-
-        // متغيرات التحريك الفيزيائي للصورة كاملة + الأطراف المقتطعة
-        let tx = idleSwayX, ty = idleBounceY, rot = 0, scaleX = 1, scaleY = 1, skewX = 0;
-        let punchSide = null; // 'left' | 'right'
-        let punchExtend = 0;
-
-        switch (currentAnim) {
-            case 'JAB':
-                tx += 14 * wave;
-                ty -= 6 * wave;
-                rot = 0.08 * wave;
-                scaleX = 1 + 0.08 * wave;
-                scaleY = 1 + 0.06 * wave;
-                punchSide = 'left';
-                punchExtend = wave;
-                break;
-            case 'CROSS':
-                tx -= 16 * wave;
-                ty -= 4 * wave;
-                rot = -0.14 * wave;
-                skewX = -0.08 * wave;
-                scaleX = 1 + 0.11 * wave;
-                scaleY = 1 + 0.08 * wave;
-                punchSide = 'right';
-                punchExtend = wave;
-                break;
-            case 'L_HOOK':
-                tx += 18 * wave;
-                rot = -0.18 * wave;
-                skewX = 0.12 * wave;
-                scaleX = 1 + 0.07 * wave;
-                punchSide = 'left';
-                punchExtend = wave * 0.85;
-                break;
-            case 'R_HOOK':
-                tx -= 18 * wave;
-                rot = 0.18 * wave;
-                skewX = -0.12 * wave;
-                scaleX = 1 + 0.07 * wave;
-                punchSide = 'right';
-                punchExtend = wave * 0.85;
-                break;
-            case 'L_UPPER':
-                ty += 12 * wave - 22 * Math.pow(wave, 2);
-                rot = -0.10 * wave;
-                scaleY = 1 + 0.09 * wave;
-                punchSide = 'left';
-                punchExtend = wave * 0.7;
-                break;
-            case 'R_UPPER':
-                ty += 12 * wave - 22 * Math.pow(wave, 2);
-                rot = 0.10 * wave;
-                scaleY = 1 + 0.09 * wave;
-                punchSide = 'right';
-                punchExtend = wave * 0.7;
-                break;
-            case 'SLIP_L':
-                tx -= 44 * wave;
-                ty += 14 * wave;
-                rot = -0.22 * wave;
-                skewX = -0.10 * wave;
-                break;
-            case 'SLIP_R':
-                tx += 44 * wave;
-                ty += 14 * wave;
-                rot = 0.22 * wave;
-                skewX = 0.10 * wave;
-                break;
-            case 'ROLL':
-                tx += Math.sin(animProgress * Math.PI * 2) * 38;
-                ty += 34 * wave;
-                rot = Math.sin(animProgress * Math.PI * 2) * 0.16;
-                scaleY = 1 - 0.10 * wave;
-                break;
-            case 'PULL':
-                tx -= 22 * wave;
-                ty += 10 * wave;
-                rot = -0.16 * wave;
-                scaleX = 1 - 0.08 * wave;
-                scaleY = 1 - 0.06 * wave;
-                break;
-            case 'STEP_IN':
-                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
-                scaleX = 1 + 0.22 * wave;
-                scaleY = 1 + 0.22 * wave;
-                break;
-            case 'STEP_BACK':
-                ty -= 10 * Math.sin(animProgress * Math.PI * 2);
-                scaleX = 1 - 0.18 * wave;
-                scaleY = 1 - 0.18 * wave;
-                break;
-            case 'PIVOT_L':
-                tx -= 35 * wave;
-                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
-                rot = -0.24 * wave;
-                scaleX = 1 - 0.12 * wave;
-                break;
-            case 'PIVOT_R':
-                tx += 35 * wave;
-                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
-                rot = 0.24 * wave;
-                scaleX = 1 - 0.12 * wave;
-                break;
-        }
-
-        // ظل أرضي ديناميكي يتغير حجمه مع حركة القدمين
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
-        ctx.beginPath();
-        ctx.ellipse(cx + tx * 0.7, canvas.height - 14, 75 * scaleX, 12 * scaleY, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.save();
-        ctx.translate(cx + tx, cy + ty);
-        ctx.rotate(rot);
-        ctx.transform(scaleX, 0, skewX, scaleY, 0, 0);
-
-        if (customImg) {
-            // رسم الصورة الحقيقية نفسها بدون أي كرات فوقها
-            const aspect = customImg.width / customImg.height;
-            const drawH = 225;
-            const drawW = Math.min(drawH * aspect, 260);
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.roundRect(-drawW / 2, -drawH / 2, drawW, drawH, 20);
-            ctx.clip();
-            ctx.drawImage(customImg, -drawW / 2, -drawH / 2, drawW, drawH);
-
-            // طبقة ذراع/قفاز مقتطعة من نفس الصورة تندفع للأمام عند اللكمة لإعطاء حركة حية
-            if (punchSide && punchExtend > 0.05) {
-                const sw = customImg.width * 0.42;
-                const sh = customImg.height * 0.45;
-                const sx = punchSide === 'left' ? 0 : customImg.width - sw;
-                const sy = customImg.height * 0.22;
-
-                const limbW = drawW * 0.48 * (1 + 0.38 * punchExtend);
-                const limbH = drawH * 0.48 * (1 + 0.38 * punchExtend);
-                const dx = punchSide === 'left'
-                    ? (-drawW * 0.45 + punchExtend * 38)
-                    : (drawW * 0.02 - punchExtend * 38);
-                const dy = -drawH * 0.22 - punchExtend * 14;
-
-                ctx.shadowColor = 'rgba(0,0,0,0.65)';
-                ctx.shadowBlur = 14;
-                ctx.drawImage(customImg, sx, sy, sw, sh, dx, dy, limbW, limbH);
-            }
-            ctx.restore();
-
-            // توهج خفيف على حافة الصورة يتفاعل مع نوع الحركة (أحمر للكم، أزرق للرأس، أخضر للقدمين)
-            let glowColor = 'rgba(255,255,255,0.18)';
-            if (currentAnim && MOVES[currentAnim]) {
-                const cat = MOVES[currentAnim].cat;
-                glowColor = cat === 'punch' ? '#f59e0b' : (cat === 'head' ? '#3b82f6' : '#10b981');
-            }
-            ctx.strokeStyle = glowColor;
-            ctx.lineWidth = currentAnim ? 3 : 1.5;
-            ctx.beginPath();
-            ctx.roundRect(-drawW / 2, -drawH / 2, drawW, drawH, 20);
-            ctx.stroke();
-
-        } else {
-            // شخصية افتراضية في حال عدم رفع صورة
-            ctx.fillStyle = '#0f172a';
-            ctx.beginPath();
-            ctx.roundRect(-34, 18, 68, 42, 8);
-            ctx.fill();
-            ctx.fillStyle = '#f59e0b';
-            ctx.fillRect(-34, 16, 68, 7);
-
-            ctx.fillStyle = '#c68642';
-            ctx.fillRect(-28, 60, 18, 45);
-            ctx.fillRect(10, 60, 18, 45);
-
-            ctx.fillStyle = '#d49a6a';
-            ctx.beginPath();
-            ctx.roundRect(-36, -42, 72, 60, 18);
-            ctx.fill();
-
-            ctx.beginPath();
-            ctx.ellipse(0, -68, 20, 24, 0, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        ctx.restore();
-        requestAnimationFrame(renderLoop);
-    }
-    requestAnimationFrame(renderLoop);
-
-    // --- إدارة الكومبوهات ووضع التكرار للإتقان ---
     let currentBuilder = [];
     let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
     let drillCurrentReps = 0;
     let drillTargetReps = 10;
 
-    function addStep(moveKey) {
-        if (currentBuilder.length >= 7) return;
-        currentBuilder.push(moveKey);
-        renderBuilder();
+    function addAndPreview(moveKey) {
+        if (currentBuilder.length < 7) {
+            currentBuilder.push(moveKey);
+            renderBuilder();
+        }
+        showMoveMedia(moveKey, 750);
     }
 
-    function clearBuilder() {
-        currentBuilder = [];
-        renderBuilder();
-    }
+    function clearBuilder() { currentBuilder = []; renderBuilder(); }
 
     function renderBuilder() {
         const box = document.getElementById('builder-preview');
         box.textContent = currentBuilder.length === 0
             ? 'اضغط على الحركات لبناء الكومبو...'
-            : currentBuilder.map(k => MOVES[k].label).join(' ➔ ');
+            : currentBuilder.map(k => MOVES[k].en).join(' ➔ ');
     }
 
     function saveCustomCombo() {
@@ -578,15 +618,12 @@
         const sel = document.getElementById('drill-combo-select');
         const valStr = JSON.stringify(comboArray);
         for (let i = 0; i < sel.options.length; i++) {
-            if (sel.options[i].value === valStr) {
-                sel.selectedIndex = i;
-                break;
-            }
+            if (sel.options[i].value === valStr) { sel.selectedIndex = i; break; }
         }
         document.getElementById('drill-enabled').value = 'on';
         resetDrillCounter();
         updateModeBadge();
-        switchTab('drill', document.querySelectorAll('.tab-btn')[1]);
+        switchTab('drill', document.querySelectorAll('.tab-btn')[2]);
     }
 
     function renderSavedCombos() {
@@ -596,9 +633,8 @@
         list.innerHTML = '';
         drillSel.innerHTML = '';
 
-        // إضافة كومبوهات المستخدم لقائمة الإتقان أولاً
         customCombos.forEach((combo, idx) => {
-            const label = combo.map(k => MOVES[k].label).join(' ➔ ');
+            const label = combo.map(k => MOVES[k].en).join(' ➔ ');
             const div = document.createElement('div');
             div.className = 'saved-item';
             div.innerHTML = `<span style="flex:1;">${label}</span>
@@ -612,11 +648,10 @@
             drillSel.appendChild(opt);
         });
 
-        // إضافة الكومبوهات الاحترافية الجاهزة لقائمة الإتقان
         PRESET_DRILLS.forEach(combo => {
             const opt = document.createElement('option');
             opt.value = JSON.stringify(combo);
-            opt.textContent = combo.map(k => MOVES[k].label).join(' ➔ ');
+            opt.textContent = combo.map(k => MOVES[k].en).join(' ➔ ');
             drillSel.appendChild(opt);
         });
     }
@@ -634,7 +669,7 @@
         document.getElementById('drill-counter-display').textContent = `0 / ${targetTxt}`;
     }
 
-    // --- التحكم بالصوت والمؤقت والجلسة ---
+    // --- الصوت والمؤقت ---
     let voiceRate = 0.90;
     let comboIntervalMs = 4000;
     let totalRounds = 3;
@@ -653,9 +688,7 @@
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
 
-    function testVoice() {
-        speakText("Jab, Cross, Slip Left, Pivot Right");
-    }
+    function testVoice() { speakText("Jab, Cross, Lead Hook, Slip Left"); }
 
     function changeInterval(val) {
         comboIntervalMs = parseFloat(val) * 1000;
@@ -673,10 +706,7 @@
 
     function updateTimeSetting() {
         roundDuration = parseInt(document.getElementById('time-select').value);
-        if (!isRunning) {
-            timeLeft = roundDuration;
-            updateTimerDisplay();
-        }
+        if (!isRunning) { timeLeft = roundDuration; updateTimerDisplay(); }
     }
 
     function updateModeBadge() {
@@ -711,6 +741,7 @@
         const btn = document.getElementById('start-btn');
         btn.textContent = 'إيقاف الجلسة';
         btn.classList.add('danger');
+        showMoveMedia('GUARD', 0);
         speakText(`Round ${currentRound}. Fight!`);
         timerId = setInterval(tickTimer, 1000);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
@@ -724,6 +755,7 @@
         btn.textContent = 'ابدأ الجلسة';
         btn.classList.remove('danger');
         document.getElementById('combo-text').textContent = 'READY';
+        showMoveMedia('GUARD', 0);
     }
 
     function resetSession() {
@@ -742,11 +774,7 @@
             updateTimerDisplay();
         } else {
             if (!isResting) {
-                if (currentRound >= totalRounds) {
-                    stopSession();
-                    speakText("Workout complete!");
-                    return;
-                }
+                if (currentRound >= totalRounds) { stopSession(); speakText("Workout complete!"); return; }
                 isResting = true;
                 timeLeft = 60;
                 document.getElementById('combo-text').textContent = 'REST';
@@ -772,7 +800,6 @@
         const punches = ['JAB', 'CROSS', 'L_HOOK', 'R_HOOK', 'L_UPPER', 'R_UPPER'];
         const heads = ['SLIP_L', 'SLIP_R', 'ROLL', 'PULL'];
         const feet = ['STEP_IN', 'STEP_BACK', 'PIVOT_L', 'PIVOT_R'];
-
         const templates = [
             () => [feet[Math.floor(Math.random()*2)], 'JAB', 'CROSS', heads[Math.floor(Math.random()*heads.length)]],
             () => ['JAB', 'CROSS', 'L_HOOK', feet[2 + Math.floor(Math.random()*2)]],
@@ -814,15 +841,13 @@
             document.getElementById('combo-sub').textContent = 'لكم • حركة رأس • حركة قدمين';
         }
 
-        document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].label).join(' ➔ ');
+        document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
+        speakText(seqKeys.map(k => MOVES[k].say).join(', '));
 
-        const speechPhrase = seqKeys.map(k => MOVES[k].say).join(', ');
-        speakText(speechPhrase);
-
-        const stepDelay = Math.max(440, Math.round(600 / voiceRate));
+        const stepDelay = Math.max(460, Math.round(620 / voiceRate));
         seqKeys.forEach((moveKey, idx) => {
             setTimeout(() => {
-                if (isRunning && !isResting) triggerAnimation(moveKey);
+                if (isRunning && !isResting) showMoveMedia(moveKey, stepDelay - 50);
             }, idx * stepDelay);
         });
     }
