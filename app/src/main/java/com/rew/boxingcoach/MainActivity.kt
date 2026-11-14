@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
-        webView.settings.mediaPlaybackRequiresUserGesture = false
+        webView.settings.allowContentAccess = true
         webView.webViewClient = WebViewClient()
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -51,12 +51,11 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             ): Boolean {
                 fileUploadCallback?.onReceiveValue(null)
                 fileUploadCallback = filePathCallback
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = "*/*"
-                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*", "image/*"))
                 }
-                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر فيديو أو صورة الحركة"))
+                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر ملف المجسم 3D (.glb)"))
                 return true
             }
         }
