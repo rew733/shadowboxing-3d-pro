@@ -12,6 +12,7 @@
             --accent: #f59e0b;
             --danger: #ef4444;
             --success: #10b981;
+            --info: #3b82f6;
             --text: #f9fafb;
             --muted: #9ca3af;
             --border: rgba(255, 255, 255, 0.09);
@@ -20,26 +21,27 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 10px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
         
-        /* شريط التبويبات */
-        .tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; background: var(--panel); padding: 6px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 10px 4px; border-radius: 10px; font-size: 0.82rem; font-weight: 700; cursor: pointer; transition: 0.2s; }
+        /* شريط التبويبات الأربعة */
+        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--panel); padding: 5px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 9px 2px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
 
         .tab-content { display: none; flex-direction: column; gap: 10px; }
         .tab-content.active { display: flex; }
 
-        /* شاشة عرض الملاكم الواقعي */
-        .stage-box { width: 100%; height: 260px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        /* شاشة عرض الملاكم */
+        .stage-box { width: 100%; height: 265px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
         canvas { width: 100%; height: 100%; display: block; }
-        .badge-stance { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.65); color: var(--accent); font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.3); font-weight: 700; }
+        .badge-stance { position: absolute; top: 10px; left: 10px; background: rgba(0,0,0,0.7); color: var(--accent); font-size: 0.7rem; padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
+        .badge-action { position: absolute; top: 10px; right: 10px; background: rgba(245,158,11,0.18); color: #fff; font-size: 0.72rem; padding: 4px 10px; border-radius: 20px; font-weight: 800; direction: ltr; }
 
-        .panel { background: var(--panel); border-radius: 16px; padding: 14px; border: 1px solid var(--border); }
-        .status-row { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); font-weight: 700; }
-        .timer { text-align: center; font-size: 2.6rem; font-weight: 900; margin: 4px 0; letter-spacing: 1px; }
+        .panel { background: var(--panel); border-radius: 16px; padding: 13px; border: 1px solid var(--border); }
+        .status-row { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
+        .timer { text-align: center; font-size: 2.5rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
         
-        .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 12px; text-align: center; min-height: 82px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
-        .combo-display h2 { color: var(--accent); font-size: 1.4rem; font-weight: 900; }
-        .combo-display span { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+        .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 11px; text-align: center; min-height: 84px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
+        .combo-display h2 { color: var(--accent); font-size: 1.25rem; font-weight: 900; line-height: 1.4; }
+        .combo-display span { font-size: 0.75rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
         .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 10px; }
         .btn { background: var(--accent); color: #000; border: none; padding: 13px; border-radius: 12px; font-size: 0.95rem; font-weight: 800; cursor: pointer; }
@@ -47,20 +49,24 @@
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
         .btn.small { padding: 8px 12px; font-size: 0.8rem; border-radius: 8px; }
 
-        /* عناصر الإعدادات والكومبوهات */
+        /* عناصر التحكم */
         .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
-        .setting-header { display: flex; justify-content: space-between; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+        .setting-header { display: flex; justify-content: space-between; font-size: 0.82rem; color: var(--muted); font-weight: 700; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
-        select { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.85rem; }
+        select { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.85rem; width: 100%; }
 
-        .move-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; direction: ltr; }
-        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 7px 10px; border-radius: 8px; font-size: 0.78rem; font-weight: 700; cursor: pointer; }
+        .cat-title { font-size: 0.75rem; color: var(--accent); font-weight: 800; margin-top: 8px; margin-bottom: 4px; }
+        .move-chips { display: flex; flex-wrap: wrap; gap: 5px; direction: ltr; }
+        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 6px 9px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; }
+        .chip.head { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
+        .chip.foot { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
         .chip:active { background: var(--accent); color: #000; }
         
-        .builder-box { background: rgba(0,0,0,0.35); border: 1px solid var(--border); padding: 10px; border-radius: 10px; min-height: 44px; font-size: 0.9rem; color: var(--accent); font-weight: 700; direction: ltr; display: flex; align-items: center; }
-        .saved-list { display: flex; flex-direction: column; gap: 8px; max-height: 240px; overflow-y: auto; margin-top: 8px; }
-        .saved-item { background: var(--card); padding: 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; direction: ltr; }
-        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 5px 9px; border-radius: 6px; font-weight: 800; cursor: pointer; }
+        .builder-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 10px; border-radius: 10px; min-height: 44px; font-size: 0.85rem; color: var(--accent); font-weight: 700; direction: ltr; display: flex; align-items: center; margin-top: 8px; }
+        .saved-list { display: flex; flex-direction: column; gap: 7px; max-height: 210px; overflow-y: auto; margin-top: 8px; }
+        .saved-item { background: var(--card); padding: 9px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; direction: ltr; gap: 6px; }
+        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 5px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
+        .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 5px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
         
         .upload-label { display: block; text-align: center; background: var(--card); border: 1px dashed var(--accent); padding: 12px; border-radius: 12px; color: var(--accent); font-weight: 700; font-size: 0.85rem; cursor: pointer; }
     </style>
@@ -68,24 +74,26 @@
 <body>
 
 <div class="app">
-    <!-- التبويبات الثلاثة -->
+    <!-- التبويبات الأربعة -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
+        <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
         <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبوهات</button>
-        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الصوت والصورة</button>
+        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الإعدادات</button>
     </div>
 
     <!-- التبويب 1: شاشة التدريب الرئيسية -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
             <span class="badge-stance">ORTHODOX</span>
-            <canvas id="boxerCanvas" width="420" height="260"></canvas>
+            <span class="badge-action" id="live-move-badge">GUARD</span>
+            <canvas id="boxerCanvas" width="420" height="265"></canvas>
         </div>
 
         <div class="panel">
             <div class="status-row">
                 <span id="round-label">الجولة 1 / 3</span>
-                <span id="mode-badge" style="color: var(--accent);">الوضع: عشوائي</span>
+                <span id="mode-badge" style="color: var(--accent);">الوضع: شامل ومتنوع</span>
             </div>
             <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
@@ -100,59 +108,111 @@
         </div>
     </div>
 
-    <!-- التبويب 2: إضافة كومبوهات اختيارية -->
+    <!-- التبويب 2: تبويب تكرار الكومبو للإتقان (Drill Mode) -->
+    <div id="tab-drill" class="tab-content">
+        <div class="panel">
+            <div class="setting-item">
+                <span class="setting-header"><span>تفعيل وضع التكرار للإتقان:</span></span>
+                <select id="drill-enabled" onchange="updateModeBadge()">
+                    <option value="off">متوقف (تدريب متنوع تلقائي)</option>
+                    <option value="on">مُفعّل (تكرار الكومبو المختار لإتقانه)</option>
+                </select>
+            </div>
+
+            <div class="setting-item">
+                <span class="setting-header"><span>اختر الكومبو المراد إتقانه:</span></span>
+                <select id="drill-combo-select"></select>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-header">
+                    <span>عدد التكرارات المطلوبة للإتقان:</span>
+                    <span id="drill-target-val" style="color: var(--accent);">10 مرات</span>
+                </div>
+                <select id="drill-reps-target" onchange="updateDrillTarget()">
+                    <option value="5">5 تكرارات</option>
+                    <option value="10" selected>10 تكرارات</option>
+                    <option value="15">15 تكراراً</option>
+                    <option value="20">20 تكراراً</option>
+                    <option value="999">تكرار مستمر طوال الجولة</option>
+                </select>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
+                <div style="font-size: 0.8rem; color: var(--muted);">تقدم الإتقان الحالي:</div>
+                <div id="drill-counter-display" style="font-size: 1.6rem; font-weight: 900; color: var(--success); margin-top: 4px;">0 / 10</div>
+                <button class="btn secondary small" style="margin-top: 8px;" onclick="resetDrillCounter()">تصفير العداد</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- التبويب 3: بناء كومبوهات اختيارية (لكم + رأس + قدمين) -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
-            <div class="setting-header"><span>اختر مصدر الكومبوهات أثناء التدريب:</span></div>
-            <select id="combo-source" style="width: 100%; margin-top: 6px;" onchange="updateModeBadge()">
-                <option value="random">توليد عشوائي تلقائي</option>
-                <option value="custom">كومبوهاتي الاختيارية فقط</option>
-                <option value="mixed">دمج العشوائي مع كومبوهاتي</option>
+            <div class="setting-header"><span>مصدر الكومبوهات في الوضع العادي:</span></div>
+            <select id="combo-source" style="margin-top: 5px;" onchange="updateModeBadge()">
+                <option value="mixed_all">توليد شامل (لكم + رأس + قدمين)</option>
+                <option value="custom">كومبوهاتي المحفوظة فقط</option>
+                <option value="both">دمج الشامل مع كومبوهاتي</option>
             </select>
-        </div>
 
-        <div class="panel">
-            <div class="setting-header"><span>ركّب الكومبو الخاص بك بالضغط على الحركات:</span></div>
+            <div class="cat-title">🥊 اللكمات (Punches):</div>
             <div class="move-chips">
                 <button class="chip" onclick="addStep('JAB')">1 Jab</button>
                 <button class="chip" onclick="addStep('CROSS')">2 Cross</button>
-                <button class="chip" onclick="addStep('HOOK')">3 Lead Hook</button>
-                <button class="chip" onclick="addStep('UPPERCUT')">4 Uppercut</button>
-                <button class="chip" onclick="addStep('SLIP_LEFT')">Slip Left</button>
-                <button class="chip" onclick="addStep('SLIP_RIGHT')">Slip Right</button>
-                <button class="chip" onclick="addStep('ROLL')">Roll</button>
+                <button class="chip" onclick="addStep('L_HOOK')">3 Lead Hook</button>
+                <button class="chip" onclick="addStep('R_HOOK')">4 Rear Hook</button>
+                <button class="chip" onclick="addStep('L_UPPER')">5 Lead Upper</button>
+                <button class="chip" onclick="addStep('R_UPPER')">6 Rear Upper</button>
             </div>
-            <div class="builder-box" id="builder-preview">اضغط على الحركات أعلاه...</div>
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 10px;">
+
+            <div class="cat-title">🛡️ حركة الرأس (Head Movement):</div>
+            <div class="move-chips">
+                <button class="chip head" onclick="addStep('SLIP_L')">Slip Left</button>
+                <button class="chip head" onclick="addStep('SLIP_R')">Slip Right</button>
+                <button class="chip head" onclick="addStep('ROLL')">Roll</button>
+                <button class="chip head" onclick="addStep('PULL')">Pull Back</button>
+            </div>
+
+            <div class="cat-title">👟 حركة القدمين (Footwork):</div>
+            <div class="move-chips">
+                <button class="chip foot" onclick="addStep('STEP_IN')">Step In</button>
+                <button class="chip foot" onclick="addStep('STEP_BACK')">Step Back</button>
+                <button class="chip foot" onclick="addStep('PIVOT_L')">Pivot Left</button>
+                <button class="chip foot" onclick="addStep('PIVOT_R')">Pivot Right</button>
+            </div>
+
+            <div class="builder-box" id="builder-preview">اضغط على الحركات لبناء الكومبو...</div>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 8px;">
                 <button class="btn small" onclick="saveCustomCombo()">حفظ الكومبو</button>
                 <button class="btn secondary small" onclick="clearBuilder()">مسح</button>
             </div>
         </div>
 
         <div class="panel">
-            <div class="setting-header"><span>قائمة كومبوهاتك المحفوظة (<span id="saved-count">0</span>):</span></div>
+            <div class="setting-header"><span>كومبوهاتك المحفوظة (<span id="saved-count">0</span>):</span></div>
             <div class="saved-list" id="saved-list"></div>
         </div>
     </div>
 
-    <!-- التبويب 3: التحكم بسرعة النطق ورفع الصورة الحقيقية -->
+    <!-- التبويب 4: التحكم بسرعة النطق ورفع الصورة الحقيقية -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
             <div class="setting-item">
                 <div class="setting-header">
-                    <span>سرعة نطق المدرب (Voice Speed):</span>
+                    <span>سرعة نطق المدرب:</span>
                     <span id="voice-rate-val" style="color: var(--accent);">0.90x (متوازن)</span>
                 </div>
                 <input type="range" id="voice-rate" min="0.55" max="1.45" step="0.05" value="0.90" oninput="changeVoiceRate(this.value)">
-                <button class="btn secondary small" style="margin-top: 6px;" onclick="testVoice()">🔊 تجربة سرعة الصوت الآن</button>
+                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت</button>
             </div>
 
-            <div class="setting-item" style="margin-top: 14px;">
+            <div class="setting-item" style="margin-top: 10px;">
                 <div class="setting-header">
-                    <span>الفاصل الزمني بين الكومبوهات:</span>
-                    <span id="interval-val" style="color: var(--accent);">3.8 ثانية</span>
+                    <span>الفاصل بين الكومبوهات:</span>
+                    <span id="interval-val" style="color: var(--accent);">4.0 ثانية</span>
                 </div>
-                <input type="range" id="combo-interval" min="2.2" max="6.0" step="0.2" value="3.8" oninput="changeInterval(this.value)">
+                <input type="range" id="combo-interval" min="2.2" max="6.5" step="0.2" value="4.0" oninput="changeInterval(this.value)">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -177,21 +237,17 @@
         </div>
 
         <div class="panel">
-            <div class="setting-header" style="margin-bottom: 8px;"><span>صورة الملاكم الواقعية:</span></div>
+            <div class="setting-header" style="margin-bottom: 8px;"><span>صورة الملاكم الحقيقية (تتحرك تلقائياً بدون كرات):</span></div>
             <label class="upload-label">
-                📷 اضغط هنا لرفع صورة حقيقية من هاتفك
+                📷 رفع صورة ملاكم من الهاتف
                 <input type="file" accept="image/*" style="display: none;" onchange="handleImageUpload(event)">
             </label>
-            <p style="font-size: 0.75rem; color: var(--muted); margin-top: 8px; line-height: 1.5;">
-                اختر صورة واضحة للملاكم في وضعية الوقوف، وسيقوم المحرك بتحريكها تلقائياً مع اللكمات والمراوغات.
-            </p>
-            <button class="btn secondary small" style="width: 100%; margin-top: 10px;" onclick="resetBoxerImage()">استعادة الملاكم الافتراضي</button>
+            <button class="btn secondary small" style="width: 100%; margin-top: 8px;" onclick="resetBoxerImage()">استعادة الملاكم الافتراضي</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- التنقل بين التبويبات ---
     function switchTab(tabId, btn) {
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
@@ -199,25 +255,41 @@
         btn.classList.add('active');
     }
 
-    // --- قاموس الحركات ---
+    // --- قاموس الحركات الكامل (لكم + رأس + قدمين) ---
     const MOVES = {
-        JAB: { label: '1 (Jab)', say: 'Jab' },
-        CROSS: { label: '2 (Cross)', say: 'Cross' },
-        HOOK: { label: '3 (Lead Hook)', say: 'Lead Hook' },
-        UPPERCUT: { label: '4 (Rear Uppercut)', say: 'Rear Uppercut' },
-        SLIP_LEFT: { label: 'Slip Left', say: 'Slip Left' },
-        SLIP_RIGHT: { label: 'Slip Right', say: 'Slip Right' },
-        ROLL: { label: 'Roll', say: 'Roll' }
+        JAB:       { label: '1 Jab',       say: 'Jab',           cat: 'punch' },
+        CROSS:     { label: '2 Cross',     say: 'Cross',         cat: 'punch' },
+        L_HOOK:    { label: '3 Lead Hook', say: 'Lead Hook',     cat: 'punch' },
+        R_HOOK:    { label: '4 Rear Hook', say: 'Rear Hook',     cat: 'punch' },
+        L_UPPER:   { label: '5 Lead Upper',say: 'Lead Uppercut', cat: 'punch' },
+        R_UPPER:   { label: '6 Rear Upper',say: 'Rear Uppercut', cat: 'punch' },
+        SLIP_L:    { label: 'Slip Left',   say: 'Slip Left',     cat: 'head'  },
+        SLIP_R:    { label: 'Slip Right',  say: 'Slip Right',    cat: 'head'  },
+        ROLL:      { label: 'Roll',        say: 'Roll',          cat: 'head'  },
+        PULL:      { label: 'Pull Back',   say: 'Pull Back',     cat: 'head'  },
+        STEP_IN:   { label: 'Step In',     say: 'Step In',       cat: 'foot'  },
+        STEP_BACK: { label: 'Step Back',   say: 'Step Back',     cat: 'foot'  },
+        PIVOT_L:   { label: 'Pivot Left',  say: 'Pivot Left',    cat: 'foot'  },
+        PIVOT_R:   { label: 'Pivot Right', say: 'Pivot Right',   cat: 'foot'  }
     };
 
-    // --- محرك الرسم والتحريك الواقعي (صورة حقيقية أو شخصية ملاكم واقعية) ---
+    // كومبوهات احترافية جاهزة للتدريب والإتقان
+    const PRESET_DRILLS = [
+        ['JAB', 'CROSS', 'L_HOOK'],
+        ['JAB', 'JAB', 'CROSS', 'SLIP_L'],
+        ['STEP_IN', 'JAB', 'CROSS', 'STEP_BACK'],
+        ['SLIP_R', 'CROSS', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'ROLL', 'R_UPPER', 'L_HOOK'],
+        ['JAB', 'PULL', 'CROSS', 'PIVOT_L']
+    ];
+
+    // --- محرك التحريك الواقعي للصورة الحقيقية ---
     const canvas = document.getElementById('boxerCanvas');
     const ctx = canvas.getContext('2d');
     let customImg = null;
     let currentAnim = null;
     let animProgress = 0;
 
-    // استعادة الصورة المحفوظة إن وجدت
     const savedPhoto = localStorage.getItem('boxer_custom_photo');
     if (savedPhoto) {
         const img = new Image();
@@ -232,16 +304,14 @@
         reader.onload = function(evt) {
             const img = new Image();
             img.onload = function() {
-                // تصغير الصورة لحفظها بسلاسة في الذاكرة المحلية
                 const tmp = document.createElement('canvas');
-                const scale = Math.min(400 / img.width, 400 / img.height, 1);
+                const scale = Math.min(450 / img.width, 450 / img.height, 1);
                 tmp.width = img.width * scale;
                 tmp.height = img.height * scale;
                 tmp.getContext('2d').drawImage(img, 0, 0, tmp.width, tmp.height);
-                const dataUrl = tmp.toDataURL('image/jpeg', 0.85);
+                const dataUrl = tmp.toDataURL('image/jpeg', 0.88);
                 localStorage.setItem('boxer_custom_photo', dataUrl);
                 customImg = img;
-                alert('تم تحميل الصورة بنجاح! ستتحرك الآن أثناء التمرين.');
             };
             img.src = evt.target.result;
         };
@@ -251,106 +321,195 @@
     function resetBoxerImage() {
         localStorage.removeItem('boxer_custom_photo');
         customImg = null;
-        alert('تمت استعادة شخصية الملاكم الافتراضية.');
     }
 
     function triggerAnimation(type) {
         currentAnim = type;
         animProgress = 0;
+        document.getElementById('live-move-badge').textContent = MOVES[type] ? MOVES[type].label.toUpperCase() : 'GUARD';
     }
 
     function renderLoop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         const cx = canvas.width / 2;
-        const cy = canvas.height / 2 + 15;
+        const cy = canvas.height / 2 + 8;
         const t = Date.now();
-        const bounceY = Math.sin(t * 0.008) * 4;
+        // حركة تنفس وارتداد قدمين مستمرة
+        const idleBounceY = Math.sin(t * 0.0085) * 4.5;
+        const idleSwayX = Math.cos(t * 0.004) * 3;
 
         let wave = 0;
         if (currentAnim) {
-            animProgress += 0.065;
+            animProgress += 0.068;
             if (animProgress >= 1) {
                 currentAnim = null;
+                document.getElementById('live-move-badge').textContent = 'GUARD';
             } else {
                 wave = Math.sin(animProgress * Math.PI);
             }
         }
 
-        // حساب الإزاحات الحركية حسب نوع اللكمة أو المراوغة
-        let bodyX = 0, bodyY = bounceY, bodyRot = 0, bodyScale = 1;
-        let leftGloveX = -38, leftGloveY = -18, leftGloveScale = 1;
-        let rightGloveX = 32, rightGloveY = -22, rightGloveScale = 1;
+        // متغيرات التحريك الفيزيائي للصورة كاملة + الأطراف المقتطعة
+        let tx = idleSwayX, ty = idleBounceY, rot = 0, scaleX = 1, scaleY = 1, skewX = 0;
+        let punchSide = null; // 'left' | 'right'
+        let punchExtend = 0;
 
-        if (currentAnim === 'JAB') {
-            bodyX = 8 * wave;
-            bodyRot = 0.06 * wave;
-            leftGloveX = -38 + 25 * wave;
-            leftGloveY = -18 - 10 * wave;
-            leftGloveScale = 1 + 0.55 * wave; // اندفاع القفاز الأمامي نحو الشاشة
-            bodyScale = 1 + 0.05 * wave;
-        } else if (currentAnim === 'CROSS') {
-            bodyX = -12 * wave;
-            bodyRot = -0.10 * wave;
-            rightGloveX = 32 - 32 * wave;
-            rightGloveY = -22 - 8 * wave;
-            rightGloveScale = 1 + 0.65 * wave; // اندفاع القفاز الخلفي بقوة
-            bodyScale = 1 + 0.07 * wave;
-        } else if (currentAnim === 'HOOK') {
-            bodyRot = -0.14 * wave;
-            leftGloveX = -38 + 65 * wave;
-            leftGloveY = -18 - 12 * wave;
-            leftGloveScale = 1 + 0.45 * wave;
-        } else if (currentAnim === 'UPPERCUT') {
-            bodyY = bounceY + 10 * wave;
-            rightGloveX = 32 - 22 * wave;
-            rightGloveY = -22 - 42 * wave;
-            rightGloveScale = 1 + 0.45 * wave;
-        } else if (currentAnim === 'SLIP_LEFT') {
-            bodyX = -32 * wave;
-            bodyY = bounceY + 10 * wave;
-            bodyRot = -0.18 * wave;
-        } else if (currentAnim === 'SLIP_RIGHT') {
-            bodyX = 32 * wave;
-            bodyY = bounceY + 10 * wave;
-            bodyRot = 0.18 * wave;
-        } else if (currentAnim === 'ROLL') {
-            bodyX = Math.sin(animProgress * Math.PI * 2) * 28;
-            bodyY = bounceY + 28 * wave;
-            bodyRot = Math.sin(animProgress * Math.PI * 2) * 0.15;
+        switch (currentAnim) {
+            case 'JAB':
+                tx += 14 * wave;
+                ty -= 6 * wave;
+                rot = 0.08 * wave;
+                scaleX = 1 + 0.08 * wave;
+                scaleY = 1 + 0.06 * wave;
+                punchSide = 'left';
+                punchExtend = wave;
+                break;
+            case 'CROSS':
+                tx -= 16 * wave;
+                ty -= 4 * wave;
+                rot = -0.14 * wave;
+                skewX = -0.08 * wave;
+                scaleX = 1 + 0.11 * wave;
+                scaleY = 1 + 0.08 * wave;
+                punchSide = 'right';
+                punchExtend = wave;
+                break;
+            case 'L_HOOK':
+                tx += 18 * wave;
+                rot = -0.18 * wave;
+                skewX = 0.12 * wave;
+                scaleX = 1 + 0.07 * wave;
+                punchSide = 'left';
+                punchExtend = wave * 0.85;
+                break;
+            case 'R_HOOK':
+                tx -= 18 * wave;
+                rot = 0.18 * wave;
+                skewX = -0.12 * wave;
+                scaleX = 1 + 0.07 * wave;
+                punchSide = 'right';
+                punchExtend = wave * 0.85;
+                break;
+            case 'L_UPPER':
+                ty += 12 * wave - 22 * Math.pow(wave, 2);
+                rot = -0.10 * wave;
+                scaleY = 1 + 0.09 * wave;
+                punchSide = 'left';
+                punchExtend = wave * 0.7;
+                break;
+            case 'R_UPPER':
+                ty += 12 * wave - 22 * Math.pow(wave, 2);
+                rot = 0.10 * wave;
+                scaleY = 1 + 0.09 * wave;
+                punchSide = 'right';
+                punchExtend = wave * 0.7;
+                break;
+            case 'SLIP_L':
+                tx -= 44 * wave;
+                ty += 14 * wave;
+                rot = -0.22 * wave;
+                skewX = -0.10 * wave;
+                break;
+            case 'SLIP_R':
+                tx += 44 * wave;
+                ty += 14 * wave;
+                rot = 0.22 * wave;
+                skewX = 0.10 * wave;
+                break;
+            case 'ROLL':
+                tx += Math.sin(animProgress * Math.PI * 2) * 38;
+                ty += 34 * wave;
+                rot = Math.sin(animProgress * Math.PI * 2) * 0.16;
+                scaleY = 1 - 0.10 * wave;
+                break;
+            case 'PULL':
+                tx -= 22 * wave;
+                ty += 10 * wave;
+                rot = -0.16 * wave;
+                scaleX = 1 - 0.08 * wave;
+                scaleY = 1 - 0.06 * wave;
+                break;
+            case 'STEP_IN':
+                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
+                scaleX = 1 + 0.22 * wave;
+                scaleY = 1 + 0.22 * wave;
+                break;
+            case 'STEP_BACK':
+                ty -= 10 * Math.sin(animProgress * Math.PI * 2);
+                scaleX = 1 - 0.18 * wave;
+                scaleY = 1 - 0.18 * wave;
+                break;
+            case 'PIVOT_L':
+                tx -= 35 * wave;
+                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
+                rot = -0.24 * wave;
+                scaleX = 1 - 0.12 * wave;
+                break;
+            case 'PIVOT_R':
+                tx += 35 * wave;
+                ty -= 12 * Math.sin(animProgress * Math.PI * 2);
+                rot = 0.24 * wave;
+                scaleX = 1 - 0.12 * wave;
+                break;
         }
 
-        // أرضية الحلبة
-        ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
+        // ظل أرضي ديناميكي يتغير حجمه مع حركة القدمين
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
         ctx.beginPath();
-        ctx.ellipse(cx, canvas.height - 14, 110, 14, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + tx * 0.7, canvas.height - 14, 75 * scaleX, 12 * scaleY, 0, 0, Math.PI * 2);
         ctx.fill();
 
         ctx.save();
-        ctx.translate(cx + bodyX, cy + bodyY);
-        ctx.rotate(bodyRot);
-        ctx.scale(bodyScale, bodyScale);
+        ctx.translate(cx + tx, cy + ty);
+        ctx.rotate(rot);
+        ctx.transform(scaleX, 0, skewX, scaleY, 0, 0);
 
         if (customImg) {
-            // رسم الصورة الحقيقية التي رفعها المستخدم مع قص دائري/بيضاوي احترافي وحركة ديناميكية
+            // رسم الصورة الحقيقية نفسها بدون أي كرات فوقها
             const aspect = customImg.width / customImg.height;
-            const drawH = 215;
-            const drawW = drawH * aspect;
+            const drawH = 225;
+            const drawW = Math.min(drawH * aspect, 260);
+
             ctx.save();
             ctx.beginPath();
-            ctx.roundRect(-drawW / 2, -drawH / 2 - 5, drawW, drawH, 22);
+            ctx.roundRect(-drawW / 2, -drawH / 2, drawW, drawH, 20);
             ctx.clip();
-            ctx.drawImage(customImg, -drawW / 2, -drawH / 2 - 5, drawW, drawH);
+            ctx.drawImage(customImg, -drawW / 2, -drawH / 2, drawW, drawH);
+
+            // طبقة ذراع/قفاز مقتطعة من نفس الصورة تندفع للأمام عند اللكمة لإعطاء حركة حية
+            if (punchSide && punchExtend > 0.05) {
+                const sw = customImg.width * 0.42;
+                const sh = customImg.height * 0.45;
+                const sx = punchSide === 'left' ? 0 : customImg.width - sw;
+                const sy = customImg.height * 0.22;
+
+                const limbW = drawW * 0.48 * (1 + 0.38 * punchExtend);
+                const limbH = drawH * 0.48 * (1 + 0.38 * punchExtend);
+                const dx = punchSide === 'left'
+                    ? (-drawW * 0.45 + punchExtend * 38)
+                    : (drawW * 0.02 - punchExtend * 38);
+                const dy = -drawH * 0.22 - punchExtend * 14;
+
+                ctx.shadowColor = 'rgba(0,0,0,0.65)';
+                ctx.shadowBlur = 14;
+                ctx.drawImage(customImg, sx, sy, sw, sh, dx, dy, limbW, limbH);
+            }
             ctx.restore();
 
-            // إطار مضيء يتفاعل مع الضربة
-            ctx.strokeStyle = currentAnim ? '#f59e0b' : 'rgba(255,255,255,0.15)';
+            // توهج خفيف على حافة الصورة يتفاعل مع نوع الحركة (أحمر للكم، أزرق للرأس، أخضر للقدمين)
+            let glowColor = 'rgba(255,255,255,0.18)';
+            if (currentAnim && MOVES[currentAnim]) {
+                const cat = MOVES[currentAnim].cat;
+                glowColor = cat === 'punch' ? '#f59e0b' : (cat === 'head' ? '#3b82f6' : '#10b981');
+            }
+            ctx.strokeStyle = glowColor;
             ctx.lineWidth = currentAnim ? 3 : 1.5;
             ctx.beginPath();
-            ctx.roundRect(-drawW / 2, -drawH / 2 - 5, drawW, drawH, 22);
+            ctx.roundRect(-drawW / 2, -drawH / 2, drawW, drawH, 20);
             ctx.stroke();
+
         } else {
-            // رسم ملاكم رياضي بملابس الملاكمة (شورت أزرق داكن بحزام ذهبي وقفازات حمراء)
-            // الأرجل والشورت
+            // شخصية افتراضية في حال عدم رفع صورة
             ctx.fillStyle = '#0f172a';
             ctx.beginPath();
             ctx.roundRect(-34, 18, 68, 42, 8);
@@ -358,67 +517,33 @@
             ctx.fillStyle = '#f59e0b';
             ctx.fillRect(-34, 16, 68, 7);
 
-            // الساقان
             ctx.fillStyle = '#c68642';
             ctx.fillRect(-28, 60, 18, 45);
             ctx.fillRect(10, 60, 18, 45);
 
-            // الجذع والعضلات بتدرج لوني واقعي
-            const torsoGrad = ctx.createLinearGradient(-35, -45, 35, 20);
-            torsoGrad.addColorStop(0, '#e0ac69');
-            torsoGrad.addColorStop(0.5, '#c68642');
-            torsoGrad.addColorStop(1, '#8d5524');
-            ctx.fillStyle = torsoGrad;
+            ctx.fillStyle = '#d49a6a';
             ctx.beginPath();
             ctx.roundRect(-36, -42, 72, 60, 18);
             ctx.fill();
 
-            // الرأس والملامح
-            ctx.fillStyle = '#d49a6a';
             ctx.beginPath();
             ctx.ellipse(0, -68, 20, 24, 0, 0, Math.PI * 2);
             ctx.fill();
-            // الشعر
-            ctx.fillStyle = '#111827';
-            ctx.beginPath();
-            ctx.arc(0, -73, 20, Math.PI, 0);
-            ctx.fill();
         }
-
-        // رسم قفازات الملاكمة المتحركة فوق الشخصية لإعطاء عمق 3D عند اللكم
-        drawGlove(rightGloveX, rightGloveY, rightGloveScale, '#b91c1c');
-        drawGlove(leftGloveX, leftGloveY, leftGloveScale, '#ef4444');
 
         ctx.restore();
         requestAnimationFrame(renderLoop);
     }
-
-    function drawGlove(x, y, scale, color) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.scale(scale, scale);
-        ctx.fillStyle = color;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
-        ctx.shadowBlur = 8;
-        ctx.beginPath();
-        ctx.arc(0, 0, 17, 0, Math.PI * 2);
-        ctx.fill();
-        // لمعان القفاز
-        ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.beginPath();
-        ctx.arc(-5, -5, 6, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
-
     requestAnimationFrame(renderLoop);
 
-    // --- إدارة الكومبوهات الاختيارية ---
+    // --- إدارة الكومبوهات ووضع التكرار للإتقان ---
     let currentBuilder = [];
     let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
+    let drillCurrentReps = 0;
+    let drillTargetReps = 10;
 
     function addStep(moveKey) {
-        if (currentBuilder.length >= 6) return;
+        if (currentBuilder.length >= 7) return;
         currentBuilder.push(moveKey);
         renderBuilder();
     }
@@ -430,11 +555,9 @@
 
     function renderBuilder() {
         const box = document.getElementById('builder-preview');
-        if (currentBuilder.length === 0) {
-            box.textContent = 'اضغط على الحركات أعلاه...';
-        } else {
-            box.textContent = currentBuilder.map(k => MOVES[k].label).join(' ➔ ');
-        }
+        box.textContent = currentBuilder.length === 0
+            ? 'اضغط على الحركات لبناء الكومبو...'
+            : currentBuilder.map(k => MOVES[k].label).join(' ➔ ');
     }
 
     function saveCustomCombo() {
@@ -451,23 +574,69 @@
         renderSavedCombos();
     }
 
+    function sendToDrill(comboArray) {
+        const sel = document.getElementById('drill-combo-select');
+        const valStr = JSON.stringify(comboArray);
+        for (let i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === valStr) {
+                sel.selectedIndex = i;
+                break;
+            }
+        }
+        document.getElementById('drill-enabled').value = 'on';
+        resetDrillCounter();
+        updateModeBadge();
+        switchTab('drill', document.querySelectorAll('.tab-btn')[1]);
+    }
+
     function renderSavedCombos() {
         const list = document.getElementById('saved-list');
+        const drillSel = document.getElementById('drill-combo-select');
         document.getElementById('saved-count').textContent = customCombos.length;
         list.innerHTML = '';
+        drillSel.innerHTML = '';
+
+        // إضافة كومبوهات المستخدم لقائمة الإتقان أولاً
         customCombos.forEach((combo, idx) => {
+            const label = combo.map(k => MOVES[k].label).join(' ➔ ');
             const div = document.createElement('div');
             div.className = 'saved-item';
-            div.innerHTML = `<span>${combo.map(k => MOVES[k].label).join(' ➔ ')}</span>
+            div.innerHTML = `<span style="flex:1;">${label}</span>
+                             <button class="drill-pick-btn" onclick='sendToDrill(${JSON.stringify(combo)})'>إتقان</button>
                              <button class="del-btn" onclick="deleteCustomCombo(${idx})">حذف</button>`;
             list.appendChild(div);
+
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(combo);
+            opt.textContent = `★ ${label}`;
+            drillSel.appendChild(opt);
+        });
+
+        // إضافة الكومبوهات الاحترافية الجاهزة لقائمة الإتقان
+        PRESET_DRILLS.forEach(combo => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(combo);
+            opt.textContent = combo.map(k => MOVES[k].label).join(' ➔ ');
+            drillSel.appendChild(opt);
         });
     }
     renderSavedCombos();
 
+    function updateDrillTarget() {
+        drillTargetReps = parseInt(document.getElementById('drill-reps-target').value);
+        document.getElementById('drill-target-val').textContent = drillTargetReps === 999 ? 'مستمر' : `${drillTargetReps} مرات`;
+        resetDrillCounter();
+    }
+
+    function resetDrillCounter() {
+        drillCurrentReps = 0;
+        const targetTxt = drillTargetReps === 999 ? '∞' : drillTargetReps;
+        document.getElementById('drill-counter-display').textContent = `0 / ${targetTxt}`;
+    }
+
     // --- التحكم بالصوت والمؤقت والجلسة ---
     let voiceRate = 0.90;
-    let comboIntervalMs = 3800;
+    let comboIntervalMs = 4000;
     let totalRounds = 3;
     let roundDuration = 180;
     let currentRound = 1;
@@ -481,13 +650,11 @@
         voiceRate = parseFloat(val);
         let desc = voiceRate < 0.8 ? '(بطيء)' : (voiceRate > 1.1 ? '(سريع)' : '(متوازن)');
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x ${desc}`;
-        if (window.AndroidTTS && window.AndroidTTS.setRate) {
-            window.AndroidTTS.setRate(voiceRate);
-        }
+        if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
 
     function testVoice() {
-        speakText("Jab, Cross, Lead Hook");
+        speakText("Jab, Cross, Slip Left, Pivot Right");
     }
 
     function changeInterval(val) {
@@ -513,9 +680,14 @@
     }
 
     function updateModeBadge() {
-        const mode = document.getElementById('combo-source').value;
-        const names = { random: 'عشوائي', custom: 'مخصص', mixed: 'مدمج' };
-        document.getElementById('mode-badge').textContent = `الوضع: ${names[mode]}`;
+        const isDrill = document.getElementById('drill-enabled').value === 'on';
+        if (isDrill) {
+            document.getElementById('mode-badge').textContent = 'الوضع: تكرار للإتقان 🔁';
+        } else {
+            const mode = document.getElementById('combo-source').value;
+            const names = { mixed_all: 'شامل ومتنوع', custom: 'مخصص', both: 'مدمج' };
+            document.getElementById('mode-badge').textContent = `الوضع: ${names[mode]}`;
+        }
     }
 
     function speakText(text) {
@@ -559,6 +731,7 @@
         currentRound = 1;
         isResting = false;
         timeLeft = roundDuration;
+        resetDrillCounter();
         document.getElementById('round-label').textContent = `الجولة 1 / ${totalRounds}`;
         updateTimerDisplay();
     }
@@ -595,33 +768,58 @@
         document.getElementById('timer-display').textContent = `${m}:${s}`;
     }
 
+    function generateSmartVariedCombo() {
+        const punches = ['JAB', 'CROSS', 'L_HOOK', 'R_HOOK', 'L_UPPER', 'R_UPPER'];
+        const heads = ['SLIP_L', 'SLIP_R', 'ROLL', 'PULL'];
+        const feet = ['STEP_IN', 'STEP_BACK', 'PIVOT_L', 'PIVOT_R'];
+
+        const templates = [
+            () => [feet[Math.floor(Math.random()*2)], 'JAB', 'CROSS', heads[Math.floor(Math.random()*heads.length)]],
+            () => ['JAB', 'CROSS', 'L_HOOK', feet[2 + Math.floor(Math.random()*2)]],
+            () => [heads[Math.floor(Math.random()*heads.length)], punches[1 + Math.floor(Math.random()*5)], 'L_HOOK', 'CROSS'],
+            () => ['JAB', 'JAB', heads[Math.floor(Math.random()*heads.length)], 'CROSS', 'STEP_BACK'],
+            () => ['STEP_IN', 'JAB', 'R_UPPER', 'L_HOOK', 'PIVOT_L']
+        ];
+        return templates[Math.floor(Math.random() * templates.length)]();
+    }
+
     function executeNextCombo() {
         if (!isRunning || isResting) return;
-        const source = document.getElementById('combo-source').value;
+        const isDrill = document.getElementById('drill-enabled').value === 'on';
         let seqKeys = [];
 
-        if (source === 'custom' && customCombos.length > 0) {
-            seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
-        } else if (source === 'mixed' && customCombos.length > 0 && Math.random() > 0.5) {
-            seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
-        } else {
-            const punchKeys = ['JAB', 'CROSS', 'HOOK', 'UPPERCUT'];
-            const defKeys = ['SLIP_LEFT', 'SLIP_RIGHT', 'ROLL'];
-            seqKeys.push(punchKeys[Math.floor(Math.random() * punchKeys.length)]);
-            seqKeys.push(punchKeys[Math.floor(Math.random() * punchKeys.length)]);
-            if (Math.random() > 0.45) {
-                seqKeys.push(defKeys[Math.floor(Math.random() * defKeys.length)]);
+        if (isDrill) {
+            const selVal = document.getElementById('drill-combo-select').value;
+            seqKeys = selVal ? JSON.parse(selVal) : PRESET_DRILLS[0];
+            drillCurrentReps++;
+            const targetTxt = drillTargetReps === 999 ? '∞' : drillTargetReps;
+            document.getElementById('drill-counter-display').textContent = `${drillCurrentReps} / ${targetTxt}`;
+            document.getElementById('combo-sub').textContent = `تكرار الإتقان: ${drillCurrentReps} من ${targetTxt}`;
+
+            if (drillTargetReps !== 999 && drillCurrentReps >= drillTargetReps) {
+                document.getElementById('drill-enabled').value = 'off';
+                updateModeBadge();
+                speakText("Drill complete! Switching to free flow.");
+                resetDrillCounter();
             }
+        } else {
+            const source = document.getElementById('combo-source').value;
+            if (source === 'custom' && customCombos.length > 0) {
+                seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
+            } else if (source === 'both' && customCombos.length > 0 && Math.random() > 0.5) {
+                seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
+            } else {
+                seqKeys = generateSmartVariedCombo();
+            }
+            document.getElementById('combo-sub').textContent = 'لكم • حركة رأس • حركة قدمين';
         }
 
         document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].label).join(' ➔ ');
-        document.getElementById('combo-sub').textContent = 'نفّذ الكومبو الآن';
 
         const speechPhrase = seqKeys.map(k => MOVES[k].say).join(', ');
         speakText(speechPhrase);
 
-        // تزامن الحركة مع سرعة النطق
-        const stepDelay = Math.max(420, Math.round(580 / voiceRate));
+        const stepDelay = Math.max(440, Math.round(600 / voiceRate));
         seqKeys.forEach((moveKey, idx) => {
             setTimeout(() => {
                 if (isRunning && !isResting) triggerAnimation(moveKey);
