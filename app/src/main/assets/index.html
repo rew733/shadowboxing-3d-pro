@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Boxing Coach Pro 3D</title>
-    <!-- مكتبة Three.js للعرض ثلاثي الأبعاد الواقعي -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
@@ -22,15 +21,14 @@
         header { text-align: center; margin-bottom: 6px; }
         header h1 { font-size: 1.1rem; color: var(--accent); letter-spacing: 2px; text-transform: uppercase; }
         .app-container { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 10px; }
-
-        /* شاشة عرض الملاكم ثلاثية الأبعاد */
+        
         #canvas-3d { width: 100%; height: 200px; background: radial-gradient(circle, #1e293b 0%, #0f172a 100%); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 8px 25px rgba(0,0,0,0.6); position: relative; overflow: hidden; }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 14px; border: 1px solid var(--border); box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
         .status-board { display: flex; justify-content: space-between; background: rgba(0,0,0,0.4); padding: 8px 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
         .timer-sec { text-align: center; margin: 4px 0; }
         .timer-sec h2 { font-size: 2.6rem; font-weight: 900; color: var(--text); text-shadow: 0 0 15px var(--accent-glow); }
-
+        
         .combo-box { background: rgba(245, 158, 11, 0.05); border: 2px dashed var(--accent); border-radius: 12px; padding: 12px; text-align: center; min-height: 85px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .combo-box h3 { font-size: 1.7rem; color: var(--accent); font-weight: 900; letter-spacing: 1px; }
         .combo-box p { font-size: 0.75rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; }
@@ -50,7 +48,6 @@
     <header><h1>Boxing Coach Pro • 3D Flow</h1></header>
 
     <div class="app-container">
-        <!-- شاشة المجسم ثلاثي الأبعاد -->
         <div id="canvas-3d"></div>
 
         <div class="panel">
@@ -86,12 +83,12 @@
     </div>
 
     <script>
-        // --- 1. محرك Three.js للرسم الواقعي للجسم والملاكم ---
         let scene, camera, renderer, boxerGroup, leftArm, rightArm;
         let isPunching = false;
 
         function init3D() {
             const container = document.getElementById('canvas-3d');
+            if (typeof THREE === 'undefined') return;
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
             camera.position.set(0, 1.2, 4.8);
@@ -110,17 +107,14 @@
             const matSkin = new THREE.MeshPhongMaterial({ color: 0xd97706 });
             const matGloves = new THREE.MeshPhongMaterial({ color: 0xef4444 });
 
-            // الجذع
             const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.2, 1.0, 8), matBody);
             torso.position.y = -0.1;
             boxerGroup.add(torso);
 
-            // الرأس
             const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 16), matSkin);
             head.position.set(0.08, 0.7, 0);
             boxerGroup.add(head);
 
-            // الذراع اليسرى (Jab)
             leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.65, 0.1), matBody);
             leftArm.position.set(-0.28, 0.2, 0.25);
             leftArm.rotation.x = -0.3;
@@ -129,7 +123,6 @@
             lg.position.set(0, -0.3, 0.35);
             leftArm.add(lg);
 
-            // الذراع اليمنى (Cross)
             rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.65, 0.1), matBody);
             rightArm.position.set(0.25, 0.2, -0.05);
             rightArm.rotation.x = -0.5;
@@ -149,15 +142,16 @@
             if(boxerGroup && !isPunching) {
                 boxerGroup.position.y = -0.3 + Math.sin(Date.now() * 0.006) * 0.015;
             }
-            renderer.render(scene, camera);
+            if(renderer && scene && camera) renderer.render(scene, camera);
         }
 
         function triggerPunch3D(isLeft) {
+            if (!leftArm || !rightArm) return;
             isPunching = true;
             let arm = isLeft ? leftArm : rightArm;
             let origZ = arm.position.z;
             let startTime = Date.now();
-
+            
             function step() {
                 let elapsed = Date.now() - startTime;
                 if(elapsed < 120) {
@@ -176,7 +170,6 @@
 
         window.addEventListener('load', init3D);
 
-        // --- 2. محرك الكومبوهات، التوقيت الصوتي، والتحكم ---
         class BoxingProEngine {
             constructor() {
                 this.punches = [
@@ -186,7 +179,7 @@
                     { name: '4 (Rear Uppercut)', code: 'Rear Uppercut', isLeft: false }
                 ];
                 this.defenses = ['Slip Left', 'Slip Right', 'Roll'];
-
+                
                 this.isRunning = false;
                 this.round = 1;
                 this.totalRounds = 3;
@@ -268,7 +261,7 @@
 
             nextCombo() {
                 if(this.isResting || !this.isRunning) return;
-
+                
                 let p1 = this.punches[Math.floor(Math.random() * this.punches.length)];
                 let p2 = this.punches[Math.floor(Math.random() * this.punches.length)];
                 let comboStr = `${p1.name} ➔ ${p2.name}`;
@@ -286,7 +279,9 @@
             }
 
             speak(text) {
-                if('speechSynthesis' in window) {
+                if (window.AndroidTTS) {
+                    window.AndroidTTS.speak(text);
+                } else if ('speechSynthesis' in window) {
                     window.speechSynthesis.cancel();
                     const u = new SpeechSynthesisUtterance(text);
                     u.rate = 1.2; u.pitch = 0.9;
