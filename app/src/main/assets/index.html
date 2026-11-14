@@ -316,7 +316,7 @@
     let baseRot = {};
     let currentMove = null;
     let moveProgress = 0;
-    let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
+    let facingFlip = localStorage.getItem('boxer_facing_flip') === '0' ? 0 : Math.PI;
 
     function toggleModelFacing() {
         facingFlip = (facingFlip === 0) ? Math.PI : 0;
@@ -431,7 +431,7 @@
         );
     }
 
-    // دالة هندسية توجه أي عظمة نحو اتجاه محدد في الفضاء العالمي مهما كانت محاور المجسم
+    // توجيه أي عظمة نحو اتجاه عالمي محدد (أمام الكاميرا +Z دائماً)
     function aimBoneWorld(bone, childBone, targetWorldDir, blend = 1.0) {
         if (!bone || !childBone || !bone.parent) return;
         bone.updateWorldMatrix(true, false);
@@ -475,37 +475,35 @@
 
         // 1. وقفة الملاكمة للقدمين والجذع (Orthodox Stance)
         let rootX = 0, rootY = bounceY - 0.04, rootZ = swayZ;
-        let rootRotY = facingFlip - 0.58; // زاوية جسم الملاكم الجانبية (33 درجة)
+        let rootRotY = facingFlip - 0.58;
 
         let spX = 0.14, spY = 0.18, spZ = 0;
         let hdX = -0.05, hdY = 0.36, hdZ = 0;
 
-        // فتح الساقين للأمام والخلف مع ثني خفيف في الركبتين (قيم آمنة ومنضبطة)
         let ltX = -0.22, ltZ = 0.10, lsX = 0.34;
         let rtX = 0.24,  rtZ = -0.10, rsX = 0.36;
 
-        // متجهات توجيه الذراعين في الفضاء العالمي (أمام الكاميرا +Z)
-        // وضعية الحراسة (Guard): المرفقان للأسفل والأمام، والقبضتان مرفوعتان أمام الذقن والخدين
-        let lUpperDir = new THREE.Vector3(-0.18, -0.55, 0.81); // العضد الأيسر للأمام والأسفل
-        let lForeDir  = new THREE.Vector3(0.15,  0.82,  0.55); // الساعد الأيسر مرفوع أمام الذقن
+        // 2. متجهات الذراعين في وضعية الحراسة العالية أمام الوجه (+Z نحو الكاميرا)
+        let lUpperDir = new THREE.Vector3(-0.15, -0.35, 0.92); // العضد الأيسر للأمام
+        let lForeDir  = new THREE.Vector3(0.18,  0.88,  0.44); // الساعد الأيسر مرفوع أمام الذقن
 
-        let rUpperDir = new THREE.Vector3(0.22, -0.62, 0.75);  // العضد الأيمن ملاصق للأضلاع
-        let rForeDir  = new THREE.Vector3(-0.18, 0.86, 0.47);  // الساعد الأيمن يحمي الخد الأيمن
+        let rUpperDir = new THREE.Vector3(0.18, -0.42, 0.89);  // العضد الأيمن ملاصق للأضلاع
+        let rForeDir  = new THREE.Vector3(-0.20, 0.90, 0.39);  // الساعد الأيمن يحمي الخد الأيمن
 
         switch (currentMove) {
-            case 'JAB': // 1 Jab: اندفاع الكتف والذراع اليسرى للأمام باستقامة كاملة
+            case 'JAB': // 1 Jab: اندفاع الذراع اليسرى للأمام باستقامة كاملة نحو الكاميرا
                 spY -= 0.42 * wave;
                 hdY += 0.28 * wave;
-                lUpperDir.lerp(new THREE.Vector3(-0.05, 0.12, 0.99), wave);
-                lForeDir.lerp(new THREE.Vector3(-0.02, 0.15, 0.98), wave);
+                lUpperDir.lerp(new THREE.Vector3(-0.04, 0.14, 0.99), wave);
+                lForeDir.lerp(new THREE.Vector3(-0.02, 0.16, 0.98), wave);
                 rootZ += 0.08 * wave;
                 break;
 
-            case 'CROSS': // 2 Cross: تدوير الجذع بقوة واندفاع الذراع اليمنى للأمام
+            case 'CROSS': // 2 Cross: تدوير الجذع واندفاع الذراع اليمنى للأمام نحو الكاميرا
                 spY += 0.62 * wave;
                 hdY -= 0.42 * wave;
-                rUpperDir.lerp(new THREE.Vector3(0.02, 0.12, 0.99), wave);
-                rForeDir.lerp(new THREE.Vector3(0.0,  0.15, 0.98), wave);
+                rUpperDir.lerp(new THREE.Vector3(0.02, 0.14, 0.99), wave);
+                rForeDir.lerp(new THREE.Vector3(0.0,  0.16, 0.98), wave);
                 rootZ += 0.10 * wave;
                 break;
 
@@ -521,19 +519,19 @@
                 rForeDir.lerp(new THREE.Vector3(-0.75, 0.15, 0.64), wave);
                 break;
 
-            case 'L_UPPER': // 5 Lead Uppercut: لكمة صاعدة من الأسفل للأعلى
+            case 'L_UPPER': // 5 Lead Uppercut: لكمة صاعدة
                 rootY -= 0.04 * wave;
                 spX -= 0.15 * wave;
-                lUpperDir.lerp(new THREE.Vector3(-0.15, -0.25, 0.95), wave);
-                lForeDir.lerp(new THREE.Vector3(0.05,  0.88,  0.47), wave);
+                lUpperDir.lerp(new THREE.Vector3(-0.12, -0.15, 0.98), wave);
+                lForeDir.lerp(new THREE.Vector3(0.05,   0.92, 0.39), wave);
                 break;
 
             case 'R_UPPER': // 6 Rear Uppercut: لكمة صاعدة قوية باليمنى
                 rootY -= 0.04 * wave;
                 spX -= 0.15 * wave;
                 spY += 0.38 * wave;
-                rUpperDir.lerp(new THREE.Vector3(0.15, -0.25, 0.95), wave);
-                rForeDir.lerp(new THREE.Vector3(-0.05, 0.88, 0.47), wave);
+                rUpperDir.lerp(new THREE.Vector3(0.12, -0.15, 0.98), wave);
+                rForeDir.lerp(new THREE.Vector3(-0.05, 0.92, 0.39), wave);
                 break;
 
             case 'SLIP_L':
@@ -584,26 +582,18 @@
                 break;
         }
 
-        // عكس المتجهات أفقياً إذا تم عكس اتجاه المجسم 180 درجة
-        const dirSign = (facingFlip === 0) ? 1 : -1;
-        lUpperDir.x *= dirSign; lUpperDir.z *= dirSign;
-        lForeDir.x  *= dirSign; lForeDir.z  *= dirSign;
-        rUpperDir.x *= dirSign; rUpperDir.z *= dirSign;
-        rForeDir.x  *= dirSign; rForeDir.z  *= dirSign;
-
         modelRoot.position.set(rootX, rootY, rootZ);
         modelRoot.rotation.y = rootRotY;
 
         applyBoneOffset('spine', spX, spY, spZ);
         applyBoneOffset('head', hdX, hdY, hdZ);
 
-        // تطبيق وقفة القدمين
         applyBoneOffset('lThigh', ltX, 0, ltZ);
         applyBoneOffset('lShin',  lsX, 0, 0);
         applyBoneOffset('rThigh', rtX, 0, rtZ);
         applyBoneOffset('rShin',  rsX, 0, 0);
 
-        // تطبيق وضعية اليدين بالحراسة واللكم بدقة متجهية
+        // توجيه الذراعين والقبضتين للأمام في نفس اتجاه الوجه
         aimBoneWorld(bones.lArm, bones.lForeArm, lUpperDir, 1.0);
         const lHandDummy = bones.lForeArm && bones.lForeArm.children[0];
         if (lHandDummy) aimBoneWorld(bones.lForeArm, lHandDummy, lForeDir, 1.0);
