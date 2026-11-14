@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro</title>
+    <title>Boxing Coach Pro • 3D GLB</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         :root {
             --bg: #070b14;
@@ -12,7 +14,6 @@
             --accent: #f59e0b;
             --danger: #ef4444;
             --success: #10b981;
-            --info: #3b82f6;
             --text: #f9fafb;
             --muted: #9ca3af;
             --border: rgba(255, 255, 255, 0.09);
@@ -21,21 +22,19 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 8px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 9px; }
         
-        /* شريط التبويبات الخمسة */
-        .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--panel); padding: 5px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 9px 2px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
 
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        /* شاشة العرض الرئيسية */
-        .stage-box { width: 100%; height: 265px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
-        canvas, #custom-vid, #custom-img { position: absolute; width: 100%; height: 100%; object-fit: contain; }
-        #custom-vid, #custom-img { display: none; background: #090d16; }
-
+        .stage-box { width: 100%; height: 280px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        #canvas-3d { width: 100%; height: 100%; }
+        
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
         .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
+        .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 5; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.8); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); cursor: pointer; }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
         .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
@@ -51,20 +50,6 @@
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
         .btn.small { padding: 8px 10px; font-size: 0.78rem; border-radius: 8px; }
 
-        /* بطاقات تخصيص الفيديو/الصور لكل حركة (مثل الصورة المرجعية) */
-        .media-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 460px; overflow-y: auto; padding-left: 2px; }
-        .media-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 9px; display: flex; flex-direction: column; gap: 7px; }
-        .media-card.active-slot { border-color: rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.06); }
-        .mc-top { display: flex; justify-content: space-between; align-items: center; gap: 4px; }
-        .mc-title { font-size: 0.75rem; font-weight: 800; color: var(--text); }
-        .mc-tag { font-size: 0.65rem; padding: 2px 6px; border-radius: 6px; font-weight: 800; background: rgba(255,255,255,0.08); color: var(--muted); white-space: nowrap; }
-        .mc-tag.on { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .mc-actions { display: flex; gap: 5px; }
-        .mc-pick { flex: 1; background: #111827; border: 1px solid var(--border); color: var(--text); padding: 6px; border-radius: 8px; font-size: 0.72rem; font-weight: 700; text-align: center; cursor: pointer; }
-        .mc-del { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 0 9px; border-radius: 8px; font-weight: 900; cursor: pointer; display: none; }
-        .media-card.active-slot .mc-del { display: block; }
-
-        /* عناصر التحكم الأخرى */
         .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 11px; }
         .setting-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
@@ -81,28 +66,29 @@
         .saved-item { background: var(--card); padding: 8px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.76rem; direction: ltr; gap: 5px; }
         .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
         .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
+        .upload-label { display: block; text-align: center; background: var(--card); border: 1px dashed var(--accent); padding: 13px; border-radius: 12px; color: var(--accent); font-weight: 800; font-size: 0.85rem; cursor: pointer; }
+        .clips-box { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 8px; font-size: 0.72rem; color: var(--success); direction: ltr; max-height: 110px; overflow-y: auto; margin-top: 8px; line-height: 1.5; }
     </style>
 </head>
 <body>
 
 <div class="app">
-    <!-- التبويبات الخمسة -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
-        <button class="tab-btn" onclick="switchTab('media', this)">🎬 الوسائط</button>
         <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
         <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبو</button>
-        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
+        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ 3D والضبط</button>
     </div>
 
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">ORTHODOX</span>
-            <span class="badge-action" id="live-move-badge">GUARD</span>
-            <canvas id="boxerCanvas" width="420" height="265"></canvas>
-            <video id="custom-vid" playsinline muted></video>
-            <img id="custom-img" alt="Move Frame" />
+            <span class="badge-stance">3D SKELETAL RIG</span>
+            <span class="badge-action" id="live-move-badge">IDLE</span>
+            <div id="canvas-3d"></div>
+            <div class="glb-status" id="glb-status" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[3])">
+                اضغط هنا لاختيار مجسم (.glb) من مجلد التنزيلات في هاتفك
+            </div>
         </div>
 
         <div class="panel">
@@ -123,19 +109,7 @@
         </div>
     </div>
 
-    <!-- التبويب 2: بطاقات الفيديو / الصور لكل حركة -->
-    <div id="tab-media" class="tab-content">
-        <div class="panel">
-            <div style="font-size: 0.82rem; font-weight: 800; color: var(--info); margin-bottom: 4px;">🎬 تخصيص مقاطع فيديو أو صور حقيقية لكل حركة</div>
-            <p style="font-size: 0.72rem; color: var(--muted); margin-bottom: 10px; line-height: 1.45;">
-                أضف فيديو (MP4/WebM) أو صورة (GIF/JPG/PNG) من هاتفك لأي حركة أدناه وسيشغلها التطبيق تلقائياً عند نطقها، أو اتركها لاستخدام الملاكم المفصلي المدمج.
-            </p>
-            <div class="media-grid" id="media-slots-grid"></div>
-            <button class="btn danger small" style="width: 100%; margin-top: 10px;" onclick="clearAllCustomMedia()">العودة للمحرك المدمج (مسح جميع الملفات)</button>
-        </div>
-    </div>
-
-    <!-- التبويب 3: الإتقان بالتكرار -->
+    <!-- التبويب 2: الإتقان -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -145,12 +119,10 @@
                     <option value="on">مُفعّل (تكرار الكومبو المختار لإتقانه)</option>
                 </select>
             </div>
-
             <div class="setting-item">
                 <span class="setting-header"><span>اختر الكومبو المراد إتقانه:</span></span>
                 <select id="drill-combo-select"></select>
             </div>
-
             <div class="setting-item">
                 <div class="setting-header">
                     <span>عدد التكرارات المطلوبة:</span>
@@ -164,7 +136,6 @@
                     <option value="999">تكرار مستمر طوال الجولة</option>
                 </select>
             </div>
-
             <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
                 <div style="font-size: 0.78rem; color: var(--muted);">تقدم الإتقان الحالي:</div>
                 <div id="drill-counter-display" style="font-size: 1.5rem; font-weight: 900; color: var(--success); margin-top: 4px;">0 / 10</div>
@@ -173,7 +144,7 @@
         </div>
     </div>
 
-    <!-- التبويب 4: بناء الكومبوهات -->
+    <!-- التبويب 3: الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
@@ -183,7 +154,7 @@
                 <option value="both">دمج الشامل مع كومبوهاتي</option>
             </select>
 
-            <div class="cat-title">🥊 اللكمات (Punches):</div>
+            <div class="cat-title">🥊 اللكمات (اضغط لاختبار حركة المجسم):</div>
             <div class="move-chips">
                 <button class="chip" onclick="addAndPreview('JAB')">1 Jab</button>
                 <button class="chip" onclick="addAndPreview('CROSS')">2 Cross</button>
@@ -193,7 +164,7 @@
                 <button class="chip" onclick="addAndPreview('R_UPPER')">6 Rear Upper</button>
             </div>
 
-            <div class="cat-title">🛡️ حركة الرأس (Head Movement):</div>
+            <div class="cat-title">🛡️ حركة الرأس:</div>
             <div class="move-chips">
                 <button class="chip head" onclick="addAndPreview('SLIP_L')">Slip Left</button>
                 <button class="chip head" onclick="addAndPreview('SLIP_R')">Slip Right</button>
@@ -201,7 +172,7 @@
                 <button class="chip head" onclick="addAndPreview('PULL')">Pull Back</button>
             </div>
 
-            <div class="cat-title">👟 حركة القدمين (Footwork):</div>
+            <div class="cat-title">👟 حركة القدمين:</div>
             <div class="move-chips">
                 <button class="chip foot" onclick="addAndPreview('STEP_IN')">Step In</button>
                 <button class="chip foot" onclick="addAndPreview('STEP_BACK')">Step Back</button>
@@ -222,8 +193,18 @@
         </div>
     </div>
 
-    <!-- التبويب 5: الإعدادات -->
+    <!-- التبويب 4: مجسم GLB والإعدادات -->
     <div id="tab-settings" class="tab-content">
+        <div class="panel">
+            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الملاكم ثلاثي الأبعاد (.glb) — يُحفظ تلقائياً في الهاتف:</span></div>
+            <label class="upload-label">
+                🧊 اختر ملف مجسم 3D (.glb) من مجلد التنزيلات
+                <input type="file" accept=".glb,.gltf,*/*" style="display:none;" onchange="handleGlbUpload(this.files[0])">
+            </label>
+            <div class="clips-box" id="detected-clips-list">لم يتم تحميل مجسم .glb بعد...</div>
+            <button class="btn danger small" style="width: 100%; margin-top: 8px;" onclick="deleteSavedGlb()">حذف المجسم المحفوظ</button>
+        </div>
+
         <div class="panel">
             <div class="setting-item">
                 <div class="setting-header">
@@ -234,7 +215,7 @@
                 <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت</button>
             </div>
 
-            <div class="setting-item" style="margin-top: 10px;">
+            <div class="setting-item" style="margin-top: 8px;">
                 <div class="setting-header">
                     <span>الفاصل بين الكومبوهات:</span>
                     <span id="interval-val" style="color: var(--accent);">4.0 ثانية</span>
@@ -273,302 +254,230 @@
         btn.classList.add('active');
     }
 
-    // --- قائمة الحركات الكاملة (15 بطاقة قابلة للتخصيص بالفيديو أو الصورة) ---
-    const MOVE_SLOTS = [
-        { key: 'GUARD',     ar: '1. الوقفة (Guard)',          en: 'GUARD',         say: '' },
-        { key: 'JAB',       ar: '2. الجاب (1 Jab)',           en: '1 Jab',         say: 'Jab' },
-        { key: 'CROSS',     ar: '3. الكروس (2 Cross)',        en: '2 Cross',       say: 'Cross' },
-        { key: 'L_HOOK',    ar: '4. هوك أمامي (3 Hook)',      en: '3 Lead Hook',   say: 'Lead Hook' },
-        { key: 'R_HOOK',    ar: '5. هوك خلفي (4 Hook)',       en: '4 Rear Hook',   say: 'Rear Hook' },
-        { key: 'L_UPPER',   ar: '6. أبركت أمامي (5 Upper)',   en: '5 Lead Upper',  say: 'Lead Uppercut' },
-        { key: 'R_UPPER',   ar: '7. أبركت خلفي (6 Upper)',    en: '6 Rear Upper',  say: 'Rear Uppercut' },
-        { key: 'SLIP_L',    ar: '8. تفادي يسار (Slip L)',     en: 'Slip Left',     say: 'Slip Left' },
-        { key: 'SLIP_R',    ar: '9. تفادي يمين (Slip R)',     en: 'Slip Right',    say: 'Slip Right' },
-        { key: 'ROLL',      ar: '10. تغطيس (Roll)',           en: 'Roll',          say: 'Roll' },
-        { key: 'PULL',      ar: '11. سحب للخلف (Pull)',       en: 'Pull Back',     say: 'Pull Back' },
-        { key: 'STEP_IN',   ar: '12. خطوة للأمام (Step In)',  en: 'Step In',       say: 'Step In' },
-        { key: 'STEP_BACK', ar: '13. خطوة للخلف (Step Back)', en: 'Step Back',     say: 'Step Back' },
-        { key: 'PIVOT_L',   ar: '14. بيفوت يسار (Pivot L)',   en: 'Pivot Left',    say: 'Pivot Left' },
-        { key: 'PIVOT_R',   ar: '15. بيفوت يمين (Pivot R)',   en: 'Pivot Right',   say: 'Pivot Right' }
-    ];
+    const MOVES = {
+        JAB:       { en: '1 Jab',        say: 'Jab',           keywords: ['punch', 'jab', 'left', 'attack'] },
+        CROSS:     { en: '2 Cross',      say: 'Cross',         keywords: ['punch', 'cross', 'right', 'attack'] },
+        L_HOOK:    { en: '3 Lead Hook',  say: 'Lead Hook',     keywords: ['punch', 'hook', 'wave'] },
+        R_HOOK:    { en: '4 Rear Hook',  say: 'Rear Hook',     keywords: ['punch', 'hook', 'yes'] },
+        L_UPPER:   { en: '5 Lead Upper', say: 'Lead Uppercut', keywords: ['punch', 'upper', 'jump'] },
+        R_UPPER:   { en: '6 Rear Upper', say: 'Rear Uppercut', keywords: ['punch', 'upper', 'jump'] },
+        SLIP_L:    { en: 'Slip Left',    say: 'Slip Left',     keywords: ['duck', 'slip', 'dodge', 'no'] },
+        SLIP_R:    { en: 'Slip Right',   say: 'Slip Right',    keywords: ['duck', 'slip', 'dodge', 'no'] },
+        ROLL:      { en: 'Roll',         say: 'Roll',          keywords: ['duck', 'roll', 'sitting', 'crouch'] },
+        PULL:      { en: 'Pull Back',    say: 'Pull Back',     keywords: ['duck', 'pull', 'no'] },
+        STEP_IN:   { en: 'Step In',      say: 'Step In',       keywords: ['walk', 'run', 'step'] },
+        STEP_BACK: { en: 'Step Back',    say: 'Step Back',     keywords: ['walk', 'back'] },
+        PIVOT_L:   { en: 'Pivot Left',   say: 'Pivot Left',    keywords: ['dance', 'turn', 'walk'] },
+        PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right',   keywords: ['dance', 'turn', 'walk'] }
+    };
 
-    const MOVES = {};
-    MOVE_SLOTS.forEach(s => { MOVES[s.key] = s; });
-
-    // --- قاعدة بيانات IndexedDB لتخزين الفيديوهات والصور بشكل دائم في الهاتف ---
-    let db = null;
-    const customMediaMap = {}; // key -> { url, isVideo }
-
-    const dbReq = indexedDB.open('BoxingMediaDB', 1);
+    // --- تخزين دائم لملف GLB في قاعدة بيانات الهاتف (IndexedDB) ---
+    let glbDB = null;
+    const dbReq = indexedDB.open('Boxer3DModelsDB', 1);
     dbReq.onupgradeneeded = e => {
-        e.target.result.createObjectStore('slots');
+        e.target.result.createObjectStore('models');
     };
     dbReq.onsuccess = e => {
-        db = e.target.result;
-        loadAllSavedMedia();
+        glbDB = e.target.result;
+        restoreSavedGlb();
     };
 
-    function loadAllSavedMedia() {
-        if (!db) return;
-        const tx = db.transaction('slots', 'readonly');
-        const store = tx.objectStore('slots');
-        MOVE_SLOTS.forEach(slot => {
-            const req = store.get(slot.key);
-            req.onsuccess = () => {
-                if (req.result) {
-                    const blob = req.result;
-                    customMediaMap[slot.key] = {
-                        url: URL.createObjectURL(blob),
-                        isVideo: blob.type.startsWith('video/')
-                    };
-                    updateCardUI(slot.key, true);
-                    if (slot.key === 'GUARD') showMoveMedia('GUARD', 0);
+    function restoreSavedGlb() {
+        if (!glbDB) return;
+        const tx = glbDB.transaction('models', 'readonly');
+        const req = tx.objectStore('models').get('active_boxer');
+        req.onsuccess = () => {
+            if (req.result) {
+                const url = URL.createObjectURL(req.result);
+                loadGLBModel(url);
+            }
+        };
+    }
+
+    function handleGlbUpload(file) {
+        if (!file) return;
+        const url = URL.createObjectURL(file);
+        loadGLBModel(url);
+        if (glbDB) {
+            const tx = glbDB.transaction('models', 'readwrite');
+            tx.objectStore('models').put(file, 'active_boxer');
+        }
+    }
+
+    function deleteSavedGlb() {
+        if (glbDB) {
+            const tx = glbDB.transaction('models', 'readwrite');
+            tx.objectStore('models').delete('active_boxer');
+        }
+        if (modelRoot) {
+            scene.remove(modelRoot);
+            modelRoot = null;
+            mixer = null;
+        }
+        document.getElementById('glb-status').style.display = 'block';
+        document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
+    }
+
+    // --- محرك Three.js + GLTFLoader ---
+    let scene, camera, renderer, mixer, modelRoot;
+    let clock = new THREE.Clock();
+    let clipActions = {};
+    let idleAction = null;
+    let currentPlayingAction = null;
+
+    function init3DScene() {
+        const container = document.getElementById('canvas-3d');
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0.25, 1.35, 2.85);
+        camera.lookAt(0, 0.95, 0);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
+        keyLight.position.set(2.5, 4.5, 3.5);
+        scene.add(keyLight);
+        const rimLight = new THREE.PointLight(0xf59e0b, 1.5, 10);
+        rimLight.position.set(-2.5, 2.5, -2);
+        scene.add(rimLight);
+
+        const floor = new THREE.Mesh(
+            new THREE.CircleGeometry(1.35, 36),
+            new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        animate3D();
+    }
+
+    function loadGLBModel(url) {
+        if (typeof THREE.GLTFLoader === 'undefined') {
+            document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل مكتبة العرض 3D.';
+            return;
+        }
+        const loader = new THREE.GLTFLoader();
+        loader.load(url, (gltf) => {
+            if (modelRoot) scene.remove(modelRoot);
+            modelRoot = gltf.scene;
+
+            const box = new THREE.Box3().setFromObject(modelRoot);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const scaleFactor = 1.85 / maxDim;
+            modelRoot.scale.setScalar(scaleFactor);
+
+            const scaledBox = new THREE.Box3().setFromObject(modelRoot);
+            const center = scaledBox.getCenter(new THREE.Vector3());
+            modelRoot.position.x = -center.x;
+            modelRoot.position.z = -center.z;
+            modelRoot.position.y = -scaledBox.min.y;
+            modelRoot.rotation.y = -0.2;
+
+            scene.add(modelRoot);
+
+            mixer = new THREE.AnimationMixer(modelRoot);
+            clipActions = {};
+            idleAction = null;
+
+            const clips = gltf.animations || [];
+            const clipNames = [];
+
+            clips.forEach(clip => {
+                const nameLower = clip.name.toLowerCase();
+                clipNames.push(clip.name);
+                const action = mixer.clipAction(clip);
+                clipActions[nameLower] = action;
+
+                if (nameLower.includes('idle') || nameLower.includes('guard') || nameLower.includes('stance')) {
+                    idleAction = action;
                 }
-            };
+            });
+
+            if (!idleAction && clips.length > 0) {
+                idleAction = clipActions[clips[0].name.toLowerCase()];
+            }
+
+            if (idleAction) {
+                idleAction.play();
+                currentPlayingAction = idleAction;
+            }
+
+            document.getElementById('glb-status').style.display = 'none';
+            document.getElementById('detected-clips-list').textContent =
+                clips.length > 0
+                    ? `✓ تم حفظ وتشغيل المجسم (${clips.length} حركات): ${clipNames.join(' | ')}`
+                    : '✓ تم تحميل المجسم بنجاح (لا توجد حركات مدمجة)';
         });
     }
 
-    function saveSlotFile(key, file) {
-        if (!db || !file) return;
-        const tx = db.transaction('slots', 'readwrite');
-        tx.objectStore('slots').put(file, key);
-        tx.oncomplete = () => {
-            if (customMediaMap[key]) URL.revokeObjectURL(customMediaMap[key].url);
-            customMediaMap[key] = {
-                url: URL.createObjectURL(file),
-                isVideo: file.type.startsWith('video/')
-            };
-            updateCardUI(key, true);
-            showMoveMedia(key, 1200); // معاينة فورية بعد الاختيار
-        };
-    }
-
-    function deleteSlotFile(key) {
-        if (!db) return;
-        const tx = db.transaction('slots', 'readwrite');
-        tx.objectStore('slots').delete(key);
-        tx.oncomplete = () => {
-            if (customMediaMap[key]) {
-                URL.revokeObjectURL(customMediaMap[key].url);
-                delete customMediaMap[key];
-            }
-            updateCardUI(key, false);
-            showMoveMedia('GUARD', 0);
-        };
-    }
-
-    function clearAllCustomMedia() {
-        if (!db) return;
-        const tx = db.transaction('slots', 'readwrite');
-        tx.objectStore('slots').clear();
-        tx.oncomplete = () => {
-            Object.keys(customMediaMap).forEach(k => {
-                URL.revokeObjectURL(customMediaMap[k].url);
-                delete customMediaMap[k];
-                updateCardUI(k, false);
-            });
-            showMoveMedia('GUARD', 0);
-        };
-    }
-
-    // بناء شبكة بطاقات الوسائط
-    const mediaGrid = document.getElementById('media-slots-grid');
-    MOVE_SLOTS.forEach(slot => {
-        const card = document.createElement('div');
-        card.className = 'media-card';
-        card.id = 'card-' + slot.key;
-        card.innerHTML = `
-            <div class="mc-top">
-                <span class="mc-title">${slot.ar}</span>
-                <span class="mc-tag" id="tag-${slot.key}">مدمج</span>
-            </div>
-            <div class="mc-actions">
-                <label class="mc-pick" id="btn-${slot.key}">
-                    + اختر فيديو/صورة
-                    <input type="file" accept="video/*,image/*" style="display:none;" onchange="saveSlotFile('${slot.key}', this.files[0])">
-                </label>
-                <button class="mc-del" onclick="deleteSlotFile('${slot.key}')">×</button>
-            </div>
-        `;
-        mediaGrid.appendChild(card);
-    });
-
-    function updateCardUI(key, isCustom) {
-        const card = document.getElementById('card-' + key);
-        const tag = document.getElementById('tag-' + key);
-        const btn = document.getElementById('btn-' + key);
-        if (!card) return;
-        if (isCustom) {
-            card.classList.add('active-slot');
-            tag.className = 'mc-tag on';
-            tag.textContent = 'مُفعّل ✓';
-            btn.childNodes[0].textContent = 'تغيير ';
-        } else {
-            card.classList.remove('active-slot');
-            tag.className = 'mc-tag';
-            tag.textContent = 'مدمج';
-            btn.childNodes[0].textContent = '+ اختر فيديو/صورة ';
-        }
-    }
-
-    // --- محرك العرض الهجين (يشغّل الفيديو/الصورة المخصصة أو الملاكم المفصلي المدمج) ---
-    const canvas = document.getElementById('boxerCanvas');
-    const ctx = canvas.getContext('2d');
-    const customVid = document.getElementById('custom-vid');
-    const customImg = document.getElementById('custom-img');
-    let currentAnim = null;
-    let animProgress = 0;
-    let guardReturnTimer = null;
-
-    function showMoveMedia(moveKey, durationMs = 520) {
-        clearTimeout(guardReturnTimer);
+    function triggerSkeletalMove(moveKey) {
         const badge = document.getElementById('live-move-badge');
-        badge.textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
+        badge.textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'IDLE';
 
-        const media = customMediaMap[moveKey];
-        if (media) {
-            canvas.style.display = 'none';
-            if (media.isVideo) {
-                customImg.style.display = 'none';
-                customVid.src = media.url;
-                customVid.loop = (moveKey === 'GUARD');
-                customVid.style.display = 'block';
-                customVid.currentTime = 0;
-                customVid.play().catch(() => {});
-            } else {
-                customVid.style.display = 'none';
-                customVid.pause();
-                customImg.src = media.url;
-                customImg.style.display = 'block';
+        if (!mixer || Object.keys(clipActions).length === 0) return;
+
+        const keywords = MOVES[moveKey] ? MOVES[moveKey].keywords : [];
+        let matchedAction = null;
+
+        for (const kw of keywords) {
+            for (const clipName of Object.keys(clipActions)) {
+                if (clipName.includes(kw)) {
+                    matchedAction = clipActions[clipName];
+                    break;
+                }
             }
-        } else {
-            // استخدام المحرك المفصلي المدمج إذا لم يضف المستخدم ملفاً لهذه الحركة
-            customVid.style.display = 'none';
-            customVid.pause();
-            customImg.style.display = 'none';
-            canvas.style.display = 'block';
-            if (moveKey !== 'GUARD') {
-                currentAnim = moveKey;
-                animProgress = 0;
+            if (matchedAction) break;
+        }
+
+        if (!matchedAction) {
+            const nonIdle = Object.keys(clipActions).filter(n => clipActions[n] !== idleAction);
+            if (nonIdle.length > 0) {
+                matchedAction = clipActions[nonIdle[Math.floor(Math.random() * nonIdle.length)]];
             }
         }
 
-        if (moveKey !== 'GUARD' && durationMs > 0) {
-            guardReturnTimer = setTimeout(() => {
-                showMoveMedia('GUARD', 0);
-            }, durationMs);
+        if (matchedAction && matchedAction !== idleAction) {
+            matchedAction.reset();
+            matchedAction.setLoop(THREE.LoopOnce, 1);
+            matchedAction.clampWhenFinished = true;
+            matchedAction.timeScale = 1.3;
+
+            if (currentPlayingAction && currentPlayingAction !== matchedAction) {
+                currentPlayingAction.crossFadeTo(matchedAction, 0.12, true);
+            }
+            matchedAction.play();
+            currentPlayingAction = matchedAction;
+
+            const onFinish = (e) => {
+                if (e.action === matchedAction && idleAction) {
+                    mixer.removeEventListener('finished', onFinish);
+                    matchedAction.crossFadeTo(idleAction, 0.18, true);
+                    idleAction.reset().play();
+                    currentPlayingAction = idleAction;
+                    badge.textContent = 'IDLE';
+                }
+            };
+            mixer.addEventListener('finished', onFinish);
         }
     }
 
-    // رسم الملاكم المفصلي المدمج كاحتياطي لأي حركة بدون فيديو
-    function drawLimbSegment(x1, y1, x2, y2, w1, w2, color) {
-        const angle = Math.atan2(y2 - y1, x2 - x1);
-        const perp = angle + Math.PI / 2;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.moveTo(x1 + Math.cos(perp) * w1, y1 + Math.sin(perp) * w1);
-        ctx.lineTo(x2 + Math.cos(perp) * w2, y2 + Math.sin(perp) * w2);
-        ctx.lineTo(x2 - Math.cos(perp) * w2, y2 - Math.sin(perp) * w2);
-        ctx.lineTo(x1 - Math.cos(perp) * w1, y1 - Math.sin(perp) * w1);
-        ctx.closePath();
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(x1, y1, w1, 0, Math.PI * 2);
-        ctx.arc(x2, y2, w2, 0, Math.PI * 2);
-        ctx.fill();
+    function animate3D() {
+        requestAnimationFrame(animate3D);
+        const delta = clock.getDelta();
+        if (mixer) mixer.update(delta);
+        if (renderer && scene && camera) renderer.render(scene, camera);
     }
 
-    function drawBoxingGlove(x, y, angle, scale, mainColor) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(angle);
-        ctx.scale(scale, scale);
-        ctx.fillStyle = '#111827';
-        ctx.beginPath();
-        ctx.roundRect(-10, -4, 20, 11, 4);
-        ctx.fill();
-        ctx.fillStyle = mainColor;
-        ctx.beginPath();
-        ctx.ellipse(0, -13, 14, 16, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-    }
+    window.addEventListener('load', init3DScene);
 
-    function renderArticulatedBoxer() {
-        if (canvas.style.display !== 'none') {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const bounce = Math.abs(Math.sin(Date.now() * 0.006)) * 5;
-            let wave = 0;
-            if (currentAnim) {
-                animProgress += 0.065;
-                if (animProgress >= 1) currentAnim = null;
-                else wave = Math.sin(animProgress * Math.PI);
-            }
-
-            let hipX = 210, hipY = 148 - bounce, torsoAngle = -0.06;
-            let headOffsetX = 0, headOffsetY = 0;
-            let frontFootX = 180, frontFootY = 238, backFootX = 248, backFootY = 232, bodyScale = 1;
-            let lElbowX = 172, lElbowY = 112 - bounce, lHandX = 182, lHandY = 74 - bounce, lGloveScale = 1.05, lGloveAngle = 0.15;
-            let rElbowX = 236, rElbowY = 110 - bounce, rHandX = 218, rHandY = 72 - bounce, rGloveScale = 0.95, rGloveAngle = -0.2;
-
-            switch (currentAnim) {
-                case 'JAB': hipX -= 8*wave; torsoAngle = -0.14*wave; lElbowX -= 22*wave; lElbowY -= 24*wave; lHandX -= 38*wave; lHandY -= 6*wave; lGloveScale += 0.42*wave; break;
-                case 'CROSS': hipX -= 12*wave; torsoAngle = -0.22*wave; rElbowX -= 48*wave; rElbowY -= 22*wave; rHandX -= 68*wave; rHandY -= 4*wave; rGloveScale += 0.5*wave; break;
-                case 'L_HOOK': torsoAngle = 0.12*wave; lElbowX -= 18*wave; lElbowY -= 34*wave; lHandX += 24*wave; lGloveScale += 0.3*wave; lGloveAngle = 1.1*wave; break;
-                case 'R_HOOK': torsoAngle = -0.2*wave; rElbowX -= 20*wave; rElbowY -= 34*wave; rHandX -= 44*wave; rGloveScale += 0.35*wave; rGloveAngle = -1.1*wave; break;
-                case 'L_UPPER': hipY += 12*wave; lElbowY += 12*wave; lHandY -= 22*wave; lGloveScale += 0.32*wave; break;
-                case 'R_UPPER': hipY += 12*wave; rElbowX -= 28*wave; rHandX -= 32*wave; rHandY -= 24*wave; rGloveScale += 0.38*wave; break;
-                case 'SLIP_L': torsoAngle = -0.32*wave; headOffsetX = -22*wave; headOffsetY = 10*wave; hipY += 10*wave; break;
-                case 'SLIP_R': torsoAngle = 0.28*wave; headOffsetX = 24*wave; headOffsetY = 10*wave; hipY += 10*wave; break;
-                case 'ROLL': hipY += 28*wave; torsoAngle = Math.sin(animProgress*Math.PI*2)*0.25; headOffsetX = Math.sin(animProgress*Math.PI*2)*20; headOffsetY = 16*wave; break;
-                case 'PULL': hipX += 16*wave; torsoAngle = 0.26*wave; headOffsetX = 18*wave; break;
-                case 'STEP_IN': hipX -= 28*wave; frontFootX -= 32*wave; backFootX -= 26*wave; bodyScale += 0.08*wave; break;
-                case 'STEP_BACK': hipX += 28*wave; frontFootX += 26*wave; backFootX += 32*wave; bodyScale -= 0.06*wave; break;
-                case 'PIVOT_L': hipX -= 18*wave; backFootX -= 42*wave; backFootY += 10*wave; torsoAngle = -0.18*wave; break;
-                case 'PIVOT_R': hipX += 18*wave; backFootX += 38*wave; backFootY -= 8*wave; torsoAngle = 0.18*wave; break;
-            }
-
-            ctx.fillStyle = 'rgba(245, 158, 11, 0.08)';
-            ctx.beginPath();
-            ctx.ellipse(210, 244, 115, 14, 0, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.save();
-            ctx.translate(210, 240);
-            ctx.scale(bodyScale, bodyScale);
-            ctx.translate(-210, -240);
-
-            const skin = '#c88a55', skinD = '#a36b3c';
-            drawLimbSegment(hipX+12, hipY+10, (hipX+12+backFootX)/2+8, (hipY+backFootY)/2, 12, 9, skinD);
-            drawLimbSegment((hipX+12+backFootX)/2+8, (hipY+backFootY)/2, backFootX, backFootY, 9, 6, skinD);
-            drawLimbSegment(hipX-10, hipY+10, (hipX-10+frontFootX)/2-8, (hipY+frontFootY)/2, 13, 9.5, skin);
-            drawLimbSegment((hipX-10+frontFootX)/2-8, (hipY+frontFootY)/2, frontFootX, frontFootY, 9.5, 6.5, skin);
-
-            ctx.fillStyle = '#0f172a';
-            ctx.beginPath(); ctx.roundRect(hipX-24, hipY-8, 48, 34, 8); ctx.fill();
-            ctx.fillStyle = '#f59e0b'; ctx.fillRect(hipX-24, hipY-10, 48, 6);
-
-            const shX = hipX + Math.sin(torsoAngle)*58, shY = hipY - Math.cos(torsoAngle)*58;
-            drawLimbSegment(hipX, hipY-6, shX, shY, 21, 27, skin);
-            drawLimbSegment(shX+18, shY+4, rElbowX, rElbowY, 9.5, 8, skinD);
-            drawLimbSegment(rElbowX, rElbowY, rHandX, rHandY, 8, 6.5, skinD);
-            drawBoxingGlove(rHandX, rHandY, rGloveAngle, rGloveScale, '#b91c1c');
-
-            const hX = shX - 4 + headOffsetX, hY = shY - 26 + headOffsetY;
-            drawLimbSegment(shX, shY, hX, hY+12, 8, 7, skin);
-            ctx.fillStyle = skin; ctx.beginPath(); ctx.ellipse(hX, hY, 15, 18, 0, 0, Math.PI*2); ctx.fill();
-            ctx.fillStyle = '#111827'; ctx.beginPath(); ctx.arc(hX+2, hY-4, 15, Math.PI*0.9, Math.PI*2.1); ctx.fill();
-
-            drawLimbSegment(shX-18, shY+4, lElbowX, lElbowY, 10, 8.5, skin);
-            drawLimbSegment(lElbowX, lElbowY, lHandX, lHandY, 8.5, 7, skin);
-            drawBoxingGlove(lHandX, lHandY, lGloveAngle, lGloveScale, '#ef4444');
-            ctx.restore();
-        }
-        requestAnimationFrame(renderArticulatedBoxer);
-    }
-    requestAnimationFrame(renderArticulatedBoxer);
-
-    // --- إدارة الكومبوهات ووضع الإتقان ---
+    // --- إدارة الكومبوهات ووضع التكرار للإتقان ---
     const PRESET_DRILLS = [
         ['JAB', 'CROSS', 'L_HOOK'],
         ['JAB', 'JAB', 'CROSS', 'SLIP_L'],
@@ -588,7 +497,7 @@
             currentBuilder.push(moveKey);
             renderBuilder();
         }
-        showMoveMedia(moveKey, 750);
+        triggerSkeletalMove(moveKey);
     }
 
     function clearBuilder() { currentBuilder = []; renderBuilder(); }
@@ -623,7 +532,7 @@
         document.getElementById('drill-enabled').value = 'on';
         resetDrillCounter();
         updateModeBadge();
-        switchTab('drill', document.querySelectorAll('.tab-btn')[2]);
+        switchTab('drill', document.querySelectorAll('.tab-btn')[1]);
     }
 
     function renderSavedCombos() {
@@ -741,7 +650,6 @@
         const btn = document.getElementById('start-btn');
         btn.textContent = 'إيقاف الجلسة';
         btn.classList.add('danger');
-        showMoveMedia('GUARD', 0);
         speakText(`Round ${currentRound}. Fight!`);
         timerId = setInterval(tickTimer, 1000);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
@@ -755,7 +663,6 @@
         btn.textContent = 'ابدأ الجلسة';
         btn.classList.remove('danger');
         document.getElementById('combo-text').textContent = 'READY';
-        showMoveMedia('GUARD', 0);
     }
 
     function resetSession() {
@@ -844,10 +751,10 @@
         document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
         speakText(seqKeys.map(k => MOVES[k].say).join(', '));
 
-        const stepDelay = Math.max(460, Math.round(620 / voiceRate));
+        const stepDelay = Math.max(480, Math.round(640 / voiceRate));
         seqKeys.forEach((moveKey, idx) => {
             setTimeout(() => {
-                if (isRunning && !isResting) showMoveMedia(moveKey, stepDelay - 50);
+                if (isRunning && !isResting) triggerSkeletalMove(moveKey);
             }, idx * stepDelay);
         });
     }
