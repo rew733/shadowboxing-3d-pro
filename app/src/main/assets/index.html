@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • Procedural 3D Rig</title>
+    <title>Boxing Coach Pro • Pro 3D Rig</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -29,12 +29,13 @@
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        .stage-box { width: 100%; height: 285px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stage-box { width: 100%; height: 290px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         #canvas-3d { width: 100%; height: 100%; }
         
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
         .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
-        .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 5; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.8); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); cursor: pointer; }
+        .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.85); color: var(--text); border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); cursor: pointer; }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
         .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
@@ -83,11 +84,12 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">ORTHODOX LIVE BONES</span>
+            <span class="badge-stance">ORTHODOX STANCE</span>
             <span class="badge-action" id="live-move-badge">GUARD</span>
+            <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[3])">
-                اضغط هنا لاختيار مجسم 3D (.glb) ليتم تحريك عظامه تلقائياً
+                اضغط هنا لاختيار مجسم 3D (.glb) من الهاتف
             </div>
         </div>
 
@@ -196,13 +198,16 @@
     <!-- التبويب 4: مجسم GLB والإعدادات -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
-            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الشخصية ثلاثي الأبعاد (.glb) — يُحرك تلقائياً بدون حاجة لحركات مدمجة:</span></div>
+            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الشخصية ثلاثي الأبعاد (.glb):</span></div>
             <label class="upload-label">
                 🧊 اختر ملف مجسم 3D (.glb) من الهاتف
                 <input type="file" accept=".glb,.gltf,*/*" style="display:none;" onchange="handleGlbUpload(this.files[0])">
             </label>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
+                <button class="btn secondary small" onclick="toggleModelFacing()">🔄 عكس وجه المجسم (180°)</button>
+                <button class="btn danger small" onclick="deleteSavedGlb()">حذف المجسم</button>
+            </div>
             <div class="clips-box" id="detected-clips-list">لم يتم تحميل مجسم .glb بعد...</div>
-            <button class="btn danger small" style="width: 100%; margin-top: 8px;" onclick="deleteSavedGlb()">حذف المجسم المحفوظ</button>
         </div>
 
         <div class="panel">
@@ -305,19 +310,26 @@
         document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
     }
 
-    // --- محرك التحريك الإجرائي المباشر لعظام المجسم (Procedural Skeletal Engine) ---
+    // --- محرك التحريك التشريحي المباشر لعظام الملاكم ---
     let scene, camera, renderer, modelRoot;
-    let bones = {}; // مرجع مباشر لعظام المجسم
+    let bones = {};
     let currentMove = null;
     let moveProgress = 0;
+    // زاوية الدوران الأساسية: Math.PI تجعل وجه المجسم نحوك مباشرة مع انحراف جانبي لوقفة Orthodox
+    let facingFlip = localStorage.getItem('boxer_facing_flip') === '0' ? 0 : Math.PI;
+
+    function toggleModelFacing() {
+        facingFlip = (facingFlip === 0) ? Math.PI : 0;
+        localStorage.setItem('boxer_facing_flip', facingFlip === 0 ? '0' : '1');
+    }
 
     function init3DScene() {
         const container = document.getElementById('canvas-3d');
         scene = new THREE.Scene();
 
-        camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0.35, 1.32, 2.75);
-        camera.lookAt(0, 0.98, 0);
+        camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+        camera.position.set(0.25, 1.32, 2.75);
+        camera.lookAt(0, 0.96, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -329,7 +341,7 @@
         const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
         keyLight.position.set(2.5, 4.5, 3.5);
         scene.add(keyLight);
-        const rimLight = new THREE.PointLight(0xf59e0b, 1.5, 10);
+        const rimLight = new THREE.PointLight(0xf59e0b, 1.6, 10);
         rimLight.position.set(-2.5, 2.5, -2);
         scene.add(rimLight);
 
@@ -343,7 +355,6 @@
         animate3D();
     }
 
-    // البحث الذكي عن عظام المجسم (يدعم Mixamo و ReadyPlayerMe و VRM و Blender)
     function mapCharacterBones(root) {
         bones = {};
         const foundNames = [];
@@ -388,7 +399,6 @@
             modelRoot.position.x = -center.x;
             modelRoot.position.z = -center.z;
             modelRoot.position.y = -scaledBox.min.y;
-            modelRoot.rotation.y = 0.25; // وقفة Orthodox موجهة للأمام
 
             scene.add(modelRoot);
 
@@ -396,8 +406,8 @@
             document.getElementById('glb-status').style.display = 'none';
             document.getElementById('detected-clips-list').textContent =
                 foundBones.length > 0
-                    ? `✓ تم ربط الهيكل العظمي بنجاح (${foundBones.length} عظمة) — جاهز للملاكمة!`
-                    : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي، سيتم تحريكه ككتلة.';
+                    ? `✓ تم ربط عظام المجسم (${foundBones.length} عظمة) وتشكيل وقفة الملاكمة!`
+                    : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي.';
         });
     }
 
@@ -407,15 +417,17 @@
         document.getElementById('live-move-badge').textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
     }
 
-    // تحديث زوايا العظام في كل إطار 60 مرة في الثانية لتشكيل وقفة الملاكمة والحركات الـ 14
+    // --- حساب زوايا وقفة الملاكمة الحقيقية والحركات الـ 14 ---
     function updateBonesPose() {
         if (!modelRoot) return;
         const t = Date.now();
-        const bounce = Math.sin(t * 0.009) * 0.035;
+        // ارتداد القدمين المستمر (Boxer Bounce)
+        const bounceY = Math.abs(Math.sin(t * 0.0075)) * 0.032;
+        const swayZ = Math.sin(t * 0.0038) * 0.025;
 
         let wave = 0;
         if (currentMove) {
-            moveProgress += 0.068;
+            moveProgress += 0.062;
             if (moveProgress >= 1) {
                 currentMove = null;
                 document.getElementById('live-move-badge').textContent = 'GUARD';
@@ -424,115 +436,151 @@
             }
         }
 
-        // 1. وضعية الحراسة الأساسية (Orthodox Boxing Guard)
-        let rootX = 0, rootY = 0, rootZ = 0, rootRotY = 0.32;
-        let spineRotX = 0.14, spineRotY = -0.22, spineRotZ = 0;
-        let headRotX = -0.08, headRotY = 0.20, headRotZ = 0;
+        // 1. وضعية الملاكمة الأساسية (Orthodox Stance & High Guard)
+        let rootX = 0, rootY = bounceY, rootZ = swayZ;
+        // زاوية الجسم الجانبية بـ 38 درجة (0.66 rad) لوضعية الملاكم الحقيقية
+        let rootRotY = facingFlip - 0.62;
 
-        // الذراع اليسرى الأمامية (Lead Jab Arm) مرفوعة لحماية الذقن
-        let lArmX = -0.85, lArmY = 0.35, lArmZ = 1.05;
-        let lForeX = -1.65, lForeZ = 0.2;
+        // انحناء الجذع للأمام وحماية الذقن
+        let spineRotX = 0.16, spineRotY = 0.15, spineRotZ = 0;
+        // الرأس يلتفت قليلاً لمواجهة الخصم مباشرة مع خفض الذقن
+        let headRotX = 0.12, headRotY = 0.42, headRotZ = 0;
 
-        // الذراع اليمنى الخلفية (Rear Cross Arm) ملتصقة بالخد
-        let rArmX = -0.95, rArmY = -0.35, rArmZ = -1.1;
-        let rForeX = -1.85, rForeZ = -0.2;
+        // وضعية الأرجل القتالية (القدم اليسرى للأمام واليمنى للخلف مع ثني الركبتين)
+        let lThighX = -0.24, lShinX = 0.34;
+        let rThighX = 0.28,  rShinX = 0.36;
 
-        // 2. تعديل زوايا العظام حسب الحركة المنطوقة
+        // اليد اليسرى الأمامية (Lead Guard): مرفوعة أمام الوجه والكتف ضامّ للجسم
+        let lArmX = 0.68, lArmY = 0.25, lArmZ = 1.15;
+        let lForeX = 0.25, lForeY = 0.35, lForeZ = 1.95;
+
+        // اليد اليمنى الخلفية (Rear Guard): ملتصقة بالخد والذقن والكوع يحمي الأضلاع
+        let rArmX = 0.55, rArmY = -0.25, rArmZ = -1.22;
+        let rForeX = 0.25, rForeY = -0.35, rForeZ = -2.10;
+
+        // 2. تعديل المفاصل بدقة حسب نوع الحركة
         switch (currentMove) {
-            case 'JAB':
-                spineRotY = -0.45 * wave - 0.22;
-                lArmX = -0.85 - 0.65 * wave; // رفع الكتف للأمام
-                lArmZ = 1.05 - 0.85 * wave;
-                lForeX = -1.65 + 1.50 * wave; // فرد الكوع بالكامل
+            case 'JAB': // 1 Jab: اندفاع اليد اليسرى للأمام باستقامة كاملة
+                spineRotY = 0.15 - 0.48 * wave;
+                headRotY = 0.42 + 0.35 * wave;
+                lArmX = 0.68 + 0.75 * wave;
+                lArmZ = 1.15 - 0.95 * wave;
+                lForeZ = 1.95 - 1.85 * wave; // فرد الكوع بالكامل
+                rootZ += 0.08 * wave;
                 break;
-            case 'CROSS':
-                spineRotY = 0.55 * wave; // تدوير الجذع بقوة
-                spineRotX = 0.14 + 0.12 * wave;
-                rArmX = -0.95 - 0.60 * wave;
-                rArmZ = -1.1 + 0.90 * wave;
-                rForeX = -1.85 + 1.70 * wave; // فرد الذراع الخلفية بالكامل
+
+            case 'CROSS': // 2 Cross: تدوير الكتف الأيمن والحوض بقوة مع فرد اليد اليمنى
+                spineRotY = 0.15 + 0.78 * wave;
+                spineRotX = 0.16 + 0.10 * wave;
+                headRotY = 0.42 - 0.55 * wave;
+                rArmX = 0.55 + 0.90 * wave;
+                rArmZ = -1.22 + 1.05 * wave;
+                rForeZ = -2.10 + 1.95 * wave; // فرد الكوع الأيمن بالكامل
+                rootZ += 0.10 * wave;
                 break;
-            case 'L_HOOK':
-                spineRotY = 0.45 * wave;
-                lArmX = -1.25 * wave - 0.85 * (1 - wave);
-                lArmY = 0.35 + 0.85 * wave; // خطاف أفقي
-                lForeX = -1.45;
+
+            case 'L_HOOK': // 3 Lead Hook: خطاف أفقي باليد اليسرى مع تدوير الجذع
+                spineRotY = 0.15 + 0.65 * wave;
+                lArmX = 0.68 + 0.85 * wave;
+                lArmY = 0.25 - 0.95 * wave;
+                lArmZ = 1.15 - 0.35 * wave;
+                lForeZ = 1.55; // بقاء الكوع بزاوية 90 درجة
                 break;
-            case 'R_HOOK':
-                spineRotY = -0.55 * wave;
-                rArmX = -1.25 * wave - 0.95 * (1 - wave);
-                rArmY = -0.35 - 0.85 * wave;
-                rForeX = -1.45;
+
+            case 'R_HOOK': // 4 Rear Hook: خطاف أفقي باليد اليمنى
+                spineRotY = 0.15 - 0.65 * wave;
+                rArmX = 0.55 + 0.85 * wave;
+                rArmY = -0.25 + 0.95 * wave;
+                rArmZ = -1.22 + 0.35 * wave;
+                rForeZ = -1.55;
                 break;
-            case 'L_UPPER':
-                rootY = -0.06 * wave;
-                spineRotX = 0.25 * (1 - wave) - 0.15 * wave;
-                lArmX = -0.85 - 0.55 * wave;
-                lForeX = -1.65 + 0.45 * wave;
+
+            case 'L_UPPER': // 5 Lead Uppercut: دفعة صاعدة من الأسفل للأعلى
+                rootY -= 0.04 * wave;
+                spineRotX = 0.16 - 0.18 * wave;
+                lArmX = 0.68 + 0.65 * wave;
+                lArmZ = 1.15 - 0.60 * wave;
+                lForeZ = 1.65;
                 break;
-            case 'R_UPPER':
-                rootY = -0.06 * wave;
-                spineRotX = 0.25 * (1 - wave) - 0.15 * wave;
-                rArmX = -0.95 - 0.55 * wave;
-                rForeX = -1.85 + 0.55 * wave;
+
+            case 'R_UPPER': // 6 Rear Uppercut: دفعة صاعدة قوية باليمنى
+                rootY -= 0.04 * wave;
+                spineRotX = 0.16 - 0.20 * wave;
+                spineRotY = 0.15 + 0.45 * wave;
+                rArmX = 0.55 + 0.70 * wave;
+                rArmZ = -1.22 + 0.65 * wave;
+                rForeZ = -1.65;
                 break;
-            case 'SLIP_L':
-                spineRotZ = 0.38 * wave;
+
+            case 'SLIP_L': // انحراف الرأس والجذع لليسار
+                spineRotZ = 0.42 * wave;
                 spineRotX = 0.28 * wave;
-                headRotZ = 0.22 * wave;
-                rootY = -0.05 * wave;
+                headRotZ = 0.20 * wave;
+                rootY -= 0.05 * wave;
                 break;
-            case 'SLIP_R':
-                spineRotZ = -0.38 * wave;
+
+            case 'SLIP_R': // انحراف الرأس والجذع لليمين
+                spineRotZ = -0.42 * wave;
                 spineRotX = 0.28 * wave;
-                headRotZ = -0.22 * wave;
-                rootY = -0.05 * wave;
+                headRotZ = -0.20 * wave;
+                rootY -= 0.05 * wave;
                 break;
-            case 'ROLL':
-                rootY = -0.22 * wave; // انخفاض الركبتين
+
+            case 'ROLL': // تغطيس ودوران تحت اللكمة مع ثني الركبتين
+                rootY -= 0.18 * wave;
+                lThighX = -0.24 - 0.35 * wave;
+                lShinX = 0.34 + 0.65 * wave;
+                rThighX = 0.28 - 0.35 * wave;
+                rShinX = 0.36 + 0.65 * wave;
                 spineRotX = 0.45 * wave;
                 spineRotZ = Math.sin(moveProgress * Math.PI * 2) * 0.35;
                 break;
-            case 'PULL':
-                spineRotX = -0.32 * wave;
-                rootZ = -0.15 * wave;
+
+            case 'PULL': // سحب الرأس والجذع للخلف
+                spineRotX = -0.34 * wave;
+                headRotX = 0.25 * wave;
+                rootZ -= 0.12 * wave;
                 break;
-            case 'STEP_IN':
-                rootZ = 0.32 * wave;
-                rootY = Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.05;
+
+            case 'STEP_IN': // خطوة سريعة للأمام
+                rootZ += 0.28 * wave;
+                rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.04;
                 break;
-            case 'STEP_BACK':
-                rootZ = -0.32 * wave;
-                rootY = Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.05;
+
+            case 'STEP_BACK': // خطوة تراجع للخلف
+                rootZ -= 0.28 * wave;
+                rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.04;
                 break;
-            case 'PIVOT_L':
-                rootRotY = 0.32 + 0.65 * wave;
-                rootX = -0.18 * wave;
+
+            case 'PIVOT_L': // التفاف بزاوية لليسار
+                rootRotY += 0.65 * wave;
+                rootX -= 0.15 * wave;
                 break;
-            case 'PIVOT_R':
-                rootRotY = 0.32 - 0.65 * wave;
-                rootX = 0.18 * wave;
+
+            case 'PIVOT_R': // التفاف بزاوية لليمين
+                rootRotY -= 0.65 * wave;
+                rootX += 0.15 * wave;
                 break;
         }
 
-        // تطبيق الزوايا على المجسم وعظامه
+        // تطبيق الوضعيات على المجسم وعظامه
         modelRoot.position.x = rootX;
+        modelRoot.position.y = rootY;
         modelRoot.position.z = rootZ;
         modelRoot.rotation.y = rootRotY;
 
-        if (bones.hips) {
-            bones.hips.position.y += (bounce * 0.15);
-        }
-        if (bones.spine) {
-            bones.spine.rotation.set(spineRotX, spineRotY, spineRotZ);
-        }
-        if (bones.head) {
-            bones.head.rotation.set(headRotX, headRotY, headRotZ);
-        }
-        if (bones.lArm) bones.lArm.rotation.set(lArmX, lArmY, lArmZ);
-        if (bones.lForeArm) bones.lForeArm.rotation.set(lForeX, 0, lForeZ);
-        if (bones.rArm) bones.rArm.rotation.set(rArmX, rArmY, rArmZ);
-        if (bones.rForeArm) bones.rForeArm.rotation.set(rForeX, 0, rForeZ);
+        if (bones.spine) bones.spine.rotation.set(spineRotX, spineRotY, spineRotZ);
+        if (bones.head) bones.head.rotation.set(headRotX, headRotY, headRotZ);
+
+        if (bones.lThigh) bones.lThigh.rotation.x = lThighX;
+        if (bones.lShin)  bones.lShin.rotation.x = lShinX;
+        if (bones.rThigh) bones.rThigh.rotation.x = rThighX;
+        if (bones.rShin)  bones.rShin.rotation.x = rShinX;
+
+        if (bones.lArm)     bones.lArm.rotation.set(lArmX, lArmY, lArmZ);
+        if (bones.lForeArm) bones.lForeArm.rotation.set(lForeX, lForeY, lForeZ);
+        if (bones.rArm)     bones.rArm.rotation.set(rArmX, rArmY, rArmZ);
+        if (bones.rForeArm) bones.rForeArm.rotation.set(rForeX, rForeY, rForeZ);
     }
 
     function animate3D() {
