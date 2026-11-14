@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • Clean 3D Rig</title>
+    <title>Boxing Coach Pro • True Stance 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -84,7 +84,7 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">ORTHODOX STANCE</span>
+            <span class="badge-stance">ORTHODOX GUARD</span>
             <span class="badge-action" id="live-move-badge">GUARD</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <div id="canvas-3d"></div>
@@ -310,10 +310,10 @@
         document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
     }
 
-    // --- محرك التحريك النسبي الآمن لعظام المجسم (Relative Bone Offsets) ---
+    // --- محرك التحريك المتجهي العالمي (World-Space Boxing Pose Engine) ---
     let scene, camera, renderer, modelRoot;
     let bones = {};
-    let baseRot = {}; // حفظ الزوايا الأصلية لكل عظمة لمنع التواء الأطراف
+    let baseRot = {};
     let currentMove = null;
     let moveProgress = 0;
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
@@ -328,8 +328,8 @@
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0.25, 1.32, 2.75);
-        camera.lookAt(0, 0.96, 0);
+        camera.position.set(0.28, 1.28, 2.85);
+        camera.lookAt(0, 0.92, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -368,12 +368,17 @@
             if (obj.isBone) {
                 const n = obj.name.toLowerCase();
                 foundNames.push(obj.name);
-                if ((n.includes('spine1') || n.includes('chest') || n.includes('spine')) && !bones.spine) saveBone('spine', obj);
+                if (n.includes('hips') && !bones.hips) saveBone('hips', obj);
+                else if ((n.includes('spine1') || n.includes('chest') || n.includes('spine')) && !bones.spine) saveBone('spine', obj);
                 else if (n.includes('head') && !n.includes('top') && !n.includes('end') && !bones.head) saveBone('head', obj);
                 else if ((n.includes('leftarm') || n.includes('upperarm_l') || (n.includes('left') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) && !bones.lArm) saveBone('lArm', obj);
                 else if ((n.includes('leftforearm') || n.includes('lowerarm_l') || (n.includes('left') && (n.includes('forearm') || n.includes('lowerarm')))) && !bones.lForeArm) saveBone('lForeArm', obj);
                 else if ((n.includes('rightarm') || n.includes('upperarm_r') || (n.includes('right') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) && !bones.rArm) saveBone('rArm', obj);
                 else if ((n.includes('rightforearm') || n.includes('lowerarm_r') || (n.includes('right') && (n.includes('forearm') || n.includes('lowerarm')))) && !bones.rForeArm) saveBone('rForeArm', obj);
+                else if ((n.includes('leftupleg') || n.includes('thigh_l')) && !bones.lThigh) saveBone('lThigh', obj);
+                else if ((n.includes('rightupleg') || n.includes('thigh_r')) && !bones.rThigh) saveBone('rThigh', obj);
+                else if ((n.includes('leftleg') || n.includes('calf_l') || n.includes('shin_l')) && !bones.lShin) saveBone('lShin', obj);
+                else if ((n.includes('rightleg') || n.includes('calf_r') || n.includes('shin_r')) && !bones.rShin) saveBone('rShin', obj);
             }
         });
         return foundNames;
@@ -406,7 +411,7 @@
             document.getElementById('glb-status').style.display = 'none';
             document.getElementById('detected-clips-list').textContent =
                 foundBones.length > 0
-                    ? `✓ تم ربط الهيكل العظمي بنجاح (${foundBones.length} عظمة) دون تشويه للأطراف!`
+                    ? `✓ تم تشكيل وقفة الملاكمة وربط (${foundBones.length} عظمة) بنجاح!`
                     : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي.';
         });
     }
@@ -417,7 +422,6 @@
         document.getElementById('live-move-badge').textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
     }
 
-    // تطبيق الإزاحة النسبية فوق الزوايا الأصلية لكل عظمة للحفاظ على سلامة الجسم
     function applyBoneOffset(key, dx, dy, dz) {
         if (!bones[key] || !baseRot[key]) return;
         bones[key].rotation.set(
@@ -425,6 +429,31 @@
             baseRot[key].y + dy,
             baseRot[key].z + dz
         );
+    }
+
+    // دالة هندسية توجه أي عظمة نحو اتجاه محدد في الفضاء العالمي مهما كانت محاور المجسم
+    function aimBoneWorld(bone, childBone, targetWorldDir, blend = 1.0) {
+        if (!bone || !childBone || !bone.parent) return;
+        bone.updateWorldMatrix(true, false);
+        childBone.updateWorldMatrix(true, false);
+
+        const pStart = new THREE.Vector3().setFromMatrixPosition(bone.matrixWorld);
+        const pEnd = new THREE.Vector3().setFromMatrixPosition(childBone.matrixWorld);
+        const currentDir = pEnd.sub(pStart).normalize();
+        const desiredDir = targetWorldDir.clone().normalize();
+
+        if (currentDir.lengthSq() < 0.0001 || desiredDir.lengthSq() < 0.0001) return;
+
+        const deltaQuatWorld = new THREE.Quaternion().setFromUnitVectors(currentDir, desiredDir);
+        const currentWorldQuat = new THREE.Quaternion();
+        bone.getWorldQuaternion(currentWorldQuat);
+
+        const targetWorldQuat = deltaQuatWorld.multiply(currentWorldQuat);
+        const parentWorldQuat = new THREE.Quaternion();
+        bone.parent.getWorldQuaternion(parentWorldQuat);
+
+        const targetLocalQuat = parentWorldQuat.invert().multiply(targetWorldQuat);
+        bone.quaternion.slerp(targetLocalQuat, blend);
     }
 
     function updateBonesPose() {
@@ -444,91 +473,93 @@
             }
         }
 
-        // 1. وضعية الجسم الأساسية وثبات القدمين على الأرضية
-        let rootX = 0, rootY = bounceY, rootZ = swayZ;
-        let rootRotY = facingFlip - 0.55; // زاوية Orthodox جانبية
+        // 1. وقفة الملاكمة للقدمين والجذع (Orthodox Stance)
+        let rootX = 0, rootY = bounceY - 0.04, rootZ = swayZ;
+        let rootRotY = facingFlip - 0.58; // زاوية جسم الملاكم الجانبية (33 درجة)
 
-        // إزاحات خفيفة ومنضبطة للجزء العلوي فقط للحفاظ على تشريح الجسم
-        let spX = 0.08, spY = 0.15, spZ = 0;
-        let hdX = 0.05, hdY = 0.35, hdZ = 0;
+        let spX = 0.14, spY = 0.18, spZ = 0;
+        let hdX = -0.05, hdY = 0.36, hdZ = 0;
 
-        // وضعية الحراسة الأساسية للذراعين (مرفوعتان لحماية الذقن)
-        let laX = 0.45, laY = 0.20, laZ = 0.75;
-        let lfX = 0.20, lfY = 0.30, lfZ = 1.25;
+        // فتح الساقين للأمام والخلف مع ثني خفيف في الركبتين (قيم آمنة ومنضبطة)
+        let ltX = -0.22, ltZ = 0.10, lsX = 0.34;
+        let rtX = 0.24,  rtZ = -0.10, rsX = 0.36;
 
-        let raX = 0.40, raY = -0.20, raZ = -0.80;
-        let rfX = 0.20, rfY = -0.30, rfZ = -1.35;
+        // متجهات توجيه الذراعين في الفضاء العالمي (أمام الكاميرا +Z)
+        // وضعية الحراسة (Guard): المرفقان للأسفل والأمام، والقبضتان مرفوعتان أمام الذقن والخدين
+        let lUpperDir = new THREE.Vector3(-0.18, -0.55, 0.81); // العضد الأيسر للأمام والأسفل
+        let lForeDir  = new THREE.Vector3(0.15,  0.82,  0.55); // الساعد الأيسر مرفوع أمام الذقن
+
+        let rUpperDir = new THREE.Vector3(0.22, -0.62, 0.75);  // العضد الأيمن ملاصق للأضلاع
+        let rForeDir  = new THREE.Vector3(-0.18, 0.86, 0.47);  // الساعد الأيمن يحمي الخد الأيمن
 
         switch (currentMove) {
-            case 'JAB':
-                spY -= 0.38 * wave;
-                hdY += 0.25 * wave;
-                laX += 0.55 * wave;
-                laZ -= 0.65 * wave;
-                lfZ -= 1.15 * wave; // مدّ الذراع اليسرى للأمام
+            case 'JAB': // 1 Jab: اندفاع الكتف والذراع اليسرى للأمام باستقامة كاملة
+                spY -= 0.42 * wave;
+                hdY += 0.28 * wave;
+                lUpperDir.lerp(new THREE.Vector3(-0.05, 0.12, 0.99), wave);
+                lForeDir.lerp(new THREE.Vector3(-0.02, 0.15, 0.98), wave);
                 rootZ += 0.08 * wave;
                 break;
 
-            case 'CROSS':
-                spY += 0.58 * wave;
-                hdY -= 0.40 * wave;
-                raX += 0.65 * wave;
-                raZ += 0.72 * wave;
-                rfZ += 1.25 * wave; // مدّ الذراع اليمنى للأمام
+            case 'CROSS': // 2 Cross: تدوير الجذع بقوة واندفاع الذراع اليمنى للأمام
+                spY += 0.62 * wave;
+                hdY -= 0.42 * wave;
+                rUpperDir.lerp(new THREE.Vector3(0.02, 0.12, 0.99), wave);
+                rForeDir.lerp(new THREE.Vector3(0.0,  0.15, 0.98), wave);
                 rootZ += 0.10 * wave;
                 break;
 
-            case 'L_HOOK':
-                spY += 0.52 * wave;
-                laX += 0.65 * wave;
-                laY -= 0.70 * wave;
-                laZ -= 0.25 * wave;
+            case 'L_HOOK': // 3 Lead Hook: خطاف أفقي باليسرى على مستوى الذقن
+                spY += 0.55 * wave;
+                lUpperDir.lerp(new THREE.Vector3(-0.65, 0.15, 0.74), wave);
+                lForeDir.lerp(new THREE.Vector3(0.75,  0.15, 0.64), wave);
                 break;
 
-            case 'R_HOOK':
-                spY -= 0.52 * wave;
-                raX += 0.65 * wave;
-                raY += 0.70 * wave;
-                raZ += 0.25 * wave;
+            case 'R_HOOK': // 4 Rear Hook: خطاف أفقي باليمنى
+                spY -= 0.55 * wave;
+                rUpperDir.lerp(new THREE.Vector3(0.65,  0.15, 0.74), wave);
+                rForeDir.lerp(new THREE.Vector3(-0.75, 0.15, 0.64), wave);
                 break;
 
-            case 'L_UPPER':
-                rootY -= 0.03 * wave;
-                spX -= 0.14 * wave;
-                laX += 0.55 * wave;
-                laZ -= 0.45 * wave;
+            case 'L_UPPER': // 5 Lead Uppercut: لكمة صاعدة من الأسفل للأعلى
+                rootY -= 0.04 * wave;
+                spX -= 0.15 * wave;
+                lUpperDir.lerp(new THREE.Vector3(-0.15, -0.25, 0.95), wave);
+                lForeDir.lerp(new THREE.Vector3(0.05,  0.88,  0.47), wave);
                 break;
 
-            case 'R_UPPER':
-                rootY -= 0.03 * wave;
-                spX -= 0.14 * wave;
-                spY += 0.35 * wave;
-                raX += 0.58 * wave;
-                raZ += 0.50 * wave;
+            case 'R_UPPER': // 6 Rear Uppercut: لكمة صاعدة قوية باليمنى
+                rootY -= 0.04 * wave;
+                spX -= 0.15 * wave;
+                spY += 0.38 * wave;
+                rUpperDir.lerp(new THREE.Vector3(0.15, -0.25, 0.95), wave);
+                rForeDir.lerp(new THREE.Vector3(-0.05, 0.88, 0.47), wave);
                 break;
 
             case 'SLIP_L':
-                spZ += 0.34 * wave;
+                spZ += 0.36 * wave;
                 spX += 0.18 * wave;
-                hdZ += 0.15 * wave;
-                rootY -= 0.04 * wave;
+                hdZ += 0.16 * wave;
+                rootY -= 0.05 * wave;
                 break;
 
             case 'SLIP_R':
-                spZ -= 0.34 * wave;
+                spZ -= 0.36 * wave;
                 spX += 0.18 * wave;
-                hdZ -= 0.15 * wave;
-                rootY -= 0.04 * wave;
+                hdZ -= 0.16 * wave;
+                rootY -= 0.05 * wave;
                 break;
 
             case 'ROLL':
-                rootY -= 0.14 * wave;
+                rootY -= 0.16 * wave;
+                ltX -= 0.25 * wave; lsX += 0.48 * wave;
+                rtX -= 0.25 * wave; rsX += 0.48 * wave;
                 spX += 0.32 * wave;
                 spZ = Math.sin(moveProgress * Math.PI * 2) * 0.28;
                 break;
 
             case 'PULL':
-                spX -= 0.28 * wave;
+                spX -= 0.30 * wave;
                 rootZ -= 0.12 * wave;
                 break;
 
@@ -543,27 +574,43 @@
                 break;
 
             case 'PIVOT_L':
-                rootRotY += 0.60 * wave;
+                rootRotY += 0.62 * wave;
                 rootX -= 0.14 * wave;
                 break;
 
             case 'PIVOT_R':
-                rootRotY -= 0.60 * wave;
+                rootRotY -= 0.62 * wave;
                 rootX += 0.14 * wave;
                 break;
         }
 
-        modelRoot.position.x = rootX;
-        modelRoot.position.y = rootY;
-        modelRoot.position.z = rootZ;
+        // عكس المتجهات أفقياً إذا تم عكس اتجاه المجسم 180 درجة
+        const dirSign = (facingFlip === 0) ? 1 : -1;
+        lUpperDir.x *= dirSign; lUpperDir.z *= dirSign;
+        lForeDir.x  *= dirSign; lForeDir.z  *= dirSign;
+        rUpperDir.x *= dirSign; rUpperDir.z *= dirSign;
+        rForeDir.x  *= dirSign; rForeDir.z  *= dirSign;
+
+        modelRoot.position.set(rootX, rootY, rootZ);
         modelRoot.rotation.y = rootRotY;
 
         applyBoneOffset('spine', spX, spY, spZ);
         applyBoneOffset('head', hdX, hdY, hdZ);
-        applyBoneOffset('lArm', laX, laY, laZ);
-        applyBoneOffset('lForeArm', lfX, lfY, lfZ);
-        applyBoneOffset('rArm', raX, raY, raZ);
-        applyBoneOffset('rForeArm', rfX, rfY, rfZ);
+
+        // تطبيق وقفة القدمين
+        applyBoneOffset('lThigh', ltX, 0, ltZ);
+        applyBoneOffset('lShin',  lsX, 0, 0);
+        applyBoneOffset('rThigh', rtX, 0, rtZ);
+        applyBoneOffset('rShin',  rsX, 0, 0);
+
+        // تطبيق وضعية اليدين بالحراسة واللكم بدقة متجهية
+        aimBoneWorld(bones.lArm, bones.lForeArm, lUpperDir, 1.0);
+        const lHandDummy = bones.lForeArm && bones.lForeArm.children[0];
+        if (lHandDummy) aimBoneWorld(bones.lForeArm, lHandDummy, lForeDir, 1.0);
+
+        aimBoneWorld(bones.rArm, bones.rForeArm, rUpperDir, 1.0);
+        const rHandDummy = bones.rForeArm && bones.rForeArm.children[0];
+        if (rHandDummy) aimBoneWorld(bones.rForeArm, rHandDummy, rForeDir, 1.0);
     }
 
     function animate3D() {
