@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • True Stance 3D</title>
+    <title>Boxing Coach Pro • FBX & GLB 3D Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         :root {
@@ -84,12 +86,12 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">ORTHODOX GUARD</span>
+            <span class="badge-stance">ORTHODOX 3D RIG</span>
             <span class="badge-action" id="live-move-badge">GUARD</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[3])">
-                اضغط هنا لاختيار مجسم 3D (.glb) من الهاتف
+                اضغط هنا لاختيار مجسم 3D (.fbx أو .glb) من الهاتف
             </div>
         </div>
 
@@ -195,19 +197,19 @@
         </div>
     </div>
 
-    <!-- التبويب 4: مجسم GLB والإعدادات -->
+    <!-- التبويب 4: مجسم 3D والإعدادات -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
-            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الشخصية ثلاثي الأبعاد (.glb):</span></div>
+            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الشخصية ثلاثي الأبعاد (.fbx أو .glb):</span></div>
             <label class="upload-label">
-                🧊 اختر ملف مجسم 3D (.glb) من الهاتف
-                <input type="file" accept=".glb,.gltf,*/*" style="display:none;" onchange="handleGlbUpload(this.files[0])">
+                🧊 اختر ملف مجسم 3D (.fbx / .glb) من الهاتف
+                <input type="file" accept=".fbx,.glb,.gltf,*/*" style="display:none;" onchange="handleModelUpload(this.files[0])">
             </label>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px;">
                 <button class="btn secondary small" onclick="toggleModelFacing()">🔄 عكس وجه المجسم (180°)</button>
-                <button class="btn danger small" onclick="deleteSavedGlb()">حذف المجسم</button>
+                <button class="btn danger small" onclick="deleteSavedModel()">حذف المجسم</button>
             </div>
-            <div class="clips-box" id="detected-clips-list">لم يتم تحميل مجسم .glb بعد...</div>
+            <div class="clips-box" id="detected-clips-list">لم يتم تحميل مجسم 3D بعد...</div>
         </div>
 
         <div class="panel">
@@ -276,47 +278,55 @@
         PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right' }
     };
 
-    // --- تخزين دائم لملف GLB في قاعدة بيانات الهاتف ---
+    // --- تخزين دائم لملف FBX/GLB في قاعدة بيانات الهاتف ---
     let glbDB = null;
-    const dbReq = indexedDB.open('Boxer3DModelsDB', 1);
+    const dbReq = indexedDB.open('Boxer3DModelsDB', 2);
     dbReq.onupgradeneeded = e => { e.target.result.createObjectStore('models'); };
-    dbReq.onsuccess = e => { glbDB = e.target.result; restoreSavedGlb(); };
+    dbReq.onsuccess = e => { glbDB = e.target.result; restoreSavedModel(); };
 
-    function restoreSavedGlb() {
-        if (!glbDB) return;
+    function restoreSavedModel() {
+        if (!glbDB) {
+            load3DModel('boxer.fbx', 'fbx');
+            return;
+        }
         const tx = glbDB.transaction('models', 'readonly');
-        const req = tx.objectStore('models').get('active_boxer');
+        const req = tx.objectStore('models').get('active_boxer_data');
         req.onsuccess = () => {
-            if (req.result) loadGLBModel(URL.createObjectURL(req.result));
+            if (req.result && req.result.file) {
+                load3DModel(URL.createObjectURL(req.result.file), req.result.ext);
+            } else {
+                load3DModel('boxer.fbx', 'fbx');
+            }
         };
     }
 
-    function handleGlbUpload(file) {
+    function handleModelUpload(file) {
         if (!file) return;
-        loadGLBModel(URL.createObjectURL(file));
+        const ext = file.name.toLowerCase().endsWith('.fbx') ? 'fbx' : 'glb';
+        load3DModel(URL.createObjectURL(file), ext);
         if (glbDB) {
             const tx = glbDB.transaction('models', 'readwrite');
-            tx.objectStore('models').put(file, 'active_boxer');
+            tx.objectStore('models').put({ file: file, ext: ext }, 'active_boxer_data');
         }
     }
 
-    function deleteSavedGlb() {
+    function deleteSavedModel() {
         if (glbDB) {
             const tx = glbDB.transaction('models', 'readwrite');
-            tx.objectStore('models').delete('active_boxer');
+            tx.objectStore('models').delete('active_boxer_data');
         }
         if (modelRoot) { scene.remove(modelRoot); modelRoot = null; }
         document.getElementById('glb-status').style.display = 'block';
         document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
     }
 
-    // --- محرك التحريك المتجهي العالمي (World-Space Boxing Pose Engine) ---
+    // --- محرك Three.js + FBXLoader & GLTFLoader ---
     let scene, camera, renderer, modelRoot;
     let bones = {};
     let baseRot = {};
     let currentMove = null;
     let moveProgress = 0;
-    let facingFlip = localStorage.getItem('boxer_facing_flip') === '0' ? 0 : Math.PI;
+    let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
 
     function toggleModelFacing() {
         facingFlip = (facingFlip === 0) ? Math.PI : 0;
@@ -384,36 +394,51 @@
         return foundNames;
     }
 
-    function loadGLBModel(url) {
-        if (typeof THREE.GLTFLoader === 'undefined') {
-            document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل محرك 3D.';
-            return;
+    function setupLoadedObject(obj) {
+        if (modelRoot) scene.remove(modelRoot);
+        modelRoot = obj;
+
+        const box = new THREE.Box3().setFromObject(modelRoot);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        modelRoot.scale.setScalar(1.85 / maxDim);
+
+        const scaledBox = new THREE.Box3().setFromObject(modelRoot);
+        const center = scaledBox.getCenter(new THREE.Vector3());
+        modelRoot.position.x = -center.x;
+        modelRoot.position.z = -center.z;
+        modelRoot.position.y = -scaledBox.min.y;
+
+        scene.add(modelRoot);
+
+        const foundBones = mapCharacterBones(modelRoot);
+        document.getElementById('glb-status').style.display = 'none';
+        document.getElementById('detected-clips-list').textContent =
+            foundBones.length > 0
+                ? `✓ تم تحميل المجسم وربط الهيكل العظمي (${foundBones.length} عظمة) بنجاح!`
+                : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي.';
+    }
+
+    function load3DModel(url, ext) {
+        if (ext === 'fbx') {
+            if (typeof THREE.FBXLoader === 'undefined') {
+                document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل مكتبة FBX.';
+                return;
+            }
+            const fbxLoader = new THREE.FBXLoader();
+            fbxLoader.load(url, (fbxObj) => {
+                setupLoadedObject(fbxObj);
+            }, undefined, () => {
+                // إذا لم يوجد boxer.fbx في assets نجرب boxer.glb
+                if (url === 'boxer.fbx') load3DModel('boxer.glb', 'glb');
+            });
+        } else {
+            if (typeof THREE.GLTFLoader === 'undefined') return;
+            const gltfLoader = new THREE.GLTFLoader();
+            gltfLoader.load(url, (gltf) => {
+                setupLoadedObject(gltf.scene);
+            });
         }
-        const loader = new THREE.GLTFLoader();
-        loader.load(url, (gltf) => {
-            if (modelRoot) scene.remove(modelRoot);
-            modelRoot = gltf.scene;
-
-            const box = new THREE.Box3().setFromObject(modelRoot);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            modelRoot.scale.setScalar(1.85 / maxDim);
-
-            const scaledBox = new THREE.Box3().setFromObject(modelRoot);
-            const center = scaledBox.getCenter(new THREE.Vector3());
-            modelRoot.position.x = -center.x;
-            modelRoot.position.z = -center.z;
-            modelRoot.position.y = -scaledBox.min.y;
-
-            scene.add(modelRoot);
-
-            const foundBones = mapCharacterBones(modelRoot);
-            document.getElementById('glb-status').style.display = 'none';
-            document.getElementById('detected-clips-list').textContent =
-                foundBones.length > 0
-                    ? `✓ تم تشكيل وقفة الملاكمة وربط (${foundBones.length} عظمة) بنجاح!`
-                    : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي.';
-        });
     }
 
     function triggerProceduralMove(moveKey) {
@@ -431,7 +456,6 @@
         );
     }
 
-    // توجيه أي عظمة نحو اتجاه عالمي محدد (أمام الكاميرا +Z دائماً)
     function aimBoneWorld(bone, childBone, targetWorldDir, blend = 1.0) {
         if (!bone || !childBone || !bone.parent) return;
         bone.updateWorldMatrix(true, false);
@@ -473,7 +497,6 @@
             }
         }
 
-        // 1. وقفة الملاكمة للقدمين والجذع (Orthodox Stance)
         let rootX = 0, rootY = bounceY - 0.04, rootZ = swayZ;
         let rootRotY = facingFlip - 0.58;
 
@@ -483,15 +506,15 @@
         let ltX = -0.22, ltZ = 0.10, lsX = 0.34;
         let rtX = 0.24,  rtZ = -0.10, rsX = 0.36;
 
-        // 2. متجهات الذراعين في وضعية الحراسة العالية أمام الوجه (+Z نحو الكاميرا)
-        let lUpperDir = new THREE.Vector3(-0.15, -0.35, 0.92); // العضد الأيسر للأمام
-        let lForeDir  = new THREE.Vector3(0.18,  0.88,  0.44); // الساعد الأيسر مرفوع أمام الذقن
+        // متجهات الذراعين في وضعية الحراسة العالية أمام الوجه (+Z نحو الكاميرا)
+        let lUpperDir = new THREE.Vector3(-0.15, -0.35, 0.92);
+        let lForeDir  = new THREE.Vector3(0.18,  0.88,  0.44);
 
-        let rUpperDir = new THREE.Vector3(0.18, -0.42, 0.89);  // العضد الأيمن ملاصق للأضلاع
-        let rForeDir  = new THREE.Vector3(-0.20, 0.90, 0.39);  // الساعد الأيمن يحمي الخد الأيمن
+        let rUpperDir = new THREE.Vector3(0.18, -0.42, 0.89);
+        let rForeDir  = new THREE.Vector3(-0.20, 0.90, 0.39);
 
         switch (currentMove) {
-            case 'JAB': // 1 Jab: اندفاع الذراع اليسرى للأمام باستقامة كاملة نحو الكاميرا
+            case 'JAB':
                 spY -= 0.42 * wave;
                 hdY += 0.28 * wave;
                 lUpperDir.lerp(new THREE.Vector3(-0.04, 0.14, 0.99), wave);
@@ -499,7 +522,7 @@
                 rootZ += 0.08 * wave;
                 break;
 
-            case 'CROSS': // 2 Cross: تدوير الجذع واندفاع الذراع اليمنى للأمام نحو الكاميرا
+            case 'CROSS':
                 spY += 0.62 * wave;
                 hdY -= 0.42 * wave;
                 rUpperDir.lerp(new THREE.Vector3(0.02, 0.14, 0.99), wave);
@@ -507,26 +530,26 @@
                 rootZ += 0.10 * wave;
                 break;
 
-            case 'L_HOOK': // 3 Lead Hook: خطاف أفقي باليسرى على مستوى الذقن
+            case 'L_HOOK':
                 spY += 0.55 * wave;
                 lUpperDir.lerp(new THREE.Vector3(-0.65, 0.15, 0.74), wave);
                 lForeDir.lerp(new THREE.Vector3(0.75,  0.15, 0.64), wave);
                 break;
 
-            case 'R_HOOK': // 4 Rear Hook: خطاف أفقي باليمنى
+            case 'R_HOOK':
                 spY -= 0.55 * wave;
                 rUpperDir.lerp(new THREE.Vector3(0.65,  0.15, 0.74), wave);
                 rForeDir.lerp(new THREE.Vector3(-0.75, 0.15, 0.64), wave);
                 break;
 
-            case 'L_UPPER': // 5 Lead Uppercut: لكمة صاعدة
+            case 'L_UPPER':
                 rootY -= 0.04 * wave;
                 spX -= 0.15 * wave;
                 lUpperDir.lerp(new THREE.Vector3(-0.12, -0.15, 0.98), wave);
                 lForeDir.lerp(new THREE.Vector3(0.05,   0.92, 0.39), wave);
                 break;
 
-            case 'R_UPPER': // 6 Rear Uppercut: لكمة صاعدة قوية باليمنى
+            case 'R_UPPER':
                 rootY -= 0.04 * wave;
                 spX -= 0.15 * wave;
                 spY += 0.38 * wave;
@@ -593,7 +616,6 @@
         applyBoneOffset('rThigh', rtX, 0, rtZ);
         applyBoneOffset('rShin',  rsX, 0, 0);
 
-        // توجيه الذراعين والقبضتين للأمام في نفس اتجاه الوجه
         aimBoneWorld(bones.lArm, bones.lForeArm, lUpperDir, 1.0);
         const lHandDummy = bones.lForeArm && bones.lForeArm.children[0];
         if (lHandDummy) aimBoneWorld(bones.lForeArm, lHandDummy, lForeDir, 1.0);
