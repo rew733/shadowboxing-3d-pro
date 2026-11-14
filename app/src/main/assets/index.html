@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • 3D GLB</title>
+    <title>Boxing Coach Pro • Procedural 3D Rig</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
@@ -29,7 +29,7 @@
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        .stage-box { width: 100%; height: 280px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stage-box { width: 100%; height: 285px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         #canvas-3d { width: 100%; height: 100%; }
         
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
@@ -83,11 +83,11 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">3D SKELETAL RIG</span>
-            <span class="badge-action" id="live-move-badge">IDLE</span>
+            <span class="badge-stance">ORTHODOX LIVE BONES</span>
+            <span class="badge-action" id="live-move-badge">GUARD</span>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[3])">
-                اضغط هنا لاختيار مجسم (.glb) من مجلد التنزيلات في هاتفك
+                اضغط هنا لاختيار مجسم 3D (.glb) ليتم تحريك عظامه تلقائياً
             </div>
         </div>
 
@@ -196,9 +196,9 @@
     <!-- التبويب 4: مجسم GLB والإعدادات -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
-            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الملاكم ثلاثي الأبعاد (.glb) — يُحفظ تلقائياً في الهاتف:</span></div>
+            <div class="setting-header" style="margin-bottom: 6px;"><span>مجسم الشخصية ثلاثي الأبعاد (.glb) — يُحرك تلقائياً بدون حاجة لحركات مدمجة:</span></div>
             <label class="upload-label">
-                🧊 اختر ملف مجسم 3D (.glb) من مجلد التنزيلات
+                🧊 اختر ملف مجسم 3D (.glb) من الهاتف
                 <input type="file" accept=".glb,.gltf,*/*" style="display:none;" onchange="handleGlbUpload(this.files[0])">
             </label>
             <div class="clips-box" id="detected-clips-list">لم يتم تحميل مجسم .glb بعد...</div>
@@ -255,49 +255,40 @@
     }
 
     const MOVES = {
-        JAB:       { en: '1 Jab',        say: 'Jab',           keywords: ['punch', 'jab', 'left', 'attack'] },
-        CROSS:     { en: '2 Cross',      say: 'Cross',         keywords: ['punch', 'cross', 'right', 'attack'] },
-        L_HOOK:    { en: '3 Lead Hook',  say: 'Lead Hook',     keywords: ['punch', 'hook', 'wave'] },
-        R_HOOK:    { en: '4 Rear Hook',  say: 'Rear Hook',     keywords: ['punch', 'hook', 'yes'] },
-        L_UPPER:   { en: '5 Lead Upper', say: 'Lead Uppercut', keywords: ['punch', 'upper', 'jump'] },
-        R_UPPER:   { en: '6 Rear Upper', say: 'Rear Uppercut', keywords: ['punch', 'upper', 'jump'] },
-        SLIP_L:    { en: 'Slip Left',    say: 'Slip Left',     keywords: ['duck', 'slip', 'dodge', 'no'] },
-        SLIP_R:    { en: 'Slip Right',   say: 'Slip Right',    keywords: ['duck', 'slip', 'dodge', 'no'] },
-        ROLL:      { en: 'Roll',         say: 'Roll',          keywords: ['duck', 'roll', 'sitting', 'crouch'] },
-        PULL:      { en: 'Pull Back',    say: 'Pull Back',     keywords: ['duck', 'pull', 'no'] },
-        STEP_IN:   { en: 'Step In',      say: 'Step In',       keywords: ['walk', 'run', 'step'] },
-        STEP_BACK: { en: 'Step Back',    say: 'Step Back',     keywords: ['walk', 'back'] },
-        PIVOT_L:   { en: 'Pivot Left',   say: 'Pivot Left',    keywords: ['dance', 'turn', 'walk'] },
-        PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right',   keywords: ['dance', 'turn', 'walk'] }
+        JAB:       { en: '1 Jab',        say: 'Jab' },
+        CROSS:     { en: '2 Cross',      say: 'Cross' },
+        L_HOOK:    { en: '3 Lead Hook',  say: 'Lead Hook' },
+        R_HOOK:    { en: '4 Rear Hook',  say: 'Rear Hook' },
+        L_UPPER:   { en: '5 Lead Upper', say: 'Lead Uppercut' },
+        R_UPPER:   { en: '6 Rear Upper', say: 'Rear Uppercut' },
+        SLIP_L:    { en: 'Slip Left',    say: 'Slip Left' },
+        SLIP_R:    { en: 'Slip Right',   say: 'Slip Right' },
+        ROLL:      { en: 'Roll',         say: 'Roll' },
+        PULL:      { en: 'Pull Back',    say: 'Pull Back' },
+        STEP_IN:   { en: 'Step In',      say: 'Step In' },
+        STEP_BACK: { en: 'Step Back',    say: 'Step Back' },
+        PIVOT_L:   { en: 'Pivot Left',   say: 'Pivot Left' },
+        PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right' }
     };
 
-    // --- تخزين دائم لملف GLB في قاعدة بيانات الهاتف (IndexedDB) ---
+    // --- تخزين دائم لملف GLB في قاعدة بيانات الهاتف ---
     let glbDB = null;
     const dbReq = indexedDB.open('Boxer3DModelsDB', 1);
-    dbReq.onupgradeneeded = e => {
-        e.target.result.createObjectStore('models');
-    };
-    dbReq.onsuccess = e => {
-        glbDB = e.target.result;
-        restoreSavedGlb();
-    };
+    dbReq.onupgradeneeded = e => { e.target.result.createObjectStore('models'); };
+    dbReq.onsuccess = e => { glbDB = e.target.result; restoreSavedGlb(); };
 
     function restoreSavedGlb() {
         if (!glbDB) return;
         const tx = glbDB.transaction('models', 'readonly');
         const req = tx.objectStore('models').get('active_boxer');
         req.onsuccess = () => {
-            if (req.result) {
-                const url = URL.createObjectURL(req.result);
-                loadGLBModel(url);
-            }
+            if (req.result) loadGLBModel(URL.createObjectURL(req.result));
         };
     }
 
     function handleGlbUpload(file) {
         if (!file) return;
-        const url = URL.createObjectURL(file);
-        loadGLBModel(url);
+        loadGLBModel(URL.createObjectURL(file));
         if (glbDB) {
             const tx = glbDB.transaction('models', 'readwrite');
             tx.objectStore('models').put(file, 'active_boxer');
@@ -309,29 +300,24 @@
             const tx = glbDB.transaction('models', 'readwrite');
             tx.objectStore('models').delete('active_boxer');
         }
-        if (modelRoot) {
-            scene.remove(modelRoot);
-            modelRoot = null;
-            mixer = null;
-        }
+        if (modelRoot) { scene.remove(modelRoot); modelRoot = null; }
         document.getElementById('glb-status').style.display = 'block';
         document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
     }
 
-    // --- محرك Three.js + GLTFLoader ---
-    let scene, camera, renderer, mixer, modelRoot;
-    let clock = new THREE.Clock();
-    let clipActions = {};
-    let idleAction = null;
-    let currentPlayingAction = null;
+    // --- محرك التحريك الإجرائي المباشر لعظام المجسم (Procedural Skeletal Engine) ---
+    let scene, camera, renderer, modelRoot;
+    let bones = {}; // مرجع مباشر لعظام المجسم
+    let currentMove = null;
+    let moveProgress = 0;
 
     function init3DScene() {
         const container = document.getElementById('canvas-3d');
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(42, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0.25, 1.35, 2.85);
-        camera.lookAt(0, 0.95, 0);
+        camera.position.set(0.35, 1.32, 2.75);
+        camera.lookAt(0, 0.98, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(container.clientWidth, container.clientHeight);
@@ -357,9 +343,34 @@
         animate3D();
     }
 
+    // البحث الذكي عن عظام المجسم (يدعم Mixamo و ReadyPlayerMe و VRM و Blender)
+    function mapCharacterBones(root) {
+        bones = {};
+        const foundNames = [];
+        root.traverse(obj => {
+            if (obj.isBone) {
+                const n = obj.name.toLowerCase();
+                foundNames.push(obj.name);
+                if (n.includes('hips') || n.includes('pelvis')) bones.hips = obj;
+                else if (n.includes('spine1') || n.includes('chest') || (n.includes('spine') && !bones.spine)) bones.spine = obj;
+                else if (n.includes('neck')) bones.neck = obj;
+                else if (n.includes('head') && !n.includes('top') && !n.includes('end')) bones.head = obj;
+                else if (n.includes('leftarm') || n.includes('upperarm_l') || n.includes('arm_l') || (n.includes('left') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) bones.lArm = obj;
+                else if (n.includes('leftforearm') || n.includes('lowerarm_l') || (n.includes('left') && (n.includes('forearm') || n.includes('lowerarm')))) bones.lForeArm = obj;
+                else if (n.includes('rightarm') || n.includes('upperarm_r') || n.includes('arm_r') || (n.includes('right') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) bones.rArm = obj;
+                else if (n.includes('rightforearm') || n.includes('lowerarm_r') || (n.includes('right') && (n.includes('forearm') || n.includes('lowerarm')))) bones.rForeArm = obj;
+                else if (n.includes('leftupleg') || n.includes('thigh_l')) bones.lThigh = obj;
+                else if (n.includes('rightupleg') || n.includes('thigh_r')) bones.rThigh = obj;
+                else if (n.includes('leftleg') || n.includes('calf_l') || n.includes('shin_l')) bones.lShin = obj;
+                else if (n.includes('rightleg') || n.includes('calf_r') || n.includes('shin_r')) bones.rShin = obj;
+            }
+        });
+        return foundNames;
+    }
+
     function loadGLBModel(url) {
         if (typeof THREE.GLTFLoader === 'undefined') {
-            document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل مكتبة العرض 3D.';
+            document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل محرك 3D.';
             return;
         }
         const loader = new THREE.GLTFLoader();
@@ -370,108 +381,163 @@
             const box = new THREE.Box3().setFromObject(modelRoot);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            const scaleFactor = 1.85 / maxDim;
-            modelRoot.scale.setScalar(scaleFactor);
+            modelRoot.scale.setScalar(1.85 / maxDim);
 
             const scaledBox = new THREE.Box3().setFromObject(modelRoot);
             const center = scaledBox.getCenter(new THREE.Vector3());
             modelRoot.position.x = -center.x;
             modelRoot.position.z = -center.z;
             modelRoot.position.y = -scaledBox.min.y;
-            modelRoot.rotation.y = -0.2;
+            modelRoot.rotation.y = 0.25; // وقفة Orthodox موجهة للأمام
 
             scene.add(modelRoot);
 
-            mixer = new THREE.AnimationMixer(modelRoot);
-            clipActions = {};
-            idleAction = null;
-
-            const clips = gltf.animations || [];
-            const clipNames = [];
-
-            clips.forEach(clip => {
-                const nameLower = clip.name.toLowerCase();
-                clipNames.push(clip.name);
-                const action = mixer.clipAction(clip);
-                clipActions[nameLower] = action;
-
-                if (nameLower.includes('idle') || nameLower.includes('guard') || nameLower.includes('stance')) {
-                    idleAction = action;
-                }
-            });
-
-            if (!idleAction && clips.length > 0) {
-                idleAction = clipActions[clips[0].name.toLowerCase()];
-            }
-
-            if (idleAction) {
-                idleAction.play();
-                currentPlayingAction = idleAction;
-            }
-
+            const foundBones = mapCharacterBones(modelRoot);
             document.getElementById('glb-status').style.display = 'none';
             document.getElementById('detected-clips-list').textContent =
-                clips.length > 0
-                    ? `✓ تم حفظ وتشغيل المجسم (${clips.length} حركات): ${clipNames.join(' | ')}`
-                    : '✓ تم تحميل المجسم بنجاح (لا توجد حركات مدمجة)';
+                foundBones.length > 0
+                    ? `✓ تم ربط الهيكل العظمي بنجاح (${foundBones.length} عظمة) — جاهز للملاكمة!`
+                    : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي، سيتم تحريكه ككتلة.';
         });
     }
 
-    function triggerSkeletalMove(moveKey) {
-        const badge = document.getElementById('live-move-badge');
-        badge.textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'IDLE';
+    function triggerProceduralMove(moveKey) {
+        currentMove = moveKey;
+        moveProgress = 0;
+        document.getElementById('live-move-badge').textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
+    }
 
-        if (!mixer || Object.keys(clipActions).length === 0) return;
+    // تحديث زوايا العظام في كل إطار 60 مرة في الثانية لتشكيل وقفة الملاكمة والحركات الـ 14
+    function updateBonesPose() {
+        if (!modelRoot) return;
+        const t = Date.now();
+        const bounce = Math.sin(t * 0.009) * 0.035;
 
-        const keywords = MOVES[moveKey] ? MOVES[moveKey].keywords : [];
-        let matchedAction = null;
-
-        for (const kw of keywords) {
-            for (const clipName of Object.keys(clipActions)) {
-                if (clipName.includes(kw)) {
-                    matchedAction = clipActions[clipName];
-                    break;
-                }
-            }
-            if (matchedAction) break;
-        }
-
-        if (!matchedAction) {
-            const nonIdle = Object.keys(clipActions).filter(n => clipActions[n] !== idleAction);
-            if (nonIdle.length > 0) {
-                matchedAction = clipActions[nonIdle[Math.floor(Math.random() * nonIdle.length)]];
+        let wave = 0;
+        if (currentMove) {
+            moveProgress += 0.068;
+            if (moveProgress >= 1) {
+                currentMove = null;
+                document.getElementById('live-move-badge').textContent = 'GUARD';
+            } else {
+                wave = Math.sin(moveProgress * Math.PI);
             }
         }
 
-        if (matchedAction && matchedAction !== idleAction) {
-            matchedAction.reset();
-            matchedAction.setLoop(THREE.LoopOnce, 1);
-            matchedAction.clampWhenFinished = true;
-            matchedAction.timeScale = 1.3;
+        // 1. وضعية الحراسة الأساسية (Orthodox Boxing Guard)
+        let rootX = 0, rootY = 0, rootZ = 0, rootRotY = 0.32;
+        let spineRotX = 0.14, spineRotY = -0.22, spineRotZ = 0;
+        let headRotX = -0.08, headRotY = 0.20, headRotZ = 0;
 
-            if (currentPlayingAction && currentPlayingAction !== matchedAction) {
-                currentPlayingAction.crossFadeTo(matchedAction, 0.12, true);
-            }
-            matchedAction.play();
-            currentPlayingAction = matchedAction;
+        // الذراع اليسرى الأمامية (Lead Jab Arm) مرفوعة لحماية الذقن
+        let lArmX = -0.85, lArmY = 0.35, lArmZ = 1.05;
+        let lForeX = -1.65, lForeZ = 0.2;
 
-            const onFinish = (e) => {
-                if (e.action === matchedAction && idleAction) {
-                    mixer.removeEventListener('finished', onFinish);
-                    matchedAction.crossFadeTo(idleAction, 0.18, true);
-                    idleAction.reset().play();
-                    currentPlayingAction = idleAction;
-                    badge.textContent = 'IDLE';
-                }
-            };
-            mixer.addEventListener('finished', onFinish);
+        // الذراع اليمنى الخلفية (Rear Cross Arm) ملتصقة بالخد
+        let rArmX = -0.95, rArmY = -0.35, rArmZ = -1.1;
+        let rForeX = -1.85, rForeZ = -0.2;
+
+        // 2. تعديل زوايا العظام حسب الحركة المنطوقة
+        switch (currentMove) {
+            case 'JAB':
+                spineRotY = -0.45 * wave - 0.22;
+                lArmX = -0.85 - 0.65 * wave; // رفع الكتف للأمام
+                lArmZ = 1.05 - 0.85 * wave;
+                lForeX = -1.65 + 1.50 * wave; // فرد الكوع بالكامل
+                break;
+            case 'CROSS':
+                spineRotY = 0.55 * wave; // تدوير الجذع بقوة
+                spineRotX = 0.14 + 0.12 * wave;
+                rArmX = -0.95 - 0.60 * wave;
+                rArmZ = -1.1 + 0.90 * wave;
+                rForeX = -1.85 + 1.70 * wave; // فرد الذراع الخلفية بالكامل
+                break;
+            case 'L_HOOK':
+                spineRotY = 0.45 * wave;
+                lArmX = -1.25 * wave - 0.85 * (1 - wave);
+                lArmY = 0.35 + 0.85 * wave; // خطاف أفقي
+                lForeX = -1.45;
+                break;
+            case 'R_HOOK':
+                spineRotY = -0.55 * wave;
+                rArmX = -1.25 * wave - 0.95 * (1 - wave);
+                rArmY = -0.35 - 0.85 * wave;
+                rForeX = -1.45;
+                break;
+            case 'L_UPPER':
+                rootY = -0.06 * wave;
+                spineRotX = 0.25 * (1 - wave) - 0.15 * wave;
+                lArmX = -0.85 - 0.55 * wave;
+                lForeX = -1.65 + 0.45 * wave;
+                break;
+            case 'R_UPPER':
+                rootY = -0.06 * wave;
+                spineRotX = 0.25 * (1 - wave) - 0.15 * wave;
+                rArmX = -0.95 - 0.55 * wave;
+                rForeX = -1.85 + 0.55 * wave;
+                break;
+            case 'SLIP_L':
+                spineRotZ = 0.38 * wave;
+                spineRotX = 0.28 * wave;
+                headRotZ = 0.22 * wave;
+                rootY = -0.05 * wave;
+                break;
+            case 'SLIP_R':
+                spineRotZ = -0.38 * wave;
+                spineRotX = 0.28 * wave;
+                headRotZ = -0.22 * wave;
+                rootY = -0.05 * wave;
+                break;
+            case 'ROLL':
+                rootY = -0.22 * wave; // انخفاض الركبتين
+                spineRotX = 0.45 * wave;
+                spineRotZ = Math.sin(moveProgress * Math.PI * 2) * 0.35;
+                break;
+            case 'PULL':
+                spineRotX = -0.32 * wave;
+                rootZ = -0.15 * wave;
+                break;
+            case 'STEP_IN':
+                rootZ = 0.32 * wave;
+                rootY = Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.05;
+                break;
+            case 'STEP_BACK':
+                rootZ = -0.32 * wave;
+                rootY = Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.05;
+                break;
+            case 'PIVOT_L':
+                rootRotY = 0.32 + 0.65 * wave;
+                rootX = -0.18 * wave;
+                break;
+            case 'PIVOT_R':
+                rootRotY = 0.32 - 0.65 * wave;
+                rootX = 0.18 * wave;
+                break;
         }
+
+        // تطبيق الزوايا على المجسم وعظامه
+        modelRoot.position.x = rootX;
+        modelRoot.position.z = rootZ;
+        modelRoot.rotation.y = rootRotY;
+
+        if (bones.hips) {
+            bones.hips.position.y += (bounce * 0.15);
+        }
+        if (bones.spine) {
+            bones.spine.rotation.set(spineRotX, spineRotY, spineRotZ);
+        }
+        if (bones.head) {
+            bones.head.rotation.set(headRotX, headRotY, headRotZ);
+        }
+        if (bones.lArm) bones.lArm.rotation.set(lArmX, lArmY, lArmZ);
+        if (bones.lForeArm) bones.lForeArm.rotation.set(lForeX, 0, lForeZ);
+        if (bones.rArm) bones.rArm.rotation.set(rArmX, rArmY, rArmZ);
+        if (bones.rForeArm) bones.rForeArm.rotation.set(rForeX, 0, rForeZ);
     }
 
     function animate3D() {
         requestAnimationFrame(animate3D);
-        const delta = clock.getDelta();
-        if (mixer) mixer.update(delta);
+        updateBonesPose();
         if (renderer && scene && camera) renderer.render(scene, camera);
     }
 
@@ -497,7 +563,7 @@
             currentBuilder.push(moveKey);
             renderBuilder();
         }
-        triggerSkeletalMove(moveKey);
+        triggerProceduralMove(moveKey);
     }
 
     function clearBuilder() { currentBuilder = []; renderBuilder(); }
@@ -754,7 +820,7 @@
         const stepDelay = Math.max(480, Math.round(640 / voiceRate));
         seqKeys.forEach((moveKey, idx) => {
             setTimeout(() => {
-                if (isRunning && !isResting) triggerSkeletalMove(moveKey);
+                if (isRunning && !isResting) triggerProceduralMove(moveKey);
             }, idx * stepDelay);
         });
     }
