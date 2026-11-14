@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • FBX & GLB 3D Engine</title>
+    <title>Boxing Coach Pro • Mixamo 3D Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -31,7 +31,7 @@
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        .stage-box { width: 100%; height: 295px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stage-box { width: 100%; height: 300px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         #canvas-3d { width: 100%; height: 100%; }
         
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
@@ -86,8 +86,8 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">ORTHODOX 3D RIG</span>
-            <span class="badge-action" id="live-move-badge">GUARD</span>
+            <span class="badge-stance">MIXAMO LIVE STANCE</span>
+            <span class="badge-action" id="live-move-badge">IDLE</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[3])">
@@ -278,7 +278,7 @@
         PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right' }
     };
 
-    // --- تخزين دائم لملف FBX/GLB في قاعدة بيانات الهاتف ---
+    // --- تخزين دائم للمجسم في الهاتف ---
     let glbDB = null;
     const dbReq = indexedDB.open('Boxer3DModelsDB', 2);
     dbReq.onupgradeneeded = e => { e.target.result.createObjectStore('models'); };
@@ -315,15 +315,15 @@
             const tx = glbDB.transaction('models', 'readwrite');
             tx.objectStore('models').delete('active_boxer_data');
         }
-        if (modelRoot) { scene.remove(modelRoot); modelRoot = null; }
+        if (modelRoot) { scene.remove(modelRoot); modelRoot = null; mixer = null; }
         document.getElementById('glb-status').style.display = 'block';
         document.getElementById('detected-clips-list').textContent = 'تم حذف المجسم المحفوظ.';
     }
 
-    // --- محرك Three.js + FBXLoader & GLTFLoader ---
-    let scene, camera, renderer, modelRoot;
+    // --- محرك تشغيل وقفة Mixamo الحقيقية + إضافة اللكمات فوقها ---
+    let scene, camera, renderer, modelRoot, mixer;
+    let clock = new THREE.Clock();
     let bones = {};
-    let baseRot = {};
     let currentMove = null;
     let moveProgress = 0;
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
@@ -338,7 +338,7 @@
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-        camera.position.set(0.28, 1.28, 2.85);
+        camera.position.set(0.18, 1.25, 2.95);
         camera.lookAt(0, 0.92, 0);
 
         renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -347,7 +347,7 @@
         renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 0.85));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.90));
         const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
         keyLight.position.set(2.5, 4.5, 3.5);
         scene.add(keyLight);
@@ -365,36 +365,26 @@
         animate3D();
     }
 
-    function saveBone(key, obj) {
-        bones[key] = obj;
-        baseRot[key] = { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z };
-    }
-
     function mapCharacterBones(root) {
         bones = {};
-        baseRot = {};
         const foundNames = [];
         root.traverse(obj => {
             if (obj.isBone) {
                 const n = obj.name.toLowerCase();
                 foundNames.push(obj.name);
-                if (n.includes('hips') && !bones.hips) saveBone('hips', obj);
-                else if ((n.includes('spine1') || n.includes('chest') || n.includes('spine')) && !bones.spine) saveBone('spine', obj);
-                else if (n.includes('head') && !n.includes('top') && !n.includes('end') && !bones.head) saveBone('head', obj);
-                else if ((n.includes('leftarm') || n.includes('upperarm_l') || (n.includes('left') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) && !bones.lArm) saveBone('lArm', obj);
-                else if ((n.includes('leftforearm') || n.includes('lowerarm_l') || (n.includes('left') && (n.includes('forearm') || n.includes('lowerarm')))) && !bones.lForeArm) saveBone('lForeArm', obj);
-                else if ((n.includes('rightarm') || n.includes('upperarm_r') || (n.includes('right') && n.includes('arm') && !n.includes('fore') && !n.includes('lower'))) && !bones.rArm) saveBone('rArm', obj);
-                else if ((n.includes('rightforearm') || n.includes('lowerarm_r') || (n.includes('right') && (n.includes('forearm') || n.includes('lowerarm')))) && !bones.rForeArm) saveBone('rForeArm', obj);
-                else if ((n.includes('leftupleg') || n.includes('thigh_l')) && !bones.lThigh) saveBone('lThigh', obj);
-                else if ((n.includes('rightupleg') || n.includes('thigh_r')) && !bones.rThigh) saveBone('rThigh', obj);
-                else if ((n.includes('leftleg') || n.includes('calf_l') || n.includes('shin_l')) && !bones.lShin) saveBone('lShin', obj);
-                else if ((n.includes('rightleg') || n.includes('calf_r') || n.includes('shin_r')) && !bones.rShin) saveBone('rShin', obj);
+                if (n.includes('hips') && !bones.hips) bones.hips = obj;
+                else if ((n.includes('spine1') || n.includes('chest') || n.includes('spine')) && !bones.spine) bones.spine = obj;
+                else if (n.includes('head') && !n.includes('top') && !n.includes('end') && !bones.head) bones.head = obj;
+                else if ((n.includes('leftarm') || n.includes('upperarm_l')) && !bones.lArm) bones.lArm = obj;
+                else if ((n.includes('leftforearm') || n.includes('lowerarm_l')) && !bones.lForeArm) bones.lForeArm = obj;
+                else if ((n.includes('rightarm') || n.includes('upperarm_r')) && !bones.rArm) bones.rArm = obj;
+                else if ((n.includes('rightforearm') || n.includes('lowerarm_r')) && !bones.rForeArm) bones.rForeArm = obj;
             }
         });
         return foundNames;
     }
 
-    function setupLoadedObject(obj) {
+    function setupLoadedObject(obj, animations) {
         if (modelRoot) scene.remove(modelRoot);
         modelRoot = obj;
 
@@ -411,32 +401,34 @@
 
         scene.add(modelRoot);
 
+        // تشغيل وقفة Mixamo الحقيقية المدمجة في الملف
+        mixer = new THREE.AnimationMixer(modelRoot);
+        const clips = animations || obj.animations || [];
+        if (clips.length > 0) {
+            const idleAction = mixer.clipAction(clips[0]);
+            idleAction.play();
+        }
+
         const foundBones = mapCharacterBones(modelRoot);
         document.getElementById('glb-status').style.display = 'none';
         document.getElementById('detected-clips-list').textContent =
-            foundBones.length > 0
-                ? `✓ تم تحميل المجسم وربط الهيكل العظمي (${foundBones.length} عظمة) بنجاح!`
-                : '⚠️ هذا المجسم لا يحتوي على هيكل عظمي داخلي.';
+            `✓ تم تشغيل وقفة الملاكم الحقيقية من Mixamo (${foundBones.length} عظمة، ${clips.length} حركة أساسية)!`;
     }
 
     function load3DModel(url, ext) {
         if (ext === 'fbx') {
-            if (typeof THREE.FBXLoader === 'undefined') {
-                document.getElementById('detected-clips-list').textContent = '⚠️ يرجى الاتصال بالإنترنت مرة واحدة لتحميل مكتبة FBX.';
-                return;
-            }
+            if (typeof THREE.FBXLoader === 'undefined') return;
             const fbxLoader = new THREE.FBXLoader();
             fbxLoader.load(url, (fbxObj) => {
-                setupLoadedObject(fbxObj);
+                setupLoadedObject(fbxObj, fbxObj.animations);
             }, undefined, () => {
-                // إذا لم يوجد boxer.fbx في assets نجرب boxer.glb
                 if (url === 'boxer.fbx') load3DModel('boxer.glb', 'glb');
             });
         } else {
             if (typeof THREE.GLTFLoader === 'undefined') return;
             const gltfLoader = new THREE.GLTFLoader();
             gltfLoader.load(url, (gltf) => {
-                setupLoadedObject(gltf.scene);
+                setupLoadedObject(gltf.scene, gltf.animations);
             });
         }
     }
@@ -444,190 +436,151 @@
     function triggerProceduralMove(moveKey) {
         currentMove = moveKey;
         moveProgress = 0;
-        document.getElementById('live-move-badge').textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'GUARD';
+        document.getElementById('live-move-badge').textContent = MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : 'IDLE';
     }
 
-    function applyBoneOffset(key, dx, dy, dz) {
-        if (!bones[key] || !baseRot[key]) return;
-        bones[key].rotation.set(
-            baseRot[key].x + dx,
-            baseRot[key].y + dy,
-            baseRot[key].z + dz
-        );
-    }
-
-    function aimBoneWorld(bone, childBone, targetWorldDir, blend = 1.0) {
-        if (!bone || !childBone || !bone.parent) return;
-        bone.updateWorldMatrix(true, false);
-        childBone.updateWorldMatrix(true, false);
-
-        const pStart = new THREE.Vector3().setFromMatrixPosition(bone.matrixWorld);
-        const pEnd = new THREE.Vector3().setFromMatrixPosition(childBone.matrixWorld);
-        const currentDir = pEnd.sub(pStart).normalize();
-        const desiredDir = targetWorldDir.clone().normalize();
-
-        if (currentDir.lengthSq() < 0.0001 || desiredDir.lengthSq() < 0.0001) return;
-
-        const deltaQuatWorld = new THREE.Quaternion().setFromUnitVectors(currentDir, desiredDir);
-        const currentWorldQuat = new THREE.Quaternion();
-        bone.getWorldQuaternion(currentWorldQuat);
-
-        const targetWorldQuat = deltaQuatWorld.multiply(currentWorldQuat);
-        const parentWorldQuat = new THREE.Quaternion();
-        bone.parent.getWorldQuaternion(parentWorldQuat);
-
-        const targetLocalQuat = parentWorldQuat.invert().multiply(targetWorldQuat);
-        bone.quaternion.slerp(targetLocalQuat, blend);
-    }
-
-    function updateBonesPose() {
+    // تطبيق حركة اللكمة والمراوغة كإضافة نظيفة فوق وقفة Mixamo بعد تحديث الـ Mixer
+    function applyAdditiveStrikeLayer() {
         if (!modelRoot) return;
-        const t = Date.now();
-        const bounceY = Math.abs(Math.sin(t * 0.0075)) * 0.025;
-        const swayZ = Math.sin(t * 0.0038) * 0.02;
 
         let wave = 0;
         if (currentMove) {
-            moveProgress += 0.065;
+            moveProgress += 0.068;
             if (moveProgress >= 1) {
                 currentMove = null;
-                document.getElementById('live-move-badge').textContent = 'GUARD';
+                document.getElementById('live-move-badge').textContent = 'IDLE';
             } else {
                 wave = Math.sin(moveProgress * Math.PI);
             }
         }
 
-        let rootX = 0, rootY = bounceY - 0.04, rootZ = swayZ;
-        let rootRotY = facingFlip - 0.58;
+        // الحفاظ على وقفة Mixamo الطبيعية (تواجه الكاميرا بزاوية Mixamo الأصلية)
+        let rootX = 0, rootY = 0, rootZ = 0;
+        let rootRotY = facingFlip;
 
-        let spX = 0.14, spY = 0.18, spZ = 0;
-        let hdX = -0.05, hdY = 0.36, hdZ = 0;
+        if (wave > 0) {
+            switch (currentMove) {
+                case 'JAB': // 1 Jab: اندفاع الجذع والكتف الأيسر للأمام مع فرد المرفق الأيسر
+                    if (bones.spine) bones.spine.rotation.y -= 0.42 * wave;
+                    if (bones.lArm) {
+                        bones.lArm.rotation.x += 0.85 * wave;
+                        bones.lArm.rotation.z -= 0.55 * wave;
+                    }
+                    if (bones.lForeArm) {
+                        bones.lForeArm.rotation.y -= 1.35 * wave; // فتح زاوية الكوع للخارج نحو الخصم
+                        bones.lForeArm.rotation.z -= 0.85 * wave;
+                    }
+                    rootZ += 0.10 * wave;
+                    break;
 
-        let ltX = -0.22, ltZ = 0.10, lsX = 0.34;
-        let rtX = 0.24,  rtZ = -0.10, rsX = 0.36;
+                case 'CROSS': // 2 Cross: تدوير الخصر والكتف الأيمن بقوة مع فرد المرفق الأيمن
+                    if (bones.spine) bones.spine.rotation.y += 0.65 * wave;
+                    if (bones.rArm) {
+                        bones.rArm.rotation.x += 0.90 * wave;
+                        bones.rArm.rotation.z += 0.55 * wave;
+                    }
+                    if (bones.rForeArm) {
+                        bones.rForeArm.rotation.y += 1.45 * wave;
+                        bones.rForeArm.rotation.z += 0.95 * wave;
+                    }
+                    rootZ += 0.12 * wave;
+                    break;
 
-        // متجهات الذراعين في وضعية الحراسة العالية أمام الوجه (+Z نحو الكاميرا)
-        let lUpperDir = new THREE.Vector3(-0.15, -0.35, 0.92);
-        let lForeDir  = new THREE.Vector3(0.18,  0.88,  0.44);
+                case 'L_HOOK': // 3 Lead Hook: خطاف أفقي باليسرى
+                    if (bones.spine) bones.spine.rotation.y += 0.55 * wave;
+                    if (bones.lArm) {
+                        bones.lArm.rotation.x += 0.75 * wave;
+                        bones.lArm.rotation.y -= 0.65 * wave;
+                    }
+                    break;
 
-        let rUpperDir = new THREE.Vector3(0.18, -0.42, 0.89);
-        let rForeDir  = new THREE.Vector3(-0.20, 0.90, 0.39);
+                case 'R_HOOK': // 4 Rear Hook: خطاف أفقي باليمنى
+                    if (bones.spine) bones.spine.rotation.y -= 0.55 * wave;
+                    if (bones.rArm) {
+                        bones.rArm.rotation.x += 0.75 * wave;
+                        bones.rArm.rotation.y += 0.65 * wave;
+                    }
+                    break;
 
-        switch (currentMove) {
-            case 'JAB':
-                spY -= 0.42 * wave;
-                hdY += 0.28 * wave;
-                lUpperDir.lerp(new THREE.Vector3(-0.04, 0.14, 0.99), wave);
-                lForeDir.lerp(new THREE.Vector3(-0.02, 0.16, 0.98), wave);
-                rootZ += 0.08 * wave;
-                break;
+                case 'L_UPPER': // 5 Lead Uppercut
+                    rootY -= 0.05 * wave;
+                    if (bones.spine) bones.spine.rotation.x -= 0.18 * wave;
+                    if (bones.lArm) bones.lArm.rotation.x += 0.85 * wave;
+                    break;
 
-            case 'CROSS':
-                spY += 0.62 * wave;
-                hdY -= 0.42 * wave;
-                rUpperDir.lerp(new THREE.Vector3(0.02, 0.14, 0.99), wave);
-                rForeDir.lerp(new THREE.Vector3(0.0,  0.16, 0.98), wave);
-                rootZ += 0.10 * wave;
-                break;
+                case 'R_UPPER': // 6 Rear Uppercut
+                    rootY -= 0.05 * wave;
+                    if (bones.spine) {
+                        bones.spine.rotation.x -= 0.18 * wave;
+                        bones.spine.rotation.y += 0.40 * wave;
+                    }
+                    if (bones.rArm) bones.rArm.rotation.x += 0.85 * wave;
+                    break;
 
-            case 'L_HOOK':
-                spY += 0.55 * wave;
-                lUpperDir.lerp(new THREE.Vector3(-0.65, 0.15, 0.74), wave);
-                lForeDir.lerp(new THREE.Vector3(0.75,  0.15, 0.64), wave);
-                break;
+                case 'SLIP_L':
+                    if (bones.spine) {
+                        bones.spine.rotation.z += 0.38 * wave;
+                        bones.spine.rotation.x += 0.20 * wave;
+                    }
+                    rootY -= 0.05 * wave;
+                    break;
 
-            case 'R_HOOK':
-                spY -= 0.55 * wave;
-                rUpperDir.lerp(new THREE.Vector3(0.65,  0.15, 0.74), wave);
-                rForeDir.lerp(new THREE.Vector3(-0.75, 0.15, 0.64), wave);
-                break;
+                case 'SLIP_R':
+                    if (bones.spine) {
+                        bones.spine.rotation.z -= 0.38 * wave;
+                        bones.spine.rotation.x += 0.20 * wave;
+                    }
+                    rootY -= 0.05 * wave;
+                    break;
 
-            case 'L_UPPER':
-                rootY -= 0.04 * wave;
-                spX -= 0.15 * wave;
-                lUpperDir.lerp(new THREE.Vector3(-0.12, -0.15, 0.98), wave);
-                lForeDir.lerp(new THREE.Vector3(0.05,   0.92, 0.39), wave);
-                break;
+                case 'ROLL':
+                    rootY -= 0.18 * wave;
+                    if (bones.spine) {
+                        bones.spine.rotation.x += 0.35 * wave;
+                        bones.spine.rotation.z += Math.sin(moveProgress * Math.PI * 2) * 0.32;
+                    }
+                    break;
 
-            case 'R_UPPER':
-                rootY -= 0.04 * wave;
-                spX -= 0.15 * wave;
-                spY += 0.38 * wave;
-                rUpperDir.lerp(new THREE.Vector3(0.12, -0.15, 0.98), wave);
-                rForeDir.lerp(new THREE.Vector3(-0.05, 0.92, 0.39), wave);
-                break;
+                case 'PULL':
+                    if (bones.spine) bones.spine.rotation.x -= 0.32 * wave;
+                    rootZ -= 0.14 * wave;
+                    break;
 
-            case 'SLIP_L':
-                spZ += 0.36 * wave;
-                spX += 0.18 * wave;
-                hdZ += 0.16 * wave;
-                rootY -= 0.05 * wave;
-                break;
+                case 'STEP_IN':
+                    rootZ += 0.28 * wave;
+                    rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.03;
+                    break;
 
-            case 'SLIP_R':
-                spZ -= 0.36 * wave;
-                spX += 0.18 * wave;
-                hdZ -= 0.16 * wave;
-                rootY -= 0.05 * wave;
-                break;
+                case 'STEP_BACK':
+                    rootZ -= 0.28 * wave;
+                    rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.03;
+                    break;
 
-            case 'ROLL':
-                rootY -= 0.16 * wave;
-                ltX -= 0.25 * wave; lsX += 0.48 * wave;
-                rtX -= 0.25 * wave; rsX += 0.48 * wave;
-                spX += 0.32 * wave;
-                spZ = Math.sin(moveProgress * Math.PI * 2) * 0.28;
-                break;
+                case 'PIVOT_L':
+                    rootRotY += 0.65 * wave;
+                    rootX -= 0.14 * wave;
+                    break;
 
-            case 'PULL':
-                spX -= 0.30 * wave;
-                rootZ -= 0.12 * wave;
-                break;
-
-            case 'STEP_IN':
-                rootZ += 0.26 * wave;
-                rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.03;
-                break;
-
-            case 'STEP_BACK':
-                rootZ -= 0.26 * wave;
-                rootY += Math.abs(Math.sin(moveProgress * Math.PI * 2)) * 0.03;
-                break;
-
-            case 'PIVOT_L':
-                rootRotY += 0.62 * wave;
-                rootX -= 0.14 * wave;
-                break;
-
-            case 'PIVOT_R':
-                rootRotY -= 0.62 * wave;
-                rootX += 0.14 * wave;
-                break;
+                case 'PIVOT_R':
+                    rootRotY -= 0.65 * wave;
+                    rootX += 0.14 * wave;
+                    break;
+            }
         }
 
-        modelRoot.position.set(rootX, rootY, rootZ);
+        modelRoot.position.x = rootX;
+        modelRoot.position.y = rootY;
+        modelRoot.position.z = rootZ;
         modelRoot.rotation.y = rootRotY;
-
-        applyBoneOffset('spine', spX, spY, spZ);
-        applyBoneOffset('head', hdX, hdY, hdZ);
-
-        applyBoneOffset('lThigh', ltX, 0, ltZ);
-        applyBoneOffset('lShin',  lsX, 0, 0);
-        applyBoneOffset('rThigh', rtX, 0, rtZ);
-        applyBoneOffset('rShin',  rsX, 0, 0);
-
-        aimBoneWorld(bones.lArm, bones.lForeArm, lUpperDir, 1.0);
-        const lHandDummy = bones.lForeArm && bones.lForeArm.children[0];
-        if (lHandDummy) aimBoneWorld(bones.lForeArm, lHandDummy, lForeDir, 1.0);
-
-        aimBoneWorld(bones.rArm, bones.rForeArm, rUpperDir, 1.0);
-        const rHandDummy = bones.rForeArm && bones.rForeArm.children[0];
-        if (rHandDummy) aimBoneWorld(bones.rForeArm, rHandDummy, rForeDir, 1.0);
     }
 
     function animate3D() {
         requestAnimationFrame(animate3D);
-        updateBonesPose();
+        const delta = clock.getDelta();
+        // 1. تحديث وقفة وحركة Mixamo الأساسية أولاً
+        if (mixer) mixer.update(delta);
+        // 2. إضافة حركة اللكمة أو المراوغة فوق وقفة Mixamo
+        applyAdditiveStrikeLayer();
         if (renderer && scene && camera) renderer.render(scene, camera);
     }
 
