@@ -40,6 +40,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
+        webView.settings.mediaPlaybackRequiresUserGesture = false
         webView.webViewClient = WebViewClient()
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -52,9 +53,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                 fileUploadCallback = filePathCallback
                 val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
                     addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "image/*"
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("video/*", "image/*"))
                 }
-                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر صورة الملاكم"))
+                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر فيديو أو صورة الحركة"))
                 return true
             }
         }
