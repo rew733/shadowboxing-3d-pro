@@ -41,6 +41,10 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = true
         webView.settings.allowContentAccess = true
+        @Suppress("DEPRECATION")
+        webView.settings.allowFileAccessFromFileURLs = true
+        @Suppress("DEPRECATION")
+        webView.settings.allowUniversalAccessFromFileURLs = true
         webView.webViewClient = WebViewClient()
 
         webView.webChromeClient = object : WebChromeClient() {
@@ -55,7 +59,7 @@ class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     addCategory(Intent.CATEGORY_OPENABLE)
                     type = "*/*"
                 }
-                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر ملف المجسم 3D (.glb)"))
+                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر ملف المجسم 3D (.fbx / .glb)"))
                 return true
             }
         }
