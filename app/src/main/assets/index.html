@@ -208,19 +208,19 @@
         <div class="panel">
             <div class="setting-item">
                 <div class="setting-header">
-                    <span>سرعة نطق المدرب:</span>
-                    <span id="voice-rate-val" style="color: var(--accent);">0.90x (متوازن)</span>
+                    <span>سرعة نطق المدرب وحركة اللكمة معاً:</span>
+                    <span id="voice-rate-val" style="color: var(--accent);">0.75x (هادئ وواضح)</span>
                 </div>
-                <input type="range" id="voice-rate" min="0.55" max="1.45" step="0.05" value="0.90" oninput="changeVoiceRate(this.value)">
+                <input type="range" id="voice-rate" min="0.25" max="1.40" step="0.05" value="0.75" oninput="changeVoiceRate(this.value)">
                 <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت</button>
             </div>
 
             <div class="setting-item" style="margin-top: 8px;">
                 <div class="setting-header">
                     <span>الفاصل بين الكومبوهات:</span>
-                    <span id="interval-val" style="color: var(--accent);">4.5 ثانية</span>
+                    <span id="interval-val" style="color: var(--accent);">5.0 ثانية</span>
                 </div>
-                <input type="range" id="combo-interval" min="2.5" max="7.0" step="0.2" value="4.5" oninput="changeInterval(this.value)">
+                <input type="range" id="combo-interval" min="2.5" max="9.0" step="0.3" value="5.0" oninput="changeInterval(this.value)">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -276,6 +276,7 @@
     let actions = {};
     let activeAction = null;
     let moveQueue = [];
+    let isComboBusy = false;
     let loadedClipsCount = 0;
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
 
@@ -319,7 +320,6 @@
     }
 
     function sanitizeClip(clip, uniqueName) {
-        // 1. تسمية المقطع باسم فريد لمنع تداخل مقاطع Mixamo ذات الاسم الموحد (mixamo.com)
         clip.name = uniqueName;
         clip.tracks.forEach(track => {
             if (track.name.endsWith('.position') && track.name.toLowerCase().includes('hips')) {
@@ -354,12 +354,12 @@
             scene.add(modelRoot);
 
             mixer = new THREE.AnimationMixer(modelRoot);
-            // عند انتهاء أي حركة، نفذ الحركة التالية في الطابور أو عد للوقفة
             mixer.addEventListener('finished', () => {
                 if (moveQueue.length > 0) {
                     const nextKey = moveQueue.shift();
-                    executeSingleAction(nextKey);
+                    executeSingleAction(nextKey, true);
                 } else {
+                    isComboBusy = false;
                     returnToIdle();
                 }
             });
@@ -385,7 +385,6 @@
 
         keys.forEach(key => {
             const fileName = MOVES[key].file;
-            // تحميل مستقل لكل مفتاح حركة مع تسمية فريدة CLIP_KEY لمنع الكاش المشترك
             loader.load(encodeURI(fileName), (animFbx) => {
                 if (animFbx.animations && animFbx.animations.length > 0) {
                     const rawClip = animFbx.animations[0].clone();
@@ -407,13 +406,14 @@
         if (!idleAct) return;
         document.getElementById('live-move-badge').textContent = 'IDLE';
         if (activeAction && activeAction !== idleAct) {
-            idleAct.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.14).play();
-            activeAction.fadeOut(0.14);
+            idleAct.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.16).play();
+            activeAction.fadeOut(0.16);
             activeAction = idleAct;
         }
     }
 
-    function executeSingleAction(moveKey) {
+    // تنفيذ حركة واحدة مع نطق اسمها في نفس اللحظة وبنفس سرعة النطق
+    function executeSingleAction(moveKey, withSpeech = false) {
         if (!mixer || Object.keys(actions).length === 0) return;
 
         const targetKey = actions[moveKey] ? moveKey : 'IDLE';
@@ -427,28 +427,33 @@
 
         document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
 
-        // ضبط سرعة اللكمة لتتناسب مع طول المقطع وسرعة الصوت
-        const clipDur = nextAction.getClip().duration || 1.2;
-        const targetDur = Math.max(0.55, 0.72 / voiceRate);
-        const dynamicSpeed = Math.min(2.6, Math.max(1.25, clipDur / targetDur));
+        if (withSpeech) {
+            speakText(MOVES[moveKey].say);
+        }
+
+        // ربط سرعة حركة المجسم مباشرة بمعامل سرعة النطق (voiceRate)
+        const clipDur = nextAction.getClip().duration || 1.25;
+        const basePunchTime = 0.85; // المدة المرجعية للكمة عند السرعة 1.0x
+        const desiredDuration = basePunchTime / voiceRate;
+        const syncedSpeed = Math.min(2.4, Math.max(0.35, clipDur / desiredDuration));
 
         nextAction.reset();
-        nextAction.setEffectiveTimeScale(dynamicSpeed);
+        nextAction.setEffectiveTimeScale(syncedSpeed);
         nextAction.setEffectiveWeight(1);
-        nextAction.fadeIn(0.07);
+        nextAction.fadeIn(0.08);
         nextAction.play();
 
         if (activeAction && activeAction !== nextAction) {
-            activeAction.fadeOut(0.07);
+            activeAction.fadeOut(0.08);
         }
         activeAction = nextAction;
     }
 
-    // تشغيل تسلسل الكومبو بالترتيب الدقيق
     function playComboSequence(seqKeys) {
         if (!seqKeys || seqKeys.length === 0) return;
+        isComboBusy = true;
         moveQueue = seqKeys.slice(1);
-        executeSingleAction(seqKeys[0]);
+        executeSingleAction(seqKeys[0], true);
     }
 
     function animate3D() {
@@ -481,7 +486,8 @@
             renderBuilder();
         }
         moveQueue = [];
-        executeSingleAction(moveKey);
+        isComboBusy = false;
+        executeSingleAction(moveKey, true);
     }
 
     function clearBuilder() { currentBuilder = []; renderBuilder(); }
@@ -562,8 +568,9 @@
         document.getElementById('drill-counter-display').textContent = `0 / ${targetTxt}`;
     }
 
-    let voiceRate = 0.90;
-    let comboIntervalMs = 4500;
+    // --- التحكم الموسع في سرعة النطق والمزامنة ---
+    let voiceRate = 0.75;
+    let comboIntervalMs = 5000;
     let totalRounds = 3;
     let roundDuration = 180;
     let currentRound = 1;
@@ -575,12 +582,16 @@
 
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
-        let desc = voiceRate < 0.8 ? '(بطيء)' : (voiceRate > 1.1 ? '(سريع)' : '(متوازن)');
+        let desc = voiceRate <= 0.45 ? '(بطيء جداً)' :
+                   (voiceRate <= 0.75 ? '(هادئ وواضح)' :
+                   (voiceRate <= 1.05 ? '(متوازن)' : '(سريع)'));
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x ${desc}`;
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
 
-    function testVoice() { speakText("Jab, Cross, Lead Hook, Slip Left"); }
+    function testVoice() {
+        playComboSequence(['JAB', 'CROSS', 'L_HOOK', 'SLIP_L']);
+    }
 
     function changeInterval(val) {
         comboIntervalMs = parseFloat(val) * 1000;
@@ -630,16 +641,19 @@
 
     function startSession() {
         isRunning = true;
+        isComboBusy = false;
         const btn = document.getElementById('start-btn');
         btn.textContent = 'إيقاف الجلسة';
         btn.classList.add('danger');
         speakText(`Round ${currentRound}. Fight!`);
         timerId = setInterval(tickTimer, 1000);
+        setTimeout(() => { if (isRunning) executeNextCombo(); }, 1200);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
     }
 
     function stopSession() {
         isRunning = false;
+        isComboBusy = false;
         moveQueue = [];
         clearInterval(timerId);
         clearInterval(comboId);
@@ -668,6 +682,7 @@
             if (!isResting) {
                 if (currentRound >= totalRounds) { stopSession(); speakText("Workout complete!"); return; }
                 isResting = true;
+                isComboBusy = false;
                 moveQueue = [];
                 timeLeft = 60;
                 document.getElementById('combo-text').textContent = 'REST';
@@ -705,7 +720,9 @@
     }
 
     function executeNextCombo() {
-        if (!isRunning || isResting) return;
+        // عدم مقاطعة الكومبو الحالي إذا كانت السرعة بطيئة ولم ينتهِ بعد
+        if (!isRunning || isResting || isComboBusy) return;
+
         const isDrill = document.getElementById('drill-enabled').value === 'on';
         let seqKeys = [];
 
@@ -720,7 +737,6 @@
             if (drillTargetReps !== 999 && drillCurrentReps >= drillTargetReps) {
                 document.getElementById('drill-enabled').value = 'off';
                 updateModeBadge();
-                speakText("Drill complete! Switching to free flow.");
                 resetDrillCounter();
             }
         } else {
@@ -736,9 +752,6 @@
         }
 
         document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
-        speakText(seqKeys.map(k => MOVES[k].say).join(', '));
-
-        // تنفيذ تسلسل الحركات في الطابور بالتزامن الدقيق مع الكومبو المنطوق
         playComboSequence(seqKeys);
     }
 </script>
