@@ -1,90 +1,115 @@
-package com.rew.boxingcoach
+package com.example.shadowboxing
 
-import android.app.Activity
-import android.content.Intent
-import android.net.Uri
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
-import android.view.WindowManager
 import android.webkit.JavascriptInterface
-import android.webkit.ValueCallback
+import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.util.Locale
 
-class MainActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
+
+    private lateinit var webView: WebView
     private var tts: TextToSpeech? = null
-    private var fileUploadCallback: ValueCallback<Array<Uri>>? = null
+    private var pendingWebPermissionRequest: PermissionRequest? = null
+    private val CAMERA_PERMISSION_CODE = 1001
 
-    private val fileChooserLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
-            val uri = result.data?.data
-            fileUploadCallback?.onReceiveValue(if (uri != null) arrayOf(uri) else null)
-        } else {
-            fileUploadCallback?.onReceiveValue(null)
-        }
-        fileUploadCallback = null
-    }
-
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
         tts = TextToSpeech(this, this)
 
-        val webView = WebView(this)
-        webView.settings.javaScriptEnabled = true
-        webView.settings.domStorageEnabled = true
-        webView.settings.allowFileAccess = true
-        webView.settings.allowContentAccess = true
-        @Suppress("DEPRECATION")
-        webView.settings.allowFileAccessFromFileURLs = true
-        @Suppress("DEPRECATION")
-        webView.settings.allowUniversalAccessFromFileURLs = true
+        webView = WebView(this)
+        setContentView(webView)
+
+        val settings: WebSettings = webView.settings
+        settings.javaScriptEnabled = true
+        settings.domStorageEnabled = true
+        settings.allowFileAccess = true
+        settings.allowContentAccess = true
+        settings.allowFileAccessFromFileURLs = true
+        settings.allowUniversalAccessFromFileURLs = true
+        settings.mediaPlaybackRequiresUserGesture = false
+        settings.cacheMode = WebSettings.LOAD_DEFAULT
+
+        webView.addJavascriptInterface(WebAppInterface(), "AndroidTTS")
         webView.webViewClient = WebViewClient()
 
         webView.webChromeClient = object : WebChromeClient() {
-            override fun onShowFileChooser(
-                webView: WebView?,
-                filePathCallback: ValueCallback<Array<Uri>>?,
-                fileChooserParams: FileChooserParams?
-            ): Boolean {
-                fileUploadCallback?.onReceiveValue(null)
-                fileUploadCallback = filePathCallback
-                val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "*/*"
+            override fun onPermissionRequest(request: PermissionRequest?) {
+                if (request == null) return
+                runOnUiThread {
+                    val hasCamera = ContextCompat.checkSelfPermission(
+                        this@MainActivity,
+                        Manifest.permission.CAMERA
+                    ) == PackageManager.PERMISSION_GRANTED
+
+                    if (hasCamera) {
+                        request.grant(request.resources)
+                    } else {
+                        pendingWebPermissionRequest = request
+                        ActivityCompat.requestPermissions(
+                            this@MainActivity,
+                            arrayOf(Manifest.permission.CAMERA),
+                            CAMERA_PERMISSION_CODE
+                        )
+                    }
                 }
-                fileChooserLauncher.launch(Intent.createChooser(intent, "اختر ملف المجسم 3D (.fbx / .glb)"))
-                return true
             }
         }
 
-        webView.addJavascriptInterface(WebAppInterface(), "AndroidTTS")
+        // طلب إذن الكاميرا مسبقاً عند فتح التطبيق ليكون جاهزاً فوراً
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+        }
+
         webView.loadUrl("file:///android_asset/index.html")
-        setContentView(webView)
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                pendingWebPermissionRequest?.grant(pendingWebPermissionRequest?.resources)
+            } else {
+                pendingWebPermissionRequest?.deny()
+            }
+            pendingWebPermissionRequest = null
+        }
     }
 
     override fun onInit(status: Int) {
         if (status == TextToSpeech.SUCCESS) {
             tts?.language = Locale.US
-            tts?.setSpeechRate(0.95f)
+            tts?.setSpeechRate(0.75f)
         }
     }
 
     inner class WebAppInterface {
         @JavascriptInterface
         fun speak(text: String) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, null)
+            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "BOXING_CUE")
         }
 
         @JavascriptInterface
         fun setRate(rate: Float) {
-            tts?.setSpeechRate(rate)
+            runOnUiThread {
+                tts?.setSpeechRate(rate)
+            }
         }
     }
 
