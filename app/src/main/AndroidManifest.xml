@@ -2,7 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.rew.boxingcoach">
 
-    <!-- الصلاحيات الأساسية لمنع الانهيار وفتح الكاميرا وشبكة CDN -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     
@@ -11,9 +10,7 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
         android:label="Boxing Coach Pro"
-        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
