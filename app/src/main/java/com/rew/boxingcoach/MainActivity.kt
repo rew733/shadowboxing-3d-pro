@@ -4,6 +4,7 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -20,20 +21,21 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         
         try {
-            // 1. إنشاء الحاوية برمجياً لتجنب أي أعطال متعلقة بالواجهة
+            // 1. إنشاء حاوية المتصفح وتفعيل تسريع العتاد الصلب (GPU Layer)
             webView = WebView(this).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT
                 )
+                setLayerType(View.LAYER_TYPE_HARDWARE, null)
             }
             setContentView(webView)
 
-            // 2. إعدادات المتصفح اللازمة لتشغيل الكاميرا دون تعارض
+            // 2. إعدادات المتصفح اللازمة لتشغيل الكاميرا والذكاء الاصطناعي بأقصى أداء
             val webSettings: WebSettings = webView.settings
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
-            webSettings.mediaPlaybackRequiresUserGesture = false // يسمح بفتح الكاميرا فوراً بدون نقر إضافي
+            webSettings.mediaPlaybackRequiresUserGesture = false
             webSettings.allowFileAccess = true
             webSettings.allowContentAccess = true
             webSettings.allowFileAccessFromFileURLs = true
@@ -50,10 +52,8 @@ class MainActivity : Activity() {
 
             // 4. التحقق من إذن الكاميرا في الأندرويد قبل تحميل الصفحة
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                // إذا لم يكن الإذن ممنوحاً، نطلبه (ولا نحمل الصفحة الآن لمنع التعارض)
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
             } else {
-                // إذا كان الإذن ممنوحاً مسبقاً، نحمل الصفحة بأمان
                 webView.loadUrl("file:///android_asset/index.html")
             }
 
@@ -62,7 +62,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // 5. هذه الدالة تعمل فور رد المستخدم على طلب الصلاحية
+    // 5. تحميل الصفحة فور رد المستخدم على طلب الصلاحية
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -70,7 +70,6 @@ class MainActivity : Activity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE) {
-            // سواء وافق المستخدم أو رفض، نقوم بتحميل الواجهة الآن
             if (::webView.isInitialized) {
                 webView.loadUrl("file:///android_asset/index.html")
             }
