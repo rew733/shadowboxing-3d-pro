@@ -700,7 +700,7 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker المتطور مع معالجة Kalman Filter ونقل Zero-Copy Transferable
+    // 🧵 Web Worker مع Kalman Filter
     // =========================================================================
     let poseWorker = null;
 
@@ -719,7 +719,6 @@
                     return this.x;
                 }
             }
-
             const kfNoseX = new KalmanFilter1D();
             const kfNoseY = new KalmanFilter1D();
             const kfLWristX = new KalmanFilter1D();
@@ -733,8 +732,7 @@
 
                 const nX = kfNoseX.filter(arr[0]);
                 const nY = kfNoseY.filter(arr[1]);
-                const lShX = arr[2], lShY = arr[3];
-                const rShX = arr[4], rShY = arr[5];
+                const lShY = arr[3], rShY = arr[5];
                 const lWX = kfLWristX.filter(arr[6]);
                 const lWY = kfLWristY.filter(arr[7]);
                 const rWX = kfRWristX.filter(arr[8]);
@@ -756,9 +754,7 @@
         const blob = new Blob([workerCode], { type: 'application/javascript' });
         poseWorker = new Worker(URL.createObjectURL(blob));
         poseWorker.onmessage = function(e) {
-            if (e.data.type === 'KALMAN_RESULT') {
-                handleKalmanWorkerResult(e.data);
-            }
+            if (e.data.type === 'KALMAN_RESULT') handleKalmanWorkerResult(e.data);
         };
     }
 
@@ -776,6 +772,10 @@
             customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
         }
         if (customInput) customInput.value = customAiModelName;
+
+        renderSavedCombosList();
+        populateDrillComboDropdown();
+        populateMittsRepeatDropdown();
         renderAnalyticsDashboard();
     });
 
@@ -847,7 +847,7 @@
 
     async function getAiCornermanAdvice(statsText) {
         if (!aiEnabled || !geminiApiKey || !navigator.onLine) {
-            return "جولة رائعة! حافظ على توازن وقفتك وسرعة استجابتك.";
+            return "Great round! Keep your guard up and stay sharp.";
         }
         const modelName = getActiveAiModelName();
         try {
@@ -856,17 +856,15 @@
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: "أنت مدرب ملاكمة محترف. أعطِ نصيحة تكتيكية تحفيزية مباشرة وموجزة جداً (باللغة العربية) بناءً على إحصائيات هذه الجولة: " + statsText }] }]
+                    contents: [{ role: 'user', parts: [{ text: "Give a very short 1-sentence tactical boxing cornerman tip in English based on these stats: " + statsText }] }]
                 })
             }, 12000);
             const data = await response.json();
             if (data.candidates && data.candidates[0].content.parts[0].text) {
                 return data.candidates[0].content.parts[0].text;
             }
-        } catch (e) {
-            console.error("AI Cornerman offline fallback:", e);
-        }
-        return "أداء قوي! ركز على رفع اليدين وحماية الوجه في الجولة القادمة.";
+        } catch (e) {}
+        return "Good work! Keep your hands high in the next round.";
     }
 
     async function runAiAppAudit() {
@@ -880,70 +878,42 @@
             reportBox.textContent = '⚠️ الرجاء إدخال مفتاح API Key في الحقل أعلاه أولاً.';
             return;
         }
-        if (!navigator.onLine) {
-            reportBox.style.display = 'block';
-            reportBox.textContent = '⚠️ الهاتف غير متصل بالإنترنت حالياً.';
-            return;
-        }
-
-        btn.textContent = `⏳ جاري الفحص عبر (${modelName})...`;
+        btn.textContent = `⏳ جاري الفحص...`;
         btn.disabled = true;
         reportBox.style.display = 'block';
-        reportBox.textContent = `جاري فحص التطبيق وتحليل أرقامك عبر (${modelName})...`;
+        reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const appArchitectureSummary = `
-        اسم التطبيق: Boxing Coach Pro (WebGPU Hardware Acceleration + WebView + Three.js + Kalman Filter Worker).
-        الميزات المفعلة: ${gpuAccelerationActive ? 'WebGPU Active' : 'WebGL2 High-Performance GPU'}، Kalman Filter Worker thread، Zero-copy Transferable Objects، Guard Validator.
-        الإحصائيات:
-        - كف المدرب: ${mittsPunchesCount} لكمة، ${mittsCamHitsCount} إصابة.
-        - الكاونتر: ${cntHitsCount} رد ناجح، أسرع رد: ${cntBestMs ? cntBestMs + ' ms' : 'غير مسجل'}.
-        - الجلسات: ${sessionHistory.length}.
-        `;
-
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق وأجب باللغة العربية باختصار:
-1. 🔍 تقييم أداء WebGPU / GPU Acceleration و Kalman Filter Worker.
-2. 🛠️ توصيات تطويرية إضافية متقدمة.
-3. 🥊 توجيه تكتيكي شخصي للملاكم بناءً على إحصائياته.
-
-البيانات:
-${appArchitectureSummary}`;
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Kalman Worker + TTS) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد، أسرع رد ${cntBestMs || '--'} ms.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
             const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ role: 'user', parts: [{ text: promptText }] }]
-                })
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] })
             }, 15000);
-
             const data = await response.json();
-            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
+            if (data.candidates && data.candidates[0]) {
                 lastAuditText = data.candidates[0].content.parts[0].text.replace(/\*\*/g, '');
                 reportBox.textContent = lastAuditText;
                 actionsBox.style.display = 'grid';
             } else if (data.error) {
-                reportBox.textContent = `❌ خطأ من الخادم: ${data.error.message}\n\n💡 جرب تبديل النموذج إلى gemini-2.0-flash.`;
-            } else {
-                reportBox.textContent = `❌ استجابة غير متوقعة من الخادم.`;
+                reportBox.textContent = `❌ خطأ: ${data.error.message}`;
             }
         } catch (err) {
-            if (err.name === 'AbortError') {
-                reportBox.textContent = '⏱️ انتهت مهلة الاتصال (15 ثانية). جرب نموذج gemini-2.0-flash.';
-            } else {
-                reportBox.textContent = `❌ تعذر الاتصال: ${err.message}`;
-            }
+            reportBox.textContent = `❌ تعذر الاتصال: ${err.message}`;
         } finally {
             btn.textContent = '🔍 فحص التطبيق واقتراح التحسينات';
             btn.disabled = false;
         }
     }
 
-    function readAuditReportAloud() { if (!lastAuditText) return; speakText(lastAuditText.slice(0, 450)); }
+    function readAuditReportAloud() { if (lastAuditText) speakText(lastAuditText.slice(0, 400)); }
     function copyAuditReport() {
-        if (!lastAuditText) return;
-        if (navigator.clipboard) { navigator.clipboard.writeText(lastAuditText); alert('تم نسخ تقرير الفحص والتحسينات!'); }
+        if (lastAuditText && navigator.clipboard) {
+            navigator.clipboard.writeText(lastAuditText);
+            alert('تم نسخ التقرير!');
+        }
     }
 
     function switchTab(tabId, btn) {
@@ -1168,7 +1138,10 @@ ${appArchitectureSummary}`;
         if (speakIndividually) speakText(cfg.say);
     }
 
-    function previewSinglePad(punchKey) { if (activeTabName === 'mitts') presentPadForPunch(punchKey, true); }
+    function previewSinglePad(punchKey) {
+        if (activeTabName === 'mitts') presentPadForPunch(punchKey, true);
+        else speakText(PAD_POSITIONS[punchKey].say);
+    }
 
     function updateCoachPadsAnimation(delta) {
         if (!coachPadsGroup || !coachPadsGroup.visible) return;
@@ -1252,7 +1225,7 @@ ${appArchitectureSummary}`;
     }
 
     // =========================================================================
-    // مراقبة الكاميرا مع نقل Zero-Copy Transferable للـ Worker
+    // مراقبة الكاميرا (WebView Safe)
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1281,6 +1254,7 @@ ${appArchitectureSummary}`;
         strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan;
         const pipBox = document.getElementById('cam-pip-box'); pipBox.classList.add('hit-ok');
         setTimeout(() => pipBox.classList.remove('hit-ok'), 700);
+        speakText("Stance calibrated");
     }
 
     function updateCamToggleButtonsUI(active) {
@@ -1432,8 +1406,16 @@ ${appArchitectureSummary}`;
 
         if (dodged) {
             stickState.evaluated = true;
-            if (activeTabName === 'counter') { cntPoints += 10; updateCounterScoreboard(); activateCounterFocusMitt(); }
-            else { refSuccessCount++; refPoints += 10; updateRefereeScoreboard(); }
+            if (activeTabName === 'counter') {
+                cntPoints += 10;
+                updateCounterScoreboard();
+                activateCounterFocusMitt();
+            } else {
+                refSuccessCount++;
+                refPoints += 10;
+                updateRefereeScoreboard();
+                document.getElementById('stick-dodge-label').textContent = '✅ تفادي ناجح (+10)';
+            }
         }
     }
 
@@ -1451,7 +1433,9 @@ ${appArchitectureSummary}`;
         counterWindow.active = true; counterWindow.startTime = performance.now(); counterWindow.expiresAt = counterWindow.startTime + 2600;
         counterWindow.targetSide = Math.random() < 0.5 ? 'LEFT' : 'RIGHT';
         mittGroup.position.set(counterWindow.targetSide === 'LEFT' ? -0.26 : 0.26, 1.44, 0.78); mittGroup.visible = true;
+        document.getElementById('counter-cue-label').textContent = '💥 اضرب الكف البنفسجي الآن!';
         syncComboText('⚡ COUNTER HIT TARGET!');
+        if (document.getElementById('counter-voice-mode').value === 'voiced') speakText('Counter!');
     }
     function evaluateCounterPunch(tx, ty) {
         if (!counterWindow.active) return;
@@ -1462,61 +1446,125 @@ ${appArchitectureSummary}`;
             counterWindow.active = false; if (mittGroup) mittGroup.visible = false;
             cntPoints += 20; cntHitsCount++;
             if (!cntBestMs || ms < cntBestMs) cntBestMs = ms;
-            updateCounterScoreboard(); syncComboText(`💥 +20 BONUS (${ms}ms)`);
+            updateCounterScoreboard();
+            document.getElementById('counter-cue-label').textContent = `💥 إصابة كاونتر ناجحة (${ms}ms)`;
+            syncComboText(`💥 +20 BONUS (${ms}ms)`);
         }
     }
 
     let stickGroup = null;
     let stickState = { active: false, evaluated: false, type: 'IDLE', progress: 0, duration: 1.0 };
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT', name: 'JAB THRUST', dodge: '➔ SLIP RIGHT' },
-        { type: 'THRUST_RIGHT', name: 'CROSS THRUST', dodge: '⬅ SLIP LEFT' },
-        { type: 'SWEEP_FROM_LEFT', name: 'HOOK SWEEP L', dodge: '⤵⬅ ROLL LEFT' },
-        { type: 'SWEEP_FROM_RIGHT', name: 'HOOK SWEEP R', dodge: '⤵➔ ROLL RIGHT' }
+        { type: 'THRUST_LEFT', name: 'JAB THRUST', dodge: '➔ SLIP RIGHT', say: 'Slip Right', x: -0.22, rotZ: 0 },
+        { type: 'THRUST_RIGHT', name: 'CROSS THRUST', dodge: '⬅ SLIP LEFT', say: 'Slip Left', x: 0.22, rotZ: 0 },
+        { type: 'SWEEP_FROM_LEFT', name: 'HOOK SWEEP L', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', x: 0, rotZ: 0.45 },
+        { type: 'SWEEP_FROM_RIGHT', name: 'HOOK SWEEP R', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', x: 0, rotZ: -0.45 }
     ];
     let isStickRunning = false; let stickLoopTimer = null; let stickBag = [];
 
     function build3DSparringStick() {
         stickGroup = new THREE.Group();
-        const foam = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24), new THREE.MeshStandardMaterial({ color: 0xf43f5e })); foam.rotation.x = Math.PI / 2; foam.position.z = 0.35; stickGroup.add(foam);
-        stickGroup.position.set(0, 1.32, 0.1); stickGroup.visible = false; scene.add(stickGroup);
+        const foam = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x9f1239, emissiveIntensity: 0.4 }));
+        foam.rotation.x = Math.PI / 2;
+        foam.position.z = 0.35;
+        stickGroup.add(foam);
+        stickGroup.position.set(0, 1.32, 0.1);
+        stickGroup.visible = false;
+        scene.add(stickGroup);
     }
+
     function updateStickAnimation(delta) {
         if (!stickGroup || !stickGroup.visible || !stickState.active) return;
         stickState.progress += delta / stickState.duration;
-        if (stickState.progress >= 1) { stickState.active = false; return; }
+        if (stickState.progress >= 1) {
+            if (!stickState.evaluated && isCamRefActive && activeTabName === 'stick') {
+                refHitCount++;
+                updateRefereeScoreboard();
+            }
+            stickState.active = false;
+            stickGroup.position.set(0, 1.32, 0.05);
+            stickGroup.rotation.set(0, 0, 0);
+            return;
+        }
         const c = Math.sin(stickState.progress * Math.PI);
-        stickGroup.position.z = 0.05 + 1.25 * c;
+        stickGroup.position.z = 0.05 + 1.35 * c;
+        if (stickState.type === 'SWEEP_FROM_LEFT') stickGroup.rotation.y = -0.8 + 1.6 * stickState.progress;
+        else if (stickState.type === 'SWEEP_FROM_RIGHT') stickGroup.rotation.y = 0.8 - 1.6 * stickState.progress;
+        else stickGroup.rotation.y = 0;
     }
+
     function triggerStickStrike() {
-        if (!isStickRunning || isResting || stickState.active) return;
+        const activeInMode = (activeTabName === 'stick' && isStickRunning) || (activeTabName === 'counter' && isCounterRunning);
+        if (!activeInMode || isResting || stickState.active) return;
+
         if (stickBag.length === 0) stickBag = [...STICK_PATTERNS];
         const pat = stickBag.shift();
-        stickState.type = pat.type; stickState.progress = 0; stickState.evaluated = false; stickState.active = true;
+        const speedEl = document.getElementById(activeTabName === 'counter' ? 'counter-speed' : 'stick-speed');
+        const speedMult = speedEl ? parseFloat(speedEl.value) : 1.0;
+
+        stickState.type = pat.type;
+        stickState.progress = 0;
+        stickState.evaluated = false;
+        stickState.duration = 1.05 / speedMult;
+        stickState.active = true;
+
+        if (stickGroup) {
+            stickGroup.position.x = pat.x;
+            stickGroup.rotation.z = pat.rotZ;
+        }
+
+        document.getElementById('live-move-badge').textContent = pat.name;
         syncComboText(pat.dodge);
+
+        if (activeTabName === 'stick') {
+            document.getElementById('stick-attack-label').textContent = `🥢 ${pat.name}`;
+            document.getElementById('stick-dodge-label').textContent = pat.dodge;
+            if (document.getElementById('stick-voice-mode').value === 'voiced') speakText(pat.say);
+        } else if (activeTabName === 'counter') {
+            document.getElementById('counter-phase-label').textContent = `⚡ ${pat.name} ➔ COUNTER`;
+            document.getElementById('counter-cue-label').textContent = `تفادَ: ${pat.dodge}`;
+            if (document.getElementById('counter-voice-mode').value === 'voiced') speakText(pat.say);
+        }
     }
+
     function toggleStickSession() { if (isStickRunning) stopStickSession(); else startStickSession(); }
     function startStickSession() {
         isStickRunning = true; isResting = false; updateStageEntityVisibility();
         document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا'; document.getElementById('stick-start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        speakText(`Round ${currentRound}. Defense only!`);
         startSharedRoundClock('stick');
-        stickLoopTimer = setInterval(triggerStickStrike, 2800);
+        setTimeout(triggerStickStrike, 900);
+        stickLoopTimer = setInterval(triggerStickStrike, 2600);
     }
-    function stopStickSession() { isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer); document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا'; document.getElementById('stick-start-btn').classList.remove('danger'); }
+    function stopStickSession() {
+        isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer);
+        document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا'; document.getElementById('stick-start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
+    }
     function resetStickSession() { stopStickSession(); resetSharedRoundState(); refPoints = 0; refSuccessCount = 0; refHitCount = 0; updateRefereeScoreboard(); }
 
     function toggleCounterSession() { if (isCounterRunning) stopCounterSession(); else startCounterSession(); }
     function startCounterSession() {
         isCounterRunning = true; isResting = false; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
         document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر'; document.getElementById('counter-start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        speakText(`Round ${currentRound}. Dodge and counter!`);
         startSharedRoundClock('counter');
-        counterLoopTimer = setInterval(() => { if (isCounterRunning && !isResting) triggerStickStrike(); }, 3800);
+        setTimeout(triggerStickStrike, 1000);
+        counterLoopTimer = setInterval(triggerStickStrike, 3600);
     }
-    function stopCounterSession() { isCounterRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(counterLoopTimer); document.getElementById('counter-start-btn').textContent = '⚡ ابدأ تدريب الكاونتر'; document.getElementById('counter-start-btn').classList.remove('danger'); }
+    function stopCounterSession() {
+        isCounterRunning = false; stickState.active = false; counterWindow.active = false;
+        if (mittGroup) mittGroup.visible = false;
+        stopSharedRoundClock(); clearInterval(counterLoopTimer);
+        document.getElementById('counter-start-btn').textContent = '⚡ ابدأ تدريب الكاونتر'; document.getElementById('counter-start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
+    }
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // محرك Three.js الرئيسي مع تسريع معالج الرسوميات (WebGPU + High-Performance GPU)
+    // محرك Three.js الرئيسي وتحميل جميع ملفات الحركة FBX
     // =========================================================================
     const MOVES = {
         JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx' },
@@ -1536,7 +1584,9 @@ ${appArchitectureSummary}`;
     };
     const MASTER_COMBOS_70 = [
         ['JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'JAB', 'CROSS'], ['STEP_IN', 'JAB', 'CROSS'],
-        ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R']
+        ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R'],
+        ['JAB', 'R_UPPER', 'L_HOOK'], ['SLIP_L', 'L_HOOK', 'CROSS'], ['SLIP_R', 'CROSS', 'L_HOOK'],
+        ['JAB', 'CROSS', 'ROLL', 'CROSS'], ['STEP_IN', 'JAB', 'L_UPPER', 'CROSS'], ['JAB', 'CROSS', 'PIVOT_L']
     ];
 
     let scene, camera, renderer, modelRoot, mixer;
@@ -1552,13 +1602,10 @@ ${appArchitectureSummary}`;
                 if (adapter) {
                     gpuDevice = await adapter.requestDevice();
                     gpuAccelerationActive = true;
-                    console.log('WebGPU Hardware Acceleration Enabled');
                     return;
                 }
             }
-        } catch (e) {
-            console.warn('WebGPU fallback to High-Performance WebGL2:', e);
-        }
+        } catch (e) {}
         gpuAccelerationActive = false;
     }
 
@@ -1608,9 +1655,7 @@ ${appArchitectureSummary}`;
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
 
         const pipTag = document.getElementById('cam-pip-status');
-        if (pipTag) {
-            pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
-        }
+        if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
         updateStageEntityVisibility();
 
         build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
@@ -1620,6 +1665,8 @@ ${appArchitectureSummary}`;
     function loadBoxerAndAnimations() {
         if (typeof THREE.FBXLoader === 'undefined') return;
         const loader = new THREE.FBXLoader();
+        const clipsLog = [];
+
         loader.load('boxer.fbx', (fbxObj) => {
             modelRoot = fbxObj;
             const box = new THREE.Box3().setFromObject(modelRoot);
@@ -1640,7 +1687,45 @@ ${appArchitectureSummary}`;
                 const idleAct = mixer.clipAction(fbxObj.animations[0].clone());
                 idleAct.setLoop(THREE.LoopRepeat); idleAct.play();
                 actions['IDLE'] = idleAct; activeAction = idleAct;
+                clipsLog.push('✔ IDLE (boxer.fbx)');
             }
+
+            const fileCache = {};
+            const moveKeys = Object.keys(MOVES);
+            let loadedCount = 0;
+
+            moveKeys.forEach(mKey => {
+                const fileName = MOVES[mKey].file;
+                const registerClip = (animClip) => {
+                    const clipClone = animClip.clone();
+                    clipClone.tracks = clipClone.tracks.filter(t => !t.name.endsWith('.position'));
+                    const act = mixer.clipAction(clipClone);
+                    act.setLoop(THREE.LoopOnce, 1);
+                    act.clampWhenFinished = true;
+                    actions[mKey] = act;
+                    clipsLog.push(`✔ ${mKey} ➔ ${fileName}`);
+                    loadedCount++;
+                    if (loadedCount === moveKeys.length) {
+                        const listBox = document.getElementById('detected-clips-list');
+                        if (listBox) listBox.textContent = clipsLog.join('\n');
+                    }
+                };
+
+                if (fileCache[fileName]) {
+                    registerClip(fileCache[fileName]);
+                } else {
+                    loader.load(fileName, (animFbx) => {
+                        if (animFbx.animations && animFbx.animations.length > 0) {
+                            fileCache[fileName] = animFbx.animations[0];
+                            registerClip(animFbx.animations[0]);
+                        }
+                    }, undefined, () => {
+                        clipsLog.push(`✖ ${mKey} (${fileName} مفقود)`);
+                        loadedCount++;
+                    });
+                }
+            });
+
             document.getElementById('glb-status').style.display = 'none';
         });
     }
@@ -1648,19 +1733,38 @@ ${appArchitectureSummary}`;
     function returnToIdle() {
         const idleAct = actions['IDLE']; if (!idleAct) return;
         document.getElementById('live-move-badge').textContent = 'IDLE';
-        if (activeAction && activeAction !== idleAct) { idleAct.reset().play(); activeAction.fadeOut(0.16); activeAction = idleAct; }
+        if (activeAction && activeAction !== idleAct) {
+            idleAct.reset().play();
+            activeAction.fadeOut(0.16);
+            activeAction = idleAct;
+        }
     }
 
     function executeSingleAction(moveKey, withSpeech = false) {
-        if (!mixer || !actions[moveKey]) return;
+        if (withSpeech && MOVES[moveKey]) speakText(MOVES[moveKey].say);
+        if (!mixer || !actions[moveKey]) {
+            if (moveQueue.length > 0) {
+                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(550 / voiceRate));
+            } else {
+                isComboBusy = false;
+            }
+            return;
+        }
         document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
-        if (withSpeech) speakText(MOVES[moveKey].say);
-        const act = actions[moveKey]; act.reset(); act.play();
+        const act = actions[moveKey];
+        act.timeScale = Math.max(0.5, voiceRate * 1.25);
+        act.reset().play();
         if (activeAction && activeAction !== act) activeAction.fadeOut(0.08);
         activeAction = act;
     }
 
-    function playComboSequence(seq) { if (seq.length > 0) { isComboBusy = true; moveQueue = seq.slice(1); executeSingleAction(seq[0], true); } }
+    function playComboSequence(seq) {
+        if (seq.length > 0) {
+            isComboBusy = true;
+            moveQueue = seq.slice(1);
+            executeSingleAction(seq[0], true);
+        }
+    }
 
     function animate3D() {
         requestAnimationFrame(animate3D);
@@ -1673,7 +1777,7 @@ ${appArchitectureSummary}`;
     window.addEventListener('load', init3DScene);
 
     // =========================================================================
-    // إدارة الجلسات والتوقيت
+    // إدارة الجلسات والتوقيت والصوت
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
@@ -1681,19 +1785,36 @@ ${appArchitectureSummary}`;
 
     function startSharedRoundClock(owner) { activeClockOwner = owner; clearInterval(timerId); timerId = setInterval(tickTimer, 1000); }
     function stopSharedRoundClock() { clearInterval(timerId); timerId = null; }
-    function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); }
+    function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels(); }
 
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x`;
+        const badge = document.getElementById('mitts-sync-rate-badge');
+        if (badge) badge.textContent = `🔊 السرعة: ${voiceRate.toFixed(2)}x`;
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
-    function changeInterval(val) { comboIntervalMs = parseFloat(val) * 1000; }
-    function syncComboText(txt) { document.getElementById('combo-text').textContent = txt; document.getElementById('tv-combo-text').textContent = txt; }
+    function changeInterval(val) {
+        comboIntervalMs = parseFloat(val) * 1000;
+        document.getElementById('interval-val').textContent = `${parseFloat(val).toFixed(1)} ثانية`;
+    }
+    function testVoice() { speakText("One, Two, Slip Left, Cross!"); }
+
+    function syncComboText(txt) {
+        document.getElementById('combo-text').textContent = txt;
+        document.getElementById('tv-combo-text').textContent = txt;
+    }
+
     function speakText(txt) {
-        if (window.AndroidTTS) { window.AndroidTTS.setRate(voiceRate); window.AndroidTTS.speak(txt); }
-        else if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt); u.rate = voiceRate; window.speechSynthesis.speak(u);
+        if (window.AndroidTTS && window.AndroidTTS.speak) {
+            if (window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
+            window.AndroidTTS.speak(txt);
+        } else if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(txt);
+            u.lang = 'en-US';
+            u.rate = voiceRate;
+            window.speechSynthesis.speak(u);
         }
     }
 
@@ -1701,13 +1822,16 @@ ${appArchitectureSummary}`;
     function startSession() {
         isRunning = true; isResting = false;
         document.getElementById('start-btn').textContent = 'إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        speakText(`Round ${currentRound}. Fight!`);
         startSharedRoundClock('train');
-        setTimeout(() => { if (isRunning && !isResting) executeNextCombo(); }, 1200);
+        setTimeout(() => { if (isRunning && !isResting) executeNextCombo(); }, 1000);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
     }
     function stopSession() {
         isRunning = false; isComboBusy = false; moveQueue = []; stopSharedRoundClock(); clearInterval(comboId);
         document.getElementById('start-btn').textContent = 'ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
         syncComboText('READY'); returnToIdle();
     }
     function resetSession() { stopSession(); resetSharedRoundState(); }
@@ -1726,14 +1850,21 @@ ${appArchitectureSummary}`;
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`انتهت الجولة ${currentRound}. اللكمات: ${mittsPunchesCount}.`);
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}`);
                     speakText(advice);
                 } else speakText("Rest time.");
             } else {
-                isResting = false; currentRound++; timeLeft = roundDuration; updateTimerDisplay();
+                isResting = false; currentRound++; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels();
                 speakText(`Round ${currentRound}. Let's go!`);
             }
         }
+    }
+
+    function updateRoundLabels() {
+        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = `الجولة ${currentRound} / ${totalRounds}`;
+        });
     }
 
     function updateTimerDisplay() {
@@ -1744,16 +1875,139 @@ ${appArchitectureSummary}`;
         });
     }
 
+    // =========================================================================
+    // إدارة الكومبوهات المخصصة ووضع الإتقان
+    // =========================================================================
+    let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
+    let currentBuilderSeq = [];
+    let drillDoneCount = 0;
+
     function executeNextCombo() {
         if (!isRunning || isResting || isComboBusy) return;
-        const seq = MASTER_COMBOS_70[Math.floor(Math.random() * MASTER_COMBOS_70.length)];
+
+        const drillMode = document.getElementById('drill-enabled').value === 'on';
+        if (drillMode) {
+            const selVal = document.getElementById('drill-combo-select').value;
+            const seq = selVal ? JSON.parse(selVal) : MASTER_COMBOS_70[0];
+            const target = parseInt(document.getElementById('drill-reps-target').value);
+            drillDoneCount++;
+            document.getElementById('drill-counter-display').textContent = `${drillDoneCount} / ${target === 999 ? '∞' : target}`;
+            if (target !== 999 && drillDoneCount > target) {
+                stopSession();
+                speakText("Drill complete!");
+                return;
+            }
+            syncComboText(seq.map(k => MOVES[k].en).join(' ➔ '));
+            playComboSequence(seq);
+            return;
+        }
+
+        const source = document.getElementById('combo-source').value;
+        let pool = MASTER_COMBOS_70;
+        if (source === 'custom' && customCombos.length > 0) pool = customCombos;
+        else if (source === 'both' && customCombos.length > 0) pool = [...MASTER_COMBOS_70, ...customCombos];
+
+        const seq = pool[Math.floor(Math.random() * pool.length)];
         syncComboText(seq.map(k => MOVES[k].en).join(' ➔ '));
         playComboSequence(seq);
     }
 
-    let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
-    function addAndPreview(k) { executeSingleAction(k, true); }
-    function saveCustomCombo() {} function clearBuilder() {} function resetDrillCounter() {} function updateModeBadge() {} function updateRoundsSetting() {} function updateTimeSetting() {}
+    function addAndPreview(k) {
+        currentBuilderSeq.push(k);
+        document.getElementById('builder-preview').textContent = currentBuilderSeq.map(m => MOVES[m].en).join(' ➔ ');
+        executeSingleAction(k, true);
+    }
+
+    function clearBuilder() {
+        currentBuilderSeq = [];
+        document.getElementById('builder-preview').textContent = 'اضغط على الحركات لبناء الكومبو...';
+    }
+
+    function saveCustomCombo() {
+        if (currentBuilderSeq.length === 0) return;
+        customCombos.push([...currentBuilderSeq]);
+        localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
+        clearBuilder();
+        renderSavedCombosList();
+        populateDrillComboDropdown();
+        populateMittsRepeatDropdown();
+        speakText("Combo saved");
+    }
+
+    function deleteCustomCombo(idx) {
+        customCombos.splice(idx, 1);
+        localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
+        renderSavedCombosList();
+        populateDrillComboDropdown();
+        populateMittsRepeatDropdown();
+    }
+
+    function renderSavedCombosList() {
+        const listEl = document.getElementById('saved-list');
+        const countEl = document.getElementById('saved-count');
+        if (countEl) countEl.textContent = customCombos.length;
+        if (!listEl) return;
+        listEl.innerHTML = '';
+        customCombos.forEach((combo, idx) => {
+            const div = document.createElement('div');
+            div.className = 'saved-item';
+            div.innerHTML = `<span>${combo.map(k => MOVES[k].en).join(' ➔ ')}</span>
+                <div>
+                    <button class="drill-pick-btn" onclick='playComboSequence(${JSON.stringify(combo)})'>▶</button>
+                    <button class="del-btn" onclick="deleteCustomCombo(${idx})">✕</button>
+                </div>`;
+            listEl.appendChild(div);
+        });
+    }
+
+    function populateDrillComboDropdown() {
+        const sel = document.getElementById('drill-combo-select');
+        if (!sel) return;
+        sel.innerHTML = '';
+        customCombos.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(c);
+            opt.textContent = '★ ' + c.map(k => MOVES[k].en).join(' ➔ ');
+            sel.appendChild(opt);
+        });
+        MASTER_COMBOS_70.forEach((c, i) => {
+            const opt = document.createElement('option');
+            opt.value = JSON.stringify(c);
+            opt.textContent = `#${i + 1}: ` + c.map(k => MOVES[k].en).join(' ➔ ');
+            sel.appendChild(opt);
+        });
+    }
+
+    function updateDrillTarget() {
+        const target = parseInt(document.getElementById('drill-reps-target').value);
+        document.getElementById('drill-target-val').textContent = target === 999 ? 'مستمر' : `${target} مرات`;
+        resetDrillCounter();
+    }
+
+    function resetDrillCounter() {
+        drillDoneCount = 0;
+        const target = parseInt(document.getElementById('drill-reps-target').value);
+        document.getElementById('drill-counter-display').textContent = `0 / ${target === 999 ? '∞' : target}`;
+    }
+
+    function updateModeBadge() {
+        const isDrill = document.getElementById('drill-enabled').value === 'on';
+        const badge = document.getElementById('mode-badge');
+        if (badge) badge.textContent = isDrill ? 'الوضع: تكرار الإتقان' : 'الوضع: 70 كومبو عشوائي';
+    }
+
+    function updateRoundsSetting() {
+        totalRounds = parseInt(document.getElementById('rounds-select').value);
+        updateRoundLabels();
+    }
+
+    function updateTimeSetting() {
+        roundDuration = parseInt(document.getElementById('time-select').value);
+        if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning) {
+            timeLeft = roundDuration;
+            updateTimerDisplay();
+        }
+    }
 </script>
 </body>
 </html>
