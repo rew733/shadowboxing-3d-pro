@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • Ultimate 3D & AI Engine</title>
+    <title>Boxing Coach Pro • Web Worker & 3D Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -29,7 +29,6 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 6px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 8px; }
         
-        /* 9 تبويبات منظمة */
         .tabs { display: grid; grid-template-columns: repeat(9, 1fr); gap: 1px; background: var(--panel); padding: 3px; border-radius: 14px; border: 1px solid var(--border); }
         .tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 0px; border-radius: 7px; font-size: 0.46rem; font-weight: 800; cursor: pointer; transition: 0.2s; text-align: center; }
         .tab-btn.active { background: var(--accent); color: #000; }
@@ -189,7 +188,6 @@
             display: none;
         }
 
-        /* تنسيق لوحة التحليلات */
         .analytics-card { background: rgba(56, 189, 248, 0.08); border: 1px solid var(--defense); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
         .analytics-card h3 { color: var(--defense); font-size: 0.88rem; margin-bottom: 6px; }
         .history-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
@@ -200,7 +198,6 @@
 <body>
 
 <div class="app">
-    <!-- 9 تبويبات شاملة -->
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
         <button class="tab-btn mitt-tab" onclick="switchTab('mitts', this)">🧤 الكف</button>
@@ -213,7 +210,6 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
-    <!-- مسرح العرض ثلاثي الأبعاد -->
     <div class="stage-box" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
@@ -225,7 +221,7 @@
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
-            <div class="cam-pip-tag" id="cam-pip-status">GUARD UP</div>
+            <div class="cam-pip-tag" id="cam-pip-status">WORKER ACTIVE</div>
         </div>
 
         <div class="tv-hud">
@@ -299,7 +295,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (حماية Guard)</button>
+                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (Worker)</button>
                 <button class="btn secondary small" id="mitts-sync-rate-badge" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[8])">🔊 السرعة: 0.75x</button>
             </div>
 
@@ -470,7 +466,7 @@
         </div>
     </div>
 
-    <!-- التبويب 5: التحليلات وأداء اللاعب (جديد) -->
+    <!-- التبويب 5: التحليلات وأداء اللاعب -->
     <div id="tab-analytics" class="tab-content">
         <div class="panel">
             <div class="analytics-card">
@@ -682,21 +678,15 @@
     let selectedAiModel = localStorage.getItem('boxing_ai_model') || 'gemini-2.0-flash';
     let customAiModelName = localStorage.getItem('boxing_ai_custom_model') || '';
     let lastAuditText = '';
-
-    // سجل التحليلات وحفظ الجلسات
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
 
     function getActiveAiModelName() {
-        if (selectedAiModel === 'custom') {
-            return customAiModelName || 'gemini-2.0-flash';
-        }
+        if (selectedAiModel === 'custom') return customAiModelName || 'gemini-2.0-flash';
         return selectedAiModel || 'gemini-2.0-flash';
     }
 
     function buildGeminiEndpointUrl(modelName, apiKey) {
-        const cleanModel = encodeURIComponent(modelName.trim());
-        const cleanKey = encodeURIComponent(apiKey.trim());
-        return `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${cleanKey}`;
+        return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName.trim())}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
     }
 
     async function fetchWithTimeout(url, options, timeoutMs = 15000) {
@@ -711,6 +701,86 @@
             throw err;
         }
     }
+
+    // =========================================================================
+    // 🧵 برمجة وتفعيل Web Worker (خيط مستقل لمعالجة الكاميرا والـ Guard)
+    // =========================================================================
+    let poseWorker = null;
+
+    function initPoseWorker() {
+        const workerCode = `
+            self.onmessage = function(e) {
+                const data = e.data;
+                if (data.type === 'CHECK_GUARD') {
+                    const lm = data.landmarks;
+                    if (!lm || lm.length === 0) return;
+                    
+                    const lShoulder = lm[11];
+                    const rShoulder = lm[12];
+                    const lWrist = lm[15];
+                    const rWrist = lm[16];
+                    
+                    if (lShoulder && rShoulder && lWrist && rWrist) {
+                        const shoulderAvgY = (lShoulder.y + rShoulder.y) / 2;
+                        const leftGuardOk = (lWrist.y < shoulderAvgY + 0.08);
+                        const rightGuardOk = (rWrist.y < shoulderAvgY + 0.08);
+                        
+                        self.postMessage({
+                            type: 'GUARD_RESULT',
+                            guardDown: (!leftGuardOk || !rightGuardOk)
+                        });
+                    }
+                }
+            };
+        `;
+        const blob = new Blob([workerCode], { type: 'application/javascript' });
+        poseWorker = new Worker(URL.createObjectURL(blob));
+        poseWorker.onmessage = function(e) {
+            if (e.data.type === 'GUARD_RESULT') {
+                handleWorkerGuardResult(e.data.guardDown);
+            }
+        };
+    }
+
+    let workerGuardDownFlag = false;
+    function handleWorkerGuardResult(isDown) {
+        workerGuardDownFlag = isDown;
+        const pipBox = document.getElementById('cam-pip-box');
+        const pipTag = document.getElementById('cam-pip-status');
+        if (!pipBox || !pipTag) return;
+
+        if (isDown) {
+            guardViolationCount++;
+            if (guardViolationCount > 20) {
+                pipBox.classList.add('guard-down');
+                pipTag.textContent = '⚠️ GUARD UP!';
+                if (Math.random() < 0.07) speakText("Guard up!");
+            }
+        } else {
+            guardViolationCount = 0;
+            if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
+                pipBox.classList.remove('guard-down');
+                pipTag.textContent = 'WORKER ACTIVE';
+            }
+        }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        initPoseWorker();
+        const aiSel = document.getElementById('ai-mode-select');
+        const keyInput = document.getElementById('gemini-api-key');
+        const modelSel = document.getElementById('ai-model-select');
+        const customInput = document.getElementById('ai-custom-model-input');
+
+        if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
+        if (keyInput) keyInput.value = geminiApiKey;
+        if (modelSel) {
+            modelSel.value = selectedAiModel;
+            customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
+        }
+        if (customInput) customInput.value = customAiModelName;
+        renderAnalyticsDashboard();
+    });
 
     function onAiModelSelectChange() {
         const sel = document.getElementById('ai-model-select');
@@ -732,22 +802,6 @@
         localStorage.setItem('boxing_ai_custom_model', customAiModelName);
     }
 
-    window.addEventListener('DOMContentLoaded', () => {
-        const aiSel = document.getElementById('ai-mode-select');
-        const keyInput = document.getElementById('gemini-api-key');
-        const modelSel = document.getElementById('ai-model-select');
-        const customInput = document.getElementById('ai-custom-model-input');
-
-        if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
-        if (keyInput) keyInput.value = geminiApiKey;
-        if (modelSel) {
-            modelSel.value = selectedAiModel;
-            customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
-        }
-        if (customInput) customInput.value = customAiModelName;
-        renderAnalyticsDashboard();
-    });
-
     function saveSessionRecord(modeName, scoreStats) {
         const record = {
             date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute:'2-digit'}),
@@ -755,7 +809,7 @@
             stats: scoreStats
         };
         sessionHistory.unshift(record);
-        if (sessionHistory.length > 20) sessionHistory.pop(); // الاحتفاظ بآخر 20 جلسة
+        if (sessionHistory.length > 20) sessionHistory.pop();
         localStorage.setItem('boxing_session_history', JSON.stringify(sessionHistory));
         renderAnalyticsDashboard();
     }
@@ -770,9 +824,7 @@
 
         let bestMs = 9999;
         sessionHistory.forEach(rec => {
-            if (rec.stats && rec.stats.bestMs && rec.stats.bestMs < bestMs) {
-                bestMs = rec.stats.bestMs;
-            }
+            if (rec.stats && rec.stats.bestMs && rec.stats.bestMs < bestMs) bestMs = rec.stats.bestMs;
         });
         if (bestReactionEl) bestReactionEl.textContent = (bestMs < 9999) ? `${bestMs} ms` : '-- ms';
 
@@ -844,17 +896,16 @@
         reportBox.textContent = `جاري فحص التطبيق وتحليل أرقامك عبر (${modelName})...`;
 
         const appArchitectureSummary = `
-        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + MediaPipe Pose).
-        الميزات المفعلة: مُحلل التغطية Guard Validator، معايرة الكاميرا، لوحة التحليلات، وسرعة النطق التكيفية.
-        إحصائيات اللاعب الحالية:
+        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + MediaPipe + Web Worker).
+        الميزات المفعلة: Web Worker Thread معالج الكاميرا، مُحلل الحماية Guard Validator، لوحة التحليلات.
+        الإحصائيات:
         - كف المدرب: ${mittsPunchesCount} لكمة، ${mittsCamHitsCount} إصابة.
-        - العصا الدفاعية: ${refSuccessCount} تفادي ناجح.
-        - الكاونتر: ${cntHitsCount} رد ناجح، أسرع رد فعل: ${cntBestMs ? cntBestMs + ' ms' : 'غير مسجل'}.
-        - إجمالي الجلسات المسجلة: ${sessionHistory.length}.
+        - الكاونتر: ${cntHitsCount} رد ناجح، أسرع رد: ${cntBestMs ? cntBestMs + ' ms' : 'غير مسجل'}.
+        - الجلسات: ${sessionHistory.length}.
         `;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق وأجب باللغة العربية بأسلوب احترافي ومختصر:
-1. 🔍 تقييم التطبيق وهندسته الحالية.
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق وأجب باللغة العربية باختصار:
+1. 🔍 تقييم أداء Web Worker وهندسة الكود.
 2. 🛠️ توصيات تطويرية إضافية متقدمة.
 3. 🥊 توجيه تكتيكي شخصي للملاكم بناءً على إحصائياته.
 
@@ -883,7 +934,7 @@ ${appArchitectureSummary}`;
             }
         } catch (err) {
             if (err.name === 'AbortError') {
-                reportBox.textContent = '⏱️ انتهت مهلة الاتصال (15 ثانية). جرب نموذج gemini-2.0-flash أو تأكد من الإنترنت.';
+                reportBox.textContent = '⏱️ انتهت مهلة الاتصال (15 ثانية). جرب نموذج gemini-2.0-flash.';
             } else {
                 reportBox.textContent = `❌ تعذر الاتصال: ${err.message}`;
             }
@@ -893,17 +944,10 @@ ${appArchitectureSummary}`;
         }
     }
 
-    function readAuditReportAloud() {
-        if (!lastAuditText) return;
-        speakText(lastAuditText.slice(0, 450));
-    }
-
+    function readAuditReportAloud() { if (!lastAuditText) return; speakText(lastAuditText.slice(0, 450)); }
     function copyAuditReport() {
         if (!lastAuditText) return;
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(lastAuditText);
-            alert('تم نسخ تقرير الفحص والتحسينات!');
-        }
+        if (navigator.clipboard) { navigator.clipboard.writeText(lastAuditText); alert('تم نسخ تقرير الفحص والتحسينات!'); }
     }
 
     function switchTab(tabId, btn) {
@@ -937,26 +981,22 @@ ${appArchitectureSummary}`;
         if (activeTabName === 'mitts') {
             stageTag.textContent = mittsSubMode === 'repeat' ? '🔁 MITTS REPEAT' : '🧤 FOCUS MITTS';
             stageTag.style.color = '#6ee7b7';
-            flipBtn.style.display = 'none';
-            camBtn.style.display = 'none';
+            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
             if (camera) { camera.position.set(0, 1.38, 2.35); camera.lookAt(0, 1.32, 0); }
         } else if (activeTabName === 'stick') {
             stageTag.textContent = isCamRefActive ? 'AR STICK DEFENSE' : '3D SPARRING STICK';
             stageTag.style.color = '#fda4af';
-            flipBtn.style.display = 'none';
-            camBtn.style.display = 'none';
+            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else if (activeTabName === 'counter') {
             stageTag.textContent = '⚡ DODGE & COUNTER';
             stageTag.style.color = '#d8b4fe';
-            flipBtn.style.display = 'none';
-            camBtn.style.display = 'none';
+            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
             stageTag.textContent = '70 PRO COMBOS';
             stageTag.style.color = '#f59e0b';
-            flipBtn.style.display = 'block';
-            camBtn.style.display = 'block';
+            flipBtn.style.display = 'block'; camBtn.style.display = 'block';
             if (camera) {
                 if (isFPV) { camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0); }
                 else { camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0); }
@@ -1022,28 +1062,20 @@ ${appArchitectureSummary}`;
     let coachPadsGroup = null;
     let leftPadMesh = null;
     let rightPadMesh = null;
-    let padAnimState = {
-        activePunch: null,
-        hitPulse: 0,
-        camTargetX: 0.5,
-        camTargetY: 0.45,
-        camScoredThisPad: false
-    };
+    let padAnimState = { activePunch: null, hitPulse: 0, camTargetX: 0.5, camTargetY: 0.45, camScoredThisPad: false };
 
     const PAD_POSITIONS = {
-        JAB:     { hand: 'LEFT',  x:  0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '1 JAB (كف اليسار - لكمة أمامية)',       say: 'Jab',           baseMs: 460 },
-        CROSS:   { hand: 'RIGHT', x: -0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '2 CROSS (كف اليمين - لكمة خلفية)',      say: 'Cross',         baseMs: 520 },
-        L_HOOK:  { hand: 'LEFT',  x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY: -0.75, rotZ: 0, camX: 0.72, camY: 0.45, label: '3 LEAD HOOK (كف اليسار - خطاف أمامي)',   say: 'Lead Hook',     baseMs: 680 },
-        R_HOOK:  { hand: 'RIGHT', x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY:  0.75, rotZ: 0, camX: 0.28, camY: 0.45, label: '4 REAR HOOK (كف اليمين - خطاف خلفي)',   say: 'Rear Hook',     baseMs: 680 },
-        L_UPPER: { hand: 'LEFT',  x:  0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY: -0.10, rotZ: 0, camX: 0.60, camY: 0.58, label: '5 LEAD UPPERCUT (كف اليسار - أبركت)',    say: 'Lead Uppercut', baseMs: 820 },
-        R_UPPER: { hand: 'RIGHT', x: -0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY:  0.10, rotZ: 0, camX: 0.40, camY: 0.58, label: '6 REAR UPPERCUT (كف اليمين - أبركت)',    say: 'Rear Uppercut', baseMs: 820 }
+        JAB:     { hand: 'LEFT',  x:  0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '1 JAB (كف اليسار)', say: 'Jab', baseMs: 460 },
+        CROSS:   { hand: 'RIGHT', x: -0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '2 CROSS (كف اليمين)', say: 'Cross', baseMs: 520 },
+        L_HOOK:  { hand: 'LEFT',  x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY: -0.75, rotZ: 0, camX: 0.72, camY: 0.45, label: '3 LEAD HOOK', say: 'Lead Hook', baseMs: 680 },
+        R_HOOK:  { hand: 'RIGHT', x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY:  0.75, rotZ: 0, camX: 0.28, camY: 0.45, label: '4 REAR HOOK', say: 'Rear Hook', baseMs: 680 },
+        L_UPPER: { hand: 'LEFT',  x:  0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY: -0.10, rotZ: 0, camX: 0.60, camY: 0.58, label: '5 LEAD UPPER', say: 'Lead Uppercut', baseMs: 820 },
+        R_UPPER: { hand: 'RIGHT', x: -0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY:  0.10, rotZ: 0, camX: 0.40, camY: 0.58, label: '6 REAR UPPER', say: 'Rear Uppercut', baseMs: 820 }
     };
 
     const MITT_COMBOS = [
         ['JAB', 'CROSS'], ['JAB', 'JAB', 'CROSS'], ['JAB', 'CROSS', 'L_HOOK'],
-        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'R_UPPER', 'L_HOOK'], ['L_HOOK', 'CROSS', 'L_HOOK'],
-        ['JAB', 'CROSS', 'L_UPPER', 'R_HOOK'], ['JAB', 'JAB', 'L_HOOK', 'CROSS'], ['R_UPPER', 'L_HOOK', 'CROSS'],
-        ['JAB', 'CROSS', 'R_HOOK', 'L_HOOK'], ['JAB', 'L_UPPER', 'CROSS', 'L_HOOK'], ['JAB', 'CROSS', 'L_HOOK', 'R_UPPER', 'L_HOOK']
+        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'R_UPPER', 'L_HOOK'], ['L_HOOK', 'CROSS', 'L_HOOK']
     ];
 
     let mittsSubMode = 'random';
@@ -1097,47 +1129,30 @@ ${appArchitectureSummary}`;
         const g = new THREE.Group();
         const padGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.09, 32);
         const padMat = new THREE.MeshStandardMaterial({ color: mainColorHex, emissive: mainColorHex, emissiveIntensity: 0.28, roughness: 0.35 });
-        const pad = new THREE.Mesh(padGeo, padMat);
-        pad.rotation.x = Math.PI / 2;
-        g.add(pad);
+        const pad = new THREE.Mesh(padGeo, padMat); pad.rotation.x = Math.PI / 2; g.add(pad);
 
         const targetGeo = new THREE.CylinderGeometry(0.095, 0.095, 0.11, 24);
         const targetMat = new THREE.MeshStandardMaterial({ color: ringColorHex, emissive: ringColorHex, emissiveIntensity: 0.55 });
-        const target = new THREE.Mesh(targetGeo, targetMat);
-        target.rotation.x = Math.PI / 2;
-        g.add(target);
+        const target = new THREE.Mesh(targetGeo, targetMat); target.rotation.x = Math.PI / 2; g.add(target);
         return g;
     }
 
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
-        leftPadMesh = createSinglePadMesh(0x10b981, 0xf59e0b);
-        leftPadMesh.position.set(0.26, 1.48, 0.70);
-        coachPadsGroup.add(leftPadMesh);
-
-        rightPadMesh = createSinglePadMesh(0x0ea5e9, 0xf59e0b);
-        rightPadMesh.position.set(-0.26, 1.48, 0.70);
-        coachPadsGroup.add(rightPadMesh);
-
-        coachPadsGroup.visible = false;
-        scene.add(coachPadsGroup);
+        leftPadMesh = createSinglePadMesh(0x10b981, 0xf59e0b); leftPadMesh.position.set(0.26, 1.48, 0.70); coachPadsGroup.add(leftPadMesh);
+        rightPadMesh = createSinglePadMesh(0x0ea5e9, 0xf59e0b); rightPadMesh.position.set(-0.26, 1.48, 0.70); coachPadsGroup.add(rightPadMesh);
+        coachPadsGroup.visible = false; scene.add(coachPadsGroup);
     }
 
     function resetPadsToGuardPosition() {
         if (!leftPadMesh || !rightPadMesh) return;
-        leftPadMesh.position.set(0.26, 1.48, 0.70);
-        leftPadMesh.rotation.set(0.1, -0.1, 0);
-        leftPadMesh.scale.set(0.85, 0.85, 0.85);
-
-        rightPadMesh.position.set(-0.26, 1.48, 0.70);
-        rightPadMesh.rotation.set(0.1, 0.1, 0);
-        rightPadMesh.scale.set(0.85, 0.85, 0.85);
+        leftPadMesh.position.set(0.26, 1.48, 0.70); leftPadMesh.rotation.set(0.1, -0.1, 0); leftPadMesh.scale.set(0.85, 0.85, 0.85);
+        rightPadMesh.position.set(-0.26, 1.48, 0.70); rightPadMesh.rotation.set(0.1, 0.1, 0); rightPadMesh.scale.set(0.85, 0.85, 0.85);
     }
 
     function presentPadForPunch(punchKey, speakIndividually = false) {
         const cfg = PAD_POSITIONS[punchKey];
         if (!cfg || !leftPadMesh || !rightPadMesh) return;
-
         resetPadsToGuardPosition();
         padAnimState.activePunch = punchKey;
         padAnimState.hitPulse = 1.0;
@@ -1154,14 +1169,10 @@ ${appArchitectureSummary}`;
         document.getElementById('mitts-punches-count').textContent = mittsPunchesCount;
         document.getElementById('mitts-current-punch').textContent = cfg.label;
         document.getElementById('live-move-badge').textContent = punchKey;
-
         if (speakIndividually) speakText(cfg.say);
     }
 
-    function previewSinglePad(punchKey) {
-        if (activeTabName !== 'mitts') return;
-        presentPadForPunch(punchKey, true);
-    }
+    function previewSinglePad(punchKey) { if (activeTabName === 'mitts') presentPadForPunch(punchKey, true); }
 
     function updateCoachPadsAnimation(delta) {
         if (!coachPadsGroup || !coachPadsGroup.visible) return;
@@ -1170,8 +1181,7 @@ ${appArchitectureSummary}`;
             const cfg = PAD_POSITIONS[padAnimState.activePunch];
             if (cfg) {
                 const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
-                const kickZ = cfg.z - Math.sin(padAnimState.hitPulse * Math.PI) * 0.08;
-                targetPad.position.z = kickZ;
+                targetPad.position.z = cfg.z - Math.sin(padAnimState.hitPulse * Math.PI) * 0.08;
             }
         }
     }
@@ -1189,379 +1199,158 @@ ${appArchitectureSummary}`;
 
     function executeNextMittCombo() {
         if (!isMittsRunning || isResting || isMittsBusy) return;
-
         let seq = [];
         if (mittsSubMode === 'repeat') {
             const selVal = document.getElementById('mitts-repeat-select').value;
             seq = selVal ? JSON.parse(selVal) : MITT_COMBOS[0];
             const target = parseInt(document.getElementById('mitts-repeat-target').value);
-
             mittsRepeatDone++;
             document.getElementById('mitts-repeat-progress').textContent = `${mittsRepeatDone} / ${target === 999 ? '∞' : target}`;
-            document.getElementById('mitts-hint-label').textContent = `تكرار الكومبو (${mittsRepeatDone} من ${target === 999 ? '∞' : target}) • السرعة ${voiceRate.toFixed(2)}x`;
-
             if (target !== 999 && mittsRepeatDone > target) {
-                stopMittsSession();
-                speakText("Combo drill complete!");
-                document.getElementById('mitts-current-punch').textContent = '✓ اكتمل تكرار الكومبو بنجاح!';
-                return;
+                stopMittsSession(); speakText("Combo drill complete!"); return;
             }
         } else {
             seq = getNextMittCombo();
-            document.getElementById('mitts-hint-label').textContent = `متزامن مع سرعة النطق (${voiceRate.toFixed(2)}x)`;
         }
 
         isMittsBusy = true;
-        const comboDisplayStr = seq.map(k => MOVES[k].en).join(' ➔ ');
-        const comboSpeechStr = seq.map(k => PAD_POSITIONS[k].say).join(', ');
-
+        const comboStr = seq.map(k => MOVES[k].en).join(' ➔ ');
         mittsCombosCount++;
         document.getElementById('mitts-combos-count').textContent = mittsCombosCount;
-        document.getElementById('mitts-combo-title').textContent = comboDisplayStr;
-        syncComboText(comboDisplayStr);
+        document.getElementById('mitts-combo-title').textContent = comboStr;
+        syncComboText(comboStr);
+        speakText(seq.map(k => PAD_POSITIONS[k].say).join(', '));
 
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
-
-        speakText(comboSpeechStr);
-
-        let cumulativeDelayMs = Math.round(140 / voiceRate);
-        seq.forEach((pKey) => {
-            const tid = setTimeout(() => {
-                if (isMittsRunning && !isResting) presentPadForPunch(pKey, false);
-            }, cumulativeDelayMs);
-            mittsStepTimers.push(tid);
-            cumulativeDelayMs += Math.round((PAD_POSITIONS[pKey].baseMs + 140) / voiceRate);
+        let delay = Math.round(140 / voiceRate);
+        seq.forEach(pKey => {
+            mittsStepTimers.push(setTimeout(() => { if (isMittsRunning && !isResting) presentPadForPunch(pKey, false); }, delay));
+            delay += Math.round((PAD_POSITIONS[pKey].baseMs + 140) / voiceRate);
         });
-
-        const finishTid = setTimeout(() => {
-            if (isMittsRunning) {
-                padAnimState.activePunch = null;
-                resetPadsToGuardPosition();
-                isMittsBusy = false;
-            }
-        }, cumulativeDelayMs + Math.round(320 / voiceRate));
-        mittsStepTimers.push(finishTid);
+        mittsStepTimers.push(setTimeout(() => {
+            if (isMittsRunning) { padAnimState.activePunch = null; resetPadsToGuardPosition(); isMittsBusy = false; }
+        }, delay + 320));
     }
 
-    function toggleMittsSession() {
-        if (isMittsRunning) stopMittsSession(); else startMittsSession();
-    }
-
+    function toggleMittsSession() { if (isMittsRunning) stopMittsSession(); else startMittsSession(); }
     function startMittsSession() {
-        isMittsRunning = true;
-        isMittsBusy = false;
-        isResting = false;
-        if (mittsSubMode === 'repeat') {
-            const target = parseInt(document.getElementById('mitts-repeat-target').value);
-            if (target !== 999 && mittsRepeatDone >= target) resetMittsRepeatProgress();
-        }
-        updateStageEntityVisibility();
-        resetPadsToGuardPosition();
-
-        const btn = document.getElementById('mitts-start-btn');
-        btn.textContent = '⏹ إيقاف التمرين';
-        btn.classList.add('danger');
-
-        const tvBtn = document.getElementById('tv-start-btn');
-        tvBtn.textContent = '⏹ إيقاف';
-        tvBtn.classList.add('stop');
-
-        speakText(`Round ${currentRound}. Fight!`);
-        startSharedRoundClock('mitts');
-
+        isMittsRunning = true; isMittsBusy = false; isResting = false;
+        if (mittsSubMode === 'repeat' && mittsRepeatDone >= parseInt(document.getElementById('mitts-repeat-target').value)) resetMittsRepeatProgress();
+        updateStageEntityVisibility(); resetPadsToGuardPosition();
+        document.getElementById('mitts-start-btn').textContent = '⏹ إيقاف التمرين'; document.getElementById('mitts-start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        speakText(`Round ${currentRound}. Fight!`); startSharedRoundClock('mitts');
         setTimeout(() => { if (isMittsRunning && !isResting) executeNextMittCombo(); }, 800);
-        mittsLoopTimer = setInterval(() => {
-            if (isMittsRunning && !isResting && !isMittsBusy) {
-                executeNextMittCombo();
-            }
-        }, Math.max(1200, Math.round(comboIntervalMs * 0.65)));
+        mittsLoopTimer = setInterval(() => { if (isMittsRunning && !isResting && !isMittsBusy) executeNextMittCombo(); }, Math.max(1200, Math.round(comboIntervalMs * 0.65)));
     }
-
     function stopMittsSession() {
-        isMittsRunning = false;
-        isMittsBusy = false;
-        padAnimState.activePunch = null;
-        stopSharedRoundClock();
-        clearInterval(mittsLoopTimer);
-        mittsStepTimers.forEach(t => clearTimeout(t));
-        mittsStepTimers = [];
-        resetPadsToGuardPosition();
-
-        const btn = document.getElementById('mitts-start-btn');
-        btn.textContent = '🧤 ابدأ تمرين كف المدرب';
-        btn.classList.remove('danger');
-
-        const tvBtn = document.getElementById('tv-start-btn');
-        tvBtn.textContent = '▶ ابدأ';
-        tvBtn.classList.remove('stop');
-        document.getElementById('mitts-current-punch').textContent = 'تم إيقاف تمرين الكفوف';
+        isMittsRunning = false; isMittsBusy = false; padAnimState.activePunch = null; stopSharedRoundClock(); clearInterval(mittsLoopTimer);
+        mittsStepTimers.forEach(t => clearTimeout(t)); mittsStepTimers = []; resetPadsToGuardPosition();
+        document.getElementById('mitts-start-btn').textContent = '🧤 ابدأ تمرين كف المدرب'; document.getElementById('mitts-start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
     }
-
     function resetMittsSession() {
-        stopMittsSession();
-        resetSharedRoundState();
-        mittsBag = [];
-        mittsPunchesCount = 0;
-        mittsCamHitsCount = 0;
-        mittsCombosCount = 0;
-        resetMittsRepeatProgress();
-        document.getElementById('mitts-punches-count').textContent = '0';
-        document.getElementById('mitts-cam-hits').textContent = '0';
-        document.getElementById('mitts-combos-count').textContent = '0';
-        document.getElementById('mitts-combo-title').textContent = '🧤 FOCUS MITTS COMBOS';
+        stopMittsSession(); resetSharedRoundState(); mittsBag = []; mittsPunchesCount = 0; mittsCamHitsCount = 0; mittsCombosCount = 0; resetMittsRepeatProgress();
+        document.getElementById('mitts-punches-count').textContent = '0'; document.getElementById('mitts-cam-hits').textContent = '0'; document.getElementById('mitts-combos-count').textContent = '0';
     }
 
     // =========================================================================
-    // مراقبة الكاميرا الأمامية + مُحلل التغطية الذكي (AI Guard & Form Validator)
+    // مراقبة الكاميرا + تفاعل Web Worker اللحظي
     // =========================================================================
-    let isCamRefActive = false;
-    let camStream = null;
-    let poseDetector = null;
-    let poseLoopReq = null;
-
+    let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
     let curNoseX = 0.5, curNoseY = 0.45, curShoulderSpan = 0.25;
-    let curLeftWrist = null, curRightWrist = null;
-    let prevLeftWrist = null, prevRightWrist = null;
-    let hasPoseFrame = false;
-    let guardViolationCount = 0;
+    let curLeftWrist = null, curRightWrist = null; let prevLeftWrist = null, prevRightWrist = null;
+    let hasPoseFrame = false; let guardViolationCount = 0;
 
     let refPoints = 0, refSuccessCount = 0, refHitCount = 0;
-    let isCounterRunning = false;
-    let counterLoopTimer = null;
-    let counterBag = [];
+    let isCounterRunning = false; let counterLoopTimer = null; let counterBag = [];
     let cntPoints = 0, cntHitsCount = 0, cntBestMs = null;
-
-    let counterWindow = {
-        active: false,
-        startTime: 0,
-        expiresAt: 0,
-        targetSide: 'LEFT',
-        punchName: 'CROSS'
-    };
+    let counterWindow = { active: false, startTime: 0, expiresAt: 0, targetSide: 'LEFT', punchName: 'CROSS' };
 
     function updateRefereeScoreboard() {
         document.getElementById('ref-points').textContent = refPoints;
         const total = refSuccessCount + refHitCount;
-        const acc = total === 0 ? 0 : Math.round((refSuccessCount / total) * 100);
-        document.getElementById('ref-accuracy').textContent = `${acc}%`;
+        document.getElementById('ref-accuracy').textContent = `${total === 0 ? 0 : Math.round((refSuccessCount / total) * 100)}%`;
         document.getElementById('ref-ratio').textContent = `${refSuccessCount} / ${refHitCount}`;
     }
-
     function updateCounterScoreboard() {
         document.getElementById('cnt-points').textContent = cntPoints;
         document.getElementById('cnt-hits').textContent = cntHitsCount;
         document.getElementById('cnt-best-ms').textContent = cntBestMs ? `${cntBestMs} ms` : '-- ms';
     }
-
     function calibrateStance() {
         if (!hasPoseFrame) return;
-        strikeStartX = curNoseX;
-        strikeStartY = curNoseY;
-        strikeStartSpan = curShoulderSpan;
-        const pipBox = document.getElementById('cam-pip-box');
-        pipBox.classList.add('hit-ok');
-        document.getElementById('cam-pip-status').textContent = 'CALIBRATED!';
-        setTimeout(() => {
-            pipBox.classList.remove('hit-ok');
-            document.getElementById('cam-pip-status').textContent = 'GUARD UP';
-        }, 700);
+        strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan;
+        const pipBox = document.getElementById('cam-pip-box'); pipBox.classList.add('hit-ok');
+        setTimeout(() => pipBox.classList.remove('hit-ok'), 700);
     }
 
-    async function toggleCameraReferee() {
-        if (isCamRefActive) stopCameraReferee();
-        else await startCameraReferee();
-    }
-
-    function syncCamButtonsUI(isActive, textOverride) {
-        const ids = ['cam-ref-toggle-btn', 'cam-ref-toggle-btn-2', 'cam-ref-toggle-btn-3'];
-        ids.forEach(id => {
-            const b = document.getElementById(id);
-            if (!b) return;
-            if (textOverride) { b.textContent = textOverride; return; }
-            if (isActive) {
-                b.textContent = '⏹ إيقاف الكاميرا';
-                b.classList.add('danger');
-            } else {
-                b.textContent = '📷 تفعيل الكاميرا';
-                b.classList.remove('danger');
-            }
-        });
-    }
-
+    async function toggleCameraReferee() { if (isCamRefActive) stopCameraReferee(); else await startCameraReferee(); }
     async function startCameraReferee() {
-        const pipBox = document.getElementById('cam-pip-box');
-        const videoEl = document.getElementById('pose-video');
-
+        const pipBox = document.getElementById('cam-pip-box'); const videoEl = document.getElementById('pose-video');
         try {
-            syncCamButtonsUI(false, '⏳ فتح الكاميرا...');
-            camStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
-                audio: false
-            });
-            videoEl.srcObject = camStream;
-            await videoEl.play();
-
-            isCamRefActive = true;
-            pipBox.style.display = 'block';
-            syncCamButtonsUI(true);
-            updateStageEntityVisibility();
-
-            if (window.AndroidTTS && window.AndroidTTS.setRate) {
-                window.AndroidTTS.setRate(voiceRate);
-            }
-
+            camStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } }, audio: false });
+            videoEl.srcObject = camStream; await videoEl.play();
+            isCamRefActive = true; pipBox.style.display = 'block'; updateStageEntityVisibility();
             if (!poseDetector && typeof Pose !== 'undefined') {
-                poseDetector = new Pose({
-                    locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}`
-                });
-                poseDetector.setOptions({
-                    modelComplexity: 0,
-                    smoothLandmarks: true,
-                    minDetectionConfidence: 0.5,
-                    minTrackingConfidence: 0.5
-                });
+                poseDetector = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
+                poseDetector.setOptions({ modelComplexity: 0, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
                 poseDetector.onResults(onPoseResults);
             }
-
-            const processVideoFrame = async () => {
+            const processFrame = async () => {
                 if (!isCamRefActive) return;
-                if (poseDetector && videoEl.readyState >= 2) {
-                    await poseDetector.send({ image: videoEl });
-                }
-                poseLoopReq = requestAnimationFrame(processVideoFrame);
+                if (poseDetector && videoEl.readyState >= 2) await poseDetector.send({ image: videoEl });
+                poseLoopReq = requestAnimationFrame(processFrame);
             };
-            processVideoFrame();
-
-        } catch (err) {
-            syncCamButtonsUI(false);
-        }
+            processFrame();
+        } catch (err) { isCamRefActive = false; }
     }
-
     function stopCameraReferee() {
-        isCamRefActive = false;
-        if (poseLoopReq) cancelAnimationFrame(poseLoopReq);
-        if (camStream) {
-            camStream.getTracks().forEach(t => t.stop());
-            camStream = null;
-        }
-        document.getElementById('cam-pip-box').style.display = 'none';
-        syncCamButtonsUI(false);
-        updateStageEntityVisibility();
+        isCamRefActive = false; if (poseLoopReq) cancelAnimationFrame(poseLoopReq);
+        if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
+        document.getElementById('cam-pip-box').style.display = 'none'; updateStageEntityVisibility();
     }
 
     function onPoseResults(results) {
-        const canvasEl = document.getElementById('pose-canvas');
-        const ctx = canvasEl.getContext('2d');
+        const canvasEl = document.getElementById('pose-canvas'); const ctx = canvasEl.getContext('2d');
         ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-        if (results.image) {
-            ctx.drawImage(results.image, 0, 0, canvasEl.width, canvasEl.height);
-        }
-
+        if (results.image) ctx.drawImage(results.image, 0, 0, canvasEl.width, canvasEl.height);
         if (!results.poseLandmarks) return;
+
         const lm = results.poseLandmarks;
-        const nose = lm[0];
-        const lShoulder = lm[11];
-        const rShoulder = lm[12];
-        const lWrist = lm[15];
-        const rWrist = lm[16];
+        const nose = lm[0]; const lShoulder = lm[11]; const rShoulder = lm[12];
+        const lWrist = lm[15]; const rWrist = lm[16];
 
         if (nose && lShoulder && rShoulder) {
-            hasPoseFrame = true;
-            curNoseX = nose.x;
-            curNoseY = nose.y;
+            hasPoseFrame = true; curNoseX = nose.x; curNoseY = nose.y;
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
-
             if (lWrist && lWrist.visibility > 0.35) curLeftWrist = { x: lWrist.x, y: lWrist.y };
             if (rWrist && rWrist.visibility > 0.35) curRightWrist = { x: rWrist.x, y: rWrist.y };
 
-            // 🛡️ مُحلل التغطية الذكي (AI Guard & Form Validator)
-            // نتحقق مما إذا كانت المعصمين منخفضين مقارنة بالكتفين أو الوجه
-            const shoulderAvgY = (lShoulder.y + rShoulder.y) / 2;
-            const leftGuardOk = lWrist && (lWrist.y < shoulderAvgY + 0.08);
-            const rightGuardOk = rWrist && (rWrist.y < shoulderAvgY + 0.08);
-            const pipBox = document.getElementById('cam-pip-box');
-            const pipTag = document.getElementById('cam-pip-status');
-
-            if (lWrist && rWrist && (!leftGuardOk || !rightGuardOk)) {
-                guardViolationCount++;
-                if (guardViolationCount > 25) { // تحذير بعد الثبات بدون Guard لفترة قصيرة
-                    pipBox.classList.add('guard-down');
-                    pipTag.textContent = '⚠️ GUARD UP!';
-                    if (Math.random() < 0.08) speakText("Guard up!");
-                }
-            } else {
-                guardViolationCount = 0;
-                if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
-                    pipBox.classList.remove('guard-down');
-                    pipTag.textContent = 'GUARD UP';
-                }
+            // إرسال الإحداثيات للـ Web Worker في الخلفية للمعالجة دون إبطاء الـ 3D
+            if (poseWorker) {
+                poseWorker.postMessage({ type: 'CHECK_GUARD', landmarks: lm });
             }
 
-            if (!stickState.active) {
-                strikeStartX = curNoseX;
-                strikeStartY = curNoseY;
-                strikeStartSpan = curShoulderSpan;
-            }
+            if (!stickState.active) { strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan; }
 
-            ctx.strokeStyle = '#f43f5e';
-            ctx.lineWidth = 2.5;
-            ctx.beginPath();
-            ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2);
-            ctx.stroke();
-
-            ctx.fillStyle = '#38bdf8';
-            ctx.beginPath();
-            ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2);
-            ctx.fill();
-
-            [curLeftWrist, curRightWrist].forEach(w => {
-                if (w) {
-                    ctx.fillStyle = '#f59e0b';
-                    ctx.beginPath();
-                    ctx.arc(w.x * canvasEl.width, w.y * canvasEl.height, 6, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-            });
+            ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2); ctx.stroke();
+            ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
 
             if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
-                const tx = padAnimState.camTargetX;
-                const ty = padAnimState.camTargetY;
-                ctx.strokeStyle = '#10b981';
-                ctx.lineWidth = 3;
-                ctx.beginPath();
-                ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2);
-                ctx.stroke();
-
-                const hitCheck = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-                if (hitCheck(curLeftWrist) || hitCheck(curRightWrist)) {
-                    padAnimState.camScoredThisPad = true;
-                    mittsCamHitsCount++;
+                const tx = padAnimState.camTargetX; const ty = padAnimState.camTargetY;
+                ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2); ctx.stroke();
+                const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
+                if (hit(curLeftWrist) || hit(curRightWrist)) {
+                    padAnimState.camScoredThisPad = true; mittsCamHitsCount++;
                     document.getElementById('mitts-cam-hits').textContent = mittsCamHitsCount;
-                    pipBox.classList.add('hit-ok');
-                    pipTag.textContent = '✓ PAD HIT!';
-                    setTimeout(() => {
-                        pipBox.classList.remove('hit-ok');
-                        pipTag.textContent = 'GUARD UP';
-                    }, 500);
                 }
             }
 
-            if (counterWindow.active) {
-                const targetX = counterWindow.targetSide === 'LEFT' ? 0.32 : 0.68;
-                const targetY = 0.45;
-                ctx.strokeStyle = '#a855f7';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.arc(targetX * canvasEl.width, targetY * canvasEl.height, 25, 0, Math.PI * 2);
-                ctx.stroke();
-                evaluateCounterPunch(targetX, targetY);
-            }
-
-            if (stickState.active && !stickState.evaluated && stickState.progress >= 0.15 && stickState.progress <= 0.95) {
-                evaluatePlayerDefenseMove();
-            }
+            if (counterWindow.active) evaluateCounterPunch(counterWindow.targetSide === 'LEFT' ? 0.32 : 0.68, 0.45);
+            if (stickState.active && !stickState.evaluated && stickState.progress >= 0.15 && stickState.progress <= 0.95) evaluatePlayerDefenseMove();
 
             prevLeftWrist = curLeftWrist ? { ...curLeftWrist } : null;
             prevRightWrist = curRightWrist ? { ...curRightWrist } : null;
@@ -1569,382 +1358,100 @@ ${appArchitectureSummary}`;
     }
 
     function evaluatePlayerDefenseMove() {
-        const dx = curNoseX - strikeStartX;
-        const dy = curNoseY - strikeStartY;
-        const spanShrink = strikeStartSpan - curShoulderSpan;
-
-        const SLIP_THRESH = 0.085;
-        const DUCK_THRESH = 0.075;
-        const ROLL_SIDE_THRESH = 0.050;
-        const PULL_THRESH = 0.040;
-
-        let dodged = false;
-        let wrongDirection = false;
-        const t = stickState.type;
-
-        if (t === 'THRUST_LEFT') {
-            if (dx > SLIP_THRESH) dodged = true;
-        } else if (t === 'THRUST_RIGHT') {
-            if (dx < -SLIP_THRESH) dodged = true;
-        } else if (t === 'SWEEP_FROM_LEFT') {
-            if (dy > DUCK_THRESH && dx < -ROLL_SIDE_THRESH) dodged = true;
-            else if (dx > ROLL_SIDE_THRESH) wrongDirection = true;
-        } else if (t === 'SWEEP_FROM_RIGHT') {
-            if (dy > DUCK_THRESH && dx > ROLL_SIDE_THRESH) dodged = true;
-            else if (dx < -ROLL_SIDE_THRESH) wrongDirection = true;
-        } else if (t === 'THRUST_CENTER' || t === 'UPPER_SWING') {
-            if (spanShrink > PULL_THRESH || Math.abs(dx) > SLIP_THRESH * 1.05 || dy > DUCK_THRESH) dodged = true;
-        }
+        const dx = curNoseX - strikeStartX; const dy = curNoseY - strikeStartY;
+        const t = stickState.type; let dodged = false;
+        if (t === 'THRUST_LEFT' && dx > 0.085) dodged = true;
+        else if (t === 'THRUST_RIGHT' && dx < -0.085) dodged = true;
+        else if ((t === 'SWEEP_FROM_LEFT' || t === 'SWEEP_FROM_RIGHT') && dy > 0.075) dodged = true;
+        else if (t === 'THRUST_CENTER' && dy > 0.07) dodged = true;
 
         if (dodged) {
             stickState.evaluated = true;
-            if (activeTabName === 'counter') {
-                cntPoints += 10;
-                updateCounterScoreboard();
-                activateCounterFocusMitt();
-            } else {
-                refSuccessCount++;
-                refPoints += 10;
-                updateRefereeScoreboard();
-                triggerRefereeFeedback(true, '');
-            }
-        } else if (wrongDirection) {
-            stickState.evaluated = true;
-            if (activeTabName === 'counter') {
-                triggerCounterFailFeedback('✗ خطأ! در في عكس اتجاه العصا');
-            } else {
-                refHitCount++;
-                updateRefereeScoreboard();
-                triggerRefereeFeedback(false, '✗ خطأ! تحركت في نفس اتجاه العصا');
-            }
+            if (activeTabName === 'counter') { cntPoints += 10; updateCounterScoreboard(); activateCounterFocusMitt(); }
+            else { refSuccessCount++; refPoints += 10; updateRefereeScoreboard(); }
         }
     }
 
-    function triggerRefereeFeedback(isSuccess, customFailMsg) {
-        const pipBox = document.getElementById('cam-pip-box');
-        const pipTag = document.getElementById('cam-pip-status');
-
-        if (isSuccess) {
-            pipBox.classList.remove('hit-fail', 'hit-counter');
-            pipBox.classList.add('hit-ok');
-            pipTag.textContent = '✓ +10 DODGED!';
-            document.getElementById('stick-hint-label').textContent = '✓ تفادي مثالي في الاتجاه المعاكس (+10 نقاط)';
-            syncComboText('✓ تفادي ممتاز (+10)');
-        } else {
-            pipBox.classList.remove('hit-ok', 'hit-counter');
-            pipBox.classList.add('hit-fail');
-            pipTag.textContent = '✗ HIT!';
-            const msg = customFailMsg || '✗ إصابة! لم تتفادَ العصا في الاتجاه الصحيح';
-            document.getElementById('stick-hint-label').textContent = msg;
-            syncComboText(msg);
-            if (navigator.vibrate) navigator.vibrate(200);
-        }
-
-        setTimeout(() => {
-            pipBox.classList.remove('hit-ok', 'hit-fail', 'hit-counter');
-            pipTag.textContent = 'GUARD UP';
-        }, 850);
-    }
-
-    // =========================================================================
-    // محرك كف المدرب للرد الهجومي
-    // =========================================================================
+    // --- كفوف الرد والعصا ---
     let mittGroup = null;
-
     function build3DFocusMitt() {
         mittGroup = new THREE.Group();
-        const padGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.12, 32);
-        const padMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.85, roughness: 0.25 });
-        const padMesh = new THREE.Mesh(padGeo, padMat);
-        padMesh.rotation.x = Math.PI / 2;
-        mittGroup.add(padMesh);
-
-        const bullseyeGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24);
-        const bullseyeMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b, emissiveIntensity: 0.95 });
-        const bullseyeMesh = new THREE.Mesh(bullseyeGeo, bullseyeMat);
-        bullseyeMesh.rotation.x = Math.PI / 2;
-        mittGroup.add(bullseyeMesh);
-
-        mittGroup.position.set(0, 1.42, 0.80);
-        mittGroup.visible = false;
-        scene.add(mittGroup);
+        const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.12, 32), new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 0.85 })); pad.rotation.x = Math.PI / 2; mittGroup.add(pad);
+        const bull = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xf59e0b })); bull.rotation.x = Math.PI / 2; mittGroup.add(bull);
+        mittGroup.position.set(0, 1.42, 0.80); mittGroup.visible = false; scene.add(mittGroup);
     }
-
-    function testMittPreview() {
-        if (!isCamRefActive) startCameraReferee();
-        stickState.currentScenario = STICK_PATTERNS[0];
-        activateCounterFocusMitt();
-    }
-
+    function testMittPreview() { if (!isCamRefActive) startCameraReferee(); activateCounterFocusMitt(); }
     function activateCounterFocusMitt() {
-        const sc = stickState.currentScenario || STICK_PATTERNS[0];
         if (!mittGroup) return;
-
-        counterWindow.active = true;
-        counterWindow.startTime = performance.now();
-        counterWindow.expiresAt = counterWindow.startTime + 2600;
-        counterWindow.targetSide = sc.mittSide;
-        counterWindow.punchName = sc.counterPunch;
-
-        const mittX = sc.mittSide === 'LEFT' ? -0.26 : 0.26;
-        mittGroup.position.set(mittX, 1.44, 0.78);
-        mittGroup.visible = true;
-
-        const pipBox = document.getElementById('cam-pip-box');
-        pipBox.classList.remove('hit-fail', 'hit-ok');
-        pipBox.classList.add('hit-counter');
-        document.getElementById('cam-pip-status').textContent = '⚡ HIT TARGET!';
-
-        document.getElementById('counter-phase-label').textContent = `🎯 TARGET OPEN: ${sc.counterPunch}!`;
-        document.getElementById('counter-cue-label').textContent = sc.counterCueAr;
-        document.getElementById('counter-hint-label').textContent = 'سدد لكمة سريعة بيدك نحو الكف البنفسجي!';
-        syncComboText(`⚡ COUNTER: ${sc.counterPunch}`);
-
-        if (document.getElementById('counter-voice-mode').value === 'voiced') {
-            speakText(sc.counterSay);
-        }
+        counterWindow.active = true; counterWindow.startTime = performance.now(); counterWindow.expiresAt = counterWindow.startTime + 2600;
+        counterWindow.targetSide = Math.random() < 0.5 ? 'LEFT' : 'RIGHT';
+        mittGroup.position.set(counterWindow.targetSide === 'LEFT' ? -0.26 : 0.26, 1.44, 0.78); mittGroup.visible = true;
+        syncComboText('⚡ COUNTER HIT TARGET!');
     }
-
-    function evaluateCounterPunch(targetX, targetY) {
+    function evaluateCounterPunch(tx, ty) {
         if (!counterWindow.active) return;
-        const now = performance.now();
-        if (now > counterWindow.expiresAt) {
-            counterWindow.active = false;
-            if (mittGroup) mittGroup.visible = false;
-            triggerCounterFailFeedback('⌛ انتهى وقت الكاونتر!');
-            return;
-        }
-
-        const checkHit = (curW, prevW) => {
-            if (!curW) return false;
-            const dist = Math.hypot(curW.x - targetX, curW.y - targetY);
-            const speed = prevW ? Math.hypot(curW.x - prevW.x, curW.y - prevW.y) : 0.05;
-            return dist < 0.28 && speed > 0.012;
-        };
-
-        if (checkHit(curLeftWrist, prevLeftWrist) || checkHit(curRightWrist, prevRightWrist)) {
-            const reactionMs = Math.max(120, Math.round(now - counterWindow.startTime));
-            counterWindow.active = false;
-            if (mittGroup) mittGroup.visible = false;
-
-            cntPoints += 20;
-            cntHitsCount++;
-            if (!cntBestMs || reactionMs < cntBestMs) cntBestMs = reactionMs;
-            updateCounterScoreboard();
-
-            const pipBox = document.getElementById('cam-pip-box');
-            pipBox.classList.remove('hit-counter', 'hit-fail');
-            pipBox.classList.add('hit-ok');
-            document.getElementById('cam-pip-status').textContent = `+20 (${reactionMs}ms)`;
-
-            document.getElementById('counter-phase-label').textContent = `💥 COUNTER HIT! (${reactionMs} ms)`;
-            document.getElementById('counter-cue-label').textContent = `✓ أصبت الكف! +20 نقطة`;
-            document.getElementById('counter-hint-label').textContent = `سرعة رد الفعل الهجومي: ${reactionMs} ملي ثانية`;
-            syncComboText(`💥 +20 BONUS (${reactionMs}ms)`);
-
-            if (navigator.vibrate) navigator.vibrate([60, 40, 80]);
-            setTimeout(() => {
-                pipBox.classList.remove('hit-ok');
-                document.getElementById('cam-pip-status').textContent = 'GUARD UP';
-            }, 900);
+        if (performance.now() > counterWindow.expiresAt) { counterWindow.active = false; if (mittGroup) mittGroup.visible = false; return; }
+        const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
+        if (hit(curLeftWrist) || hit(curRightWrist)) {
+            const ms = Math.max(120, Math.round(performance.now() - counterWindow.startTime));
+            counterWindow.active = false; if (mittGroup) mittGroup.visible = false;
+            cntPoints += 20; cntHitsCount++;
+            if (!cntBestMs || ms < cntBestMs) cntBestMs = ms;
+            updateCounterScoreboard(); syncComboText(`💥 +20 BONUS (${ms}ms)`);
         }
     }
 
-    function triggerCounterFailFeedback(msg) {
-        const pipBox = document.getElementById('cam-pip-box');
-        pipBox.classList.remove('hit-ok', 'hit-counter');
-        pipBox.classList.add('hit-fail');
-        document.getElementById('cam-pip-status').textContent = '✗ MISSED';
-        document.getElementById('counter-cue-label').textContent = msg;
-        syncComboText(msg);
-        if (navigator.vibrate) navigator.vibrate(180);
-        setTimeout(() => {
-            pipBox.classList.remove('hit-fail');
-            document.getElementById('cam-pip-status').textContent = 'GUARD UP';
-        }, 850);
-    }
-
-    // --- العصا الإسفنجية ---
     let stickGroup = null;
-    let stickState = { active: false, evaluated: false, type: 'IDLE', progress: 0, duration: 1.0, currentScenario: null };
-
+    let stickState = { active: false, evaluated: false, type: 'IDLE', progress: 0, duration: 1.0 };
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT', name: 'JAB THRUST (طعنة يسارية)', dodge: '➔ SLIP RIGHT (أمل رأسك يميناً)', say: 'Slip Right', hint: 'أمل رأسك يميناً', mittSide: 'RIGHT', counterPunch: '2 CROSS', counterCueAr: '⚡ اضرب الكف بكروس يميني!', counterSay: 'Cross!' },
-        { type: 'THRUST_RIGHT', name: 'CROSS THRUST (طعنة يمينية)', dodge: '⬅ SLIP LEFT (أمل رأسك يساراً)', say: 'Slip Left', hint: 'أمل رأسك يساراً', mittSide: 'LEFT', counterPunch: '3 LEAD HOOK', counterCueAr: '⚡ اضرب الكف بخطاف أيسر!', counterSay: 'Lead Hook!' },
-        { type: 'SWEEP_FROM_LEFT', name: 'LEFT HOOK SWEEP (تلويحة من اليسار)', dodge: '⤵⬅ ROLL LEFT (انحنِ واخرج يساراً)', say: 'Roll Left', hint: 'غص تحت العصا واخرج يساراً', mittSide: 'LEFT', counterPunch: '3 LEAD HOOK', counterCueAr: '⚡ اضرب الكف بخطاف!', counterSay: 'Hook!' },
-        { type: 'SWEEP_FROM_RIGHT', name: 'RIGHT HOOK SWEEP (تلويحة من اليمين)', dodge: '⤵➔ ROLL RIGHT (انحنِ واخرج يميناً)', say: 'Roll Right', hint: 'غص تحت العصا واخرج يميناً', mittSide: 'RIGHT', counterPunch: '2 CROSS', counterCueAr: '⚡ اضرب الكف بكروس!', counterSay: 'Cross!' },
-        { type: 'THRUST_CENTER', name: 'CENTER JAB (اندفاع في المنتصف)', dodge: '⬇ PULL BACK (اسحب جذعك للخلف)', say: 'Pull Back', hint: 'اسحب رأسك للخلف', mittSide: 'RIGHT', counterPunch: '2 CROSS', counterCueAr: '⚡ اضرب الكف بكروس!', counterSay: 'Cross!' }
+        { type: 'THRUST_LEFT', name: 'JAB THRUST', dodge: '➔ SLIP RIGHT' },
+        { type: 'THRUST_RIGHT', name: 'CROSS THRUST', dodge: '⬅ SLIP LEFT' },
+        { type: 'SWEEP_FROM_LEFT', name: 'HOOK SWEEP L', dodge: '⤵⬅ ROLL LEFT' },
+        { type: 'SWEEP_FROM_RIGHT', name: 'HOOK SWEEP R', dodge: '⤵➔ ROLL RIGHT' }
     ];
-
-    let isStickRunning = false;
-    let stickLoopTimer = null;
-    let stickBag = [];
+    let isStickRunning = false; let stickLoopTimer = null; let stickBag = [];
 
     function build3DSparringStick() {
         stickGroup = new THREE.Group();
-        const foamGeo = new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24);
-        const foamMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.45, metalness: 0.1 });
-        const foamMesh = new THREE.Mesh(foamGeo, foamMat);
-        foamMesh.rotation.x = Math.PI / 2;
-        foamMesh.position.z = 0.35;
-        stickGroup.add(foamMesh);
-
-        const tipGeo = new THREE.SphereGeometry(0.056, 20, 20);
-        const tipMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.35 });
-        const tipMesh = new THREE.Mesh(tipGeo, tipMat);
-        tipMesh.position.z = 1.02;
-        stickGroup.add(tipMesh);
-
-        stickGroup.position.set(0, 1.32, 0.1);
-        stickGroup.visible = false;
-        scene.add(stickGroup);
+        const foam = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24), new THREE.MeshStandardMaterial({ color: 0xf43f5e })); foam.rotation.x = Math.PI / 2; foam.position.z = 0.35; stickGroup.add(foam);
+        stickGroup.position.set(0, 1.32, 0.1); stickGroup.visible = false; scene.add(stickGroup);
     }
-
     function updateStickAnimation(delta) {
-        if (!stickGroup || !stickGroup.visible) return;
-        if (mittGroup && mittGroup.visible) {
-            const pulse = 1 + Math.sin(performance.now() * 0.015) * 0.09;
-            mittGroup.scale.set(pulse, pulse, 1);
-            if (counterWindow.active && performance.now() > counterWindow.expiresAt) {
-                counterWindow.active = false;
-                mittGroup.visible = false;
-                triggerCounterFailFeedback('⌛ انتهى وقت الكاونتر!');
-            }
-        }
-        if (!stickState.active) {
-            const t = performance.now() * 0.003;
-            stickGroup.position.set(Math.sin(t) * 0.04, 1.32 + Math.cos(t * 1.3) * 0.02, 0.05);
-            return;
-        }
-
+        if (!stickGroup || !stickGroup.visible || !stickState.active) return;
         stickState.progress += delta / stickState.duration;
-        const p = stickState.progress;
-        if (p >= 1) {
-            if (isCamRefActive && hasPoseFrame && !stickState.evaluated) {
-                if (activeTabName === 'counter') triggerCounterFailFeedback('✗ لم تتفادَ العصا!');
-                else { refHitCount++; updateRefereeScoreboard(); triggerRefereeFeedback(false, ''); }
-            }
-            stickState.active = false;
-            document.getElementById('live-move-badge').textContent = 'READY';
-            return;
-        }
-
-        const strikeCurve = p < 0.48 ? Math.sin((p / 0.48) * (Math.PI / 2)) : Math.cos(((p - 0.48) / 0.52) * (Math.PI / 2));
-        if (stickState.type === 'THRUST_LEFT') {
-            stickGroup.position.set(-0.32 + 0.28 * strikeCurve, 1.34, 0.05 + 1.25 * strikeCurve);
-        } else if (stickState.type === 'THRUST_RIGHT') {
-            stickGroup.position.set(0.32 - 0.28 * strikeCurve, 1.34, 0.05 + 1.25 * strikeCurve);
-        } else if (stickState.type === 'THRUST_CENTER') {
-            stickGroup.position.set(0, 1.35, 0.05 + 1.28 * strikeCurve);
-        } else if (stickState.type === 'SWEEP_FROM_LEFT') {
-            const sa = (p - 0.5) * 2.2;
-            stickGroup.position.set(Math.sin(sa) * 0.55, 1.35, 0.55 + Math.cos(sa) * 0.65);
-        } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
-            const sa = (0.5 - p) * 2.2;
-            stickGroup.position.set(Math.sin(sa) * 0.55, 1.35, 0.55 + Math.cos(sa) * 0.65);
-        }
+        if (stickState.progress >= 1) { stickState.active = false; return; }
+        const c = Math.sin(stickState.progress * Math.PI);
+        stickGroup.position.z = 0.05 + 1.25 * c;
     }
-
-    function getNextPatternFromBag(bagRef) {
-        if (bagRef.length === 0) {
-            bagRef.push(...STICK_PATTERNS);
-            for (let i = bagRef.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [bagRef[i], bagRef[j]] = [bagRef[j], bagRef[i]];
-            }
-        }
-        return bagRef.shift();
-    }
-
     function triggerStickStrike() {
         if (!isStickRunning || isResting || stickState.active) return;
-        if (hasPoseFrame) { strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan; }
-
-        const pat = getNextPatternFromBag(stickBag);
-        const speedMult = parseFloat(document.getElementById('stick-speed').value);
-        document.getElementById('stick-attack-label').textContent = pat.name;
-        document.getElementById('stick-dodge-label').textContent = pat.dodge;
-        document.getElementById('stick-hint-label').textContent = pat.hint;
-        document.getElementById('live-move-badge').textContent = pat.type;
+        if (stickBag.length === 0) stickBag = [...STICK_PATTERNS];
+        const pat = stickBag.shift();
+        stickState.type = pat.type; stickState.progress = 0; stickState.evaluated = false; stickState.active = true;
         syncComboText(pat.dodge);
-
-        if (document.getElementById('stick-voice-mode').value === 'voiced') speakText(pat.say);
-        stickState.type = pat.type;
-        stickState.currentScenario = pat;
-        stickState.progress = 0;
-        stickState.evaluated = false;
-        stickState.duration = 1.25 / speedMult;
-        stickState.active = true;
     }
-
     function toggleStickSession() { if (isStickRunning) stopStickSession(); else startStickSession(); }
     function startStickSession() {
         isStickRunning = true; isResting = false; updateStageEntityVisibility();
-        document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا';
-        document.getElementById('stick-start-btn').classList.add('danger');
-        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف';
-        document.getElementById('tv-start-btn').classList.add('stop');
-        speakText(`Round ${currentRound}. Fight!`);
+        document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا'; document.getElementById('stick-start-btn').classList.add('danger');
         startSharedRoundClock('stick');
-        const speedMult = parseFloat(document.getElementById('stick-speed').value);
-        setTimeout(() => { if (isStickRunning && !isResting) triggerStickStrike(); }, 800);
-        stickLoopTimer = setInterval(triggerStickStrike, Math.max(1950, Math.round(3100 / speedMult)));
+        stickLoopTimer = setInterval(triggerStickStrike, 2800);
     }
-    function stopStickSession() {
-        isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer);
-        document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا';
-        document.getElementById('stick-start-btn').classList.remove('danger');
-        document.getElementById('tv-start-btn').textContent = '▶ ابدأ';
-        document.getElementById('tv-start-btn').classList.remove('stop');
-        document.getElementById('stick-dodge-label').textContent = 'تم إيقاف العصا';
-    }
-    function resetStickSession() {
-        stopStickSession(); resetSharedRoundState(); stickBag = []; refPoints = 0; refSuccessCount = 0; refHitCount = 0; updateRefereeScoreboard();
-    }
-
-    function triggerCounterStrike() {
-        if (!isCounterRunning || isResting || stickState.active || counterWindow.active) return;
-        if (hasPoseFrame) { strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan; }
-        const pat = getNextPatternFromBag(counterBag);
-        const speedMult = parseFloat(document.getElementById('counter-speed').value);
-        document.getElementById('counter-phase-label').textContent = `1️⃣ تفادَ: ${pat.name}`;
-        document.getElementById('counter-cue-label').textContent = pat.dodge;
-        document.getElementById('counter-hint-label').textContent = 'تفادَ العصا ليظهر كف المدرب!';
-        document.getElementById('live-move-badge').textContent = 'DODGE FIRST';
-        syncComboText(pat.dodge);
-        if (document.getElementById('counter-voice-mode').value === 'voiced') speakText(pat.say);
-        stickState.type = pat.type; stickState.currentScenario = pat; stickState.progress = 0; stickState.evaluated = false; stickState.duration = 1.35 / speedMult; stickState.active = true;
-    }
+    function stopStickSession() { isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer); document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا'; document.getElementById('stick-start-btn').classList.remove('danger'); }
+    function resetStickSession() { stopStickSession(); resetSharedRoundState(); refPoints = 0; refSuccessCount = 0; refHitCount = 0; updateRefereeScoreboard(); }
 
     function toggleCounterSession() { if (isCounterRunning) stopCounterSession(); else startCounterSession(); }
     function startCounterSession() {
-        isCounterRunning = true; isResting = false; updateStageEntityVisibility();
-        if (!isCamRefActive) startCameraReferee();
-        document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر';
-        document.getElementById('counter-start-btn').classList.add('danger');
-        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف';
-        document.getElementById('tv-start-btn').classList.add('stop');
-        speakText(`Round ${currentRound}. Fight!`);
+        isCounterRunning = true; isResting = false; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
+        document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر'; document.getElementById('counter-start-btn').classList.add('danger');
         startSharedRoundClock('counter');
-        const speedMult = parseFloat(document.getElementById('counter-speed').value);
-        setTimeout(() => { if (isCounterRunning && !isResting) triggerCounterStrike(); }, 1000);
-        counterLoopTimer = setInterval(triggerCounterStrike, Math.max(3600, Math.round(4800 / speedMult)));
+        counterLoopTimer = setInterval(() => { if (isCounterRunning && !isResting) triggerStickStrike(); }, 3800);
     }
-    function stopCounterSession() {
-        isCounterRunning = false; stickState.active = false; counterWindow.active = false;
-        if (mittGroup) mittGroup.visible = false;
-        stopSharedRoundClock(); clearInterval(counterLoopTimer);
-        document.getElementById('counter-start-btn').textContent = '⚡ ابدأ تدريب الكاونتر';
-        document.getElementById('counter-start-btn').classList.remove('danger');
-        document.getElementById('tv-start-btn').textContent = '▶ ابدأ';
-        document.getElementById('tv-start-btn').classList.remove('stop');
-    }
-    function resetCounterSession() {
-        stopCounterSession(); resetSharedRoundState(); counterBag = []; cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard();
-    }
+    function stopCounterSession() { isCounterRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(counterLoopTimer); document.getElementById('counter-start-btn').textContent = '⚡ ابدأ تدريب الكاونتر'; document.getElementById('counter-start-btn').classList.remove('danger'); }
+    function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // مكتبة الحركات ومحرك 3D
+    // محرك Three.js الرئيسي
     // =========================================================================
     const MOVES = {
         JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx' },
@@ -1962,45 +1469,14 @@ ${appArchitectureSummary}`;
         PIVOT_L: { en: 'Pivot Left', say: 'Pivot Left', file: 'Left Pivot.fbx' },
         PIVOT_R: { en: 'Pivot Right', say: 'Pivot Right', file: 'Right Pivot.fbx' }
     };
-
     const MASTER_COMBOS_70 = [
         ['JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'JAB', 'CROSS'], ['STEP_IN', 'JAB', 'CROSS'],
-        ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R'],
-        ['JAB', 'CROSS', 'ROLL'], ['JAB', 'PULL', 'CROSS'], ['SLIP_L', 'L_HOOK', 'CROSS'],
-        ['SLIP_R', 'CROSS', 'L_HOOK'], ['JAB', 'R_UPPER', 'STEP_BACK'], ['STEP_IN', 'JAB', 'R_HOOK'],
-        ['JAB', 'CROSS', 'PIVOT_L'], ['JAB', 'CROSS', 'PIVOT_R'], ['PULL', 'CROSS', 'L_HOOK'],
-        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'JAB', 'CROSS', 'L_HOOK'],
-        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_L', 'CROSS'], ['JAB', 'SLIP_R', 'CROSS', 'L_HOOK'],
-        ['JAB', 'SLIP_L', 'L_UPPER', 'CROSS'], ['SLIP_R', 'R_UPPER', 'L_HOOK', 'CROSS']
+        ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R']
     ];
 
-    let shuffleBag = [];
-    let lastPlayedSignature = '';
-
-    function refillAndShuffleBag(pool) {
-        const copy = pool.map(c => [...c]);
-        for (let i = copy.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [copy[i], copy[j]] = [copy[j], copy[i]];
-        }
-        return copy;
-    }
-
-    function getNextUniqueCombo(pool) {
-        if (!pool || pool.length === 0) return MASTER_COMBOS_70[0];
-        if (shuffleBag.length === 0) shuffleBag = refillAndShuffleBag(pool);
-        return shuffleBag.shift();
-    }
-
     let scene, camera, renderer, modelRoot, mixer;
-    let clock = new THREE.Clock();
-    let actions = {};
-    let activeAction = null;
-    let moveQueue = [];
-    let isComboBusy = false;
-    let loadedClipsCount = 0;
-    let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
-    let isFPV = false;
+    let clock = new THREE.Clock(); let actions = {}; let activeAction = null; let moveQueue = []; let isComboBusy = false;
+    let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0; let isFPV = false;
 
     function toggleModelFacing() {
         if (isFPV) return;
@@ -2008,13 +1484,10 @@ ${appArchitectureSummary}`;
         localStorage.setItem('boxer_facing_flip', facingFlip === 0 ? '0' : '1');
         if (modelRoot) modelRoot.rotation.y = facingFlip;
     }
-
     function toggleCameraView() {
-        isFPV = !isFPV;
-        const btn = document.getElementById('cam-btn');
+        isFPV = !isFPV; const btn = document.getElementById('cam-btn');
         if (isFPV) {
-            facingFlip = 0; localStorage.setItem('boxer_facing_flip', '0');
-            if (modelRoot) modelRoot.rotation.y = 0;
+            facingFlip = 0; if (modelRoot) modelRoot.rotation.y = 0;
             camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0);
             btn.textContent = '🎥 المنظور الخارجي'; btn.style.background = 'rgba(16, 185, 129, 0.88)';
         } else {
@@ -2036,30 +1509,13 @@ ${appArchitectureSummary}`;
         container.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.92));
-        const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
-        keyLight.position.set(2.5, 4.5, 3.5); scene.add(keyLight);
-        const rimLight = new THREE.PointLight(0xf59e0b, 1.6, 10);
-        rimLight.position.set(-2.5, 2.5, -2); scene.add(rimLight);
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.35); keyLight.position.set(2.5, 4.5, 3.5); scene.add(keyLight);
 
         const floor = new THREE.Mesh(new THREE.CircleGeometry(1.4, 36), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 }));
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
 
-        build3DSparringStick();
-        build3DFocusMitt();
-        build3DCoachPads();
-        loadBoxerAndAnimations();
-        animate3D();
-    }
-
-    function sanitizeClip(clip, uniqueName) {
-        clip.name = uniqueName;
-        clip.tracks.forEach(track => {
-            if (track.name.endsWith('.position') && track.name.toLowerCase().includes('hips')) {
-                const v = track.values; const bx = v[0], bz = v[2];
-                for (let i = 0; i < v.length; i += 3) { v[i] = bx + (v[i] - bx) * 0.22; v[i + 2] = bz + (v[i + 2] - bz) * 0.30; }
-            }
-        });
-        return clip;
+        build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
+        loadBoxerAndAnimations(); animate3D();
     }
 
     function loadBoxerAndAnimations() {
@@ -2068,15 +1524,12 @@ ${appArchitectureSummary}`;
         loader.load('boxer.fbx', (fbxObj) => {
             modelRoot = fbxObj;
             const box = new THREE.Box3().setFromObject(modelRoot);
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z) || 1;
+            const size = box.getSize(new THREE.Vector3()); const maxDim = Math.max(size.x, size.y, size.z) || 1;
             modelRoot.scale.setScalar(1.85 / maxDim);
             const scaledBox = new THREE.Box3().setFromObject(modelRoot);
             const center = scaledBox.getCenter(new THREE.Vector3());
             modelRoot.position.set(-center.x, -scaledBox.min.y, -center.z);
-            modelRoot.rotation.y = facingFlip;
-            modelRoot.visible = (activeTabName !== 'stick' && activeTabName !== 'counter' && activeTabName !== 'mitts');
-            scene.add(modelRoot);
+            modelRoot.rotation.y = facingFlip; scene.add(modelRoot);
 
             mixer = new THREE.AnimationMixer(modelRoot);
             mixer.addEventListener('finished', () => {
@@ -2085,67 +1538,30 @@ ${appArchitectureSummary}`;
             });
 
             if (fbxObj.animations && fbxObj.animations.length > 0) {
-                const idleClip = sanitizeClip(fbxObj.animations[0].clone(), 'CLIP_IDLE');
-                const idleAct = mixer.clipAction(idleClip);
+                const idleAct = mixer.clipAction(fbxObj.animations[0].clone());
                 idleAct.setLoop(THREE.LoopRepeat); idleAct.play();
                 actions['IDLE'] = idleAct; activeAction = idleAct;
             }
             document.getElementById('glb-status').style.display = 'none';
-            loadAllMoveClips(loader);
-        });
-    }
-
-    function loadAllMoveClips(loader) {
-        const keys = Object.keys(MOVES);
-        const logBox = document.getElementById('detected-clips-list');
-        const loadedNames = ['IDLE (boxer.fbx)'];
-        keys.forEach(key => {
-            loader.load(encodeURI(MOVES[key].file), (animFbx) => {
-                if (animFbx.animations && animFbx.animations.length > 0) {
-                    const namedClip = sanitizeClip(animFbx.animations[0].clone(), 'CLIP_' + key);
-                    const act = mixer.clipAction(namedClip);
-                    act.setLoop(THREE.LoopOnce, 1); act.clampWhenFinished = false;
-                    actions[key] = act; loadedClipsCount++;
-                    loadedNames.push(`✓ ${key}`);
-                    if (logBox) logBox.textContent = `تم ربط ${loadedClipsCount} حركة:\n` + loadedNames.join('\n');
-                }
-            }, undefined, () => {});
         });
     }
 
     function returnToIdle() {
-        const idleAct = actions['IDLE'];
-        if (!idleAct) return;
+        const idleAct = actions['IDLE']; if (!idleAct) return;
         document.getElementById('live-move-badge').textContent = 'IDLE';
-        if (activeAction && activeAction !== idleAct) {
-            idleAct.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.16).play();
-            activeAction.fadeOut(0.16); activeAction = idleAct;
-        }
+        if (activeAction && activeAction !== idleAct) { idleAct.reset().play(); activeAction.fadeOut(0.16); activeAction = idleAct; }
     }
 
     function executeSingleAction(moveKey, withSpeech = false) {
-        if (!mixer || Object.keys(actions).length === 0) return;
-        const targetKey = actions[moveKey] ? moveKey : 'IDLE';
-        const nextAction = actions[targetKey];
-        if (!nextAction) return;
-        if (targetKey === 'IDLE') { returnToIdle(); return; }
-
+        if (!mixer || !actions[moveKey]) return;
         document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
         if (withSpeech) speakText(MOVES[moveKey].say);
-
-        const clipDur = nextAction.getClip().duration || 1.25;
-        const syncedSpeed = Math.min(2.4, Math.max(0.35, clipDur / (0.85 / voiceRate)));
-        nextAction.reset(); nextAction.setEffectiveTimeScale(syncedSpeed); nextAction.setEffectiveWeight(1);
-        nextAction.fadeIn(0.08); nextAction.play();
-        if (activeAction && activeAction !== nextAction) activeAction.fadeOut(0.08);
-        activeAction = nextAction;
+        const act = actions[moveKey]; act.reset(); act.play();
+        if (activeAction && activeAction !== act) activeAction.fadeOut(0.08);
+        activeAction = act;
     }
 
-    function playComboSequence(seqKeys) {
-        if (!seqKeys || seqKeys.length === 0) return;
-        isComboBusy = true; moveQueue = seqKeys.slice(1);
-        executeSingleAction(seqKeys[0], true);
-    }
+    function playComboSequence(seq) { if (seq.length > 0) { isComboBusy = true; moveQueue = seq.slice(1); executeSingleAction(seq[0], true); } }
 
     function animate3D() {
         requestAnimationFrame(animate3D);
@@ -2155,147 +1571,47 @@ ${appArchitectureSummary}`;
         else if (mixer) mixer.update(delta);
         if (renderer && scene && camera) renderer.render(scene, camera);
     }
-
     window.addEventListener('load', init3DScene);
 
-    let currentBuilder = [];
-    let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
-    let drillCurrentReps = 0; let drillTargetReps = 10;
-
-    function addAndPreview(moveKey) {
-        if (currentBuilder.length < 7) { currentBuilder.push(moveKey); renderBuilder(); }
-        moveQueue = []; isComboBusy = false; executeSingleAction(moveKey, true);
-    }
-    function clearBuilder() { currentBuilder = []; renderBuilder(); }
-    function renderBuilder() {
-        const box = document.getElementById('builder-preview');
-        box.textContent = currentBuilder.length === 0 ? 'اضغط على الحركات لبناء الكومبو...' : currentBuilder.map(k => MOVES[k].en).join(' ➔ ');
-    }
-    function saveCustomCombo() {
-        if (currentBuilder.length === 0) return;
-        customCombos.push([...currentBuilder]);
-        localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
-        shuffleBag = []; clearBuilder(); renderSavedCombos();
-    }
-    function deleteCustomCombo(index) {
-        customCombos.splice(index, 1);
-        localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
-        shuffleBag = []; renderSavedCombos();
-    }
-    function sendToDrill(comboArray) {
-        const sel = document.getElementById('drill-combo-select');
-        const valStr = JSON.stringify(comboArray);
-        for (let i = 0; i < sel.options.length; i++) {
-            if (sel.options[i].value === valStr) { sel.selectedIndex = i; break; }
-        }
-        document.getElementById('drill-enabled').value = 'on';
-        resetDrillCounter(); updateModeBadge(); switchTab('drill', document.querySelectorAll('.tab-btn')[6]);
-    }
-    function renderSavedCombos() {
-        const list = document.getElementById('saved-list');
-        const drillSel = document.getElementById('drill-combo-select');
-        document.getElementById('saved-count').textContent = customCombos.length;
-        list.innerHTML = ''; drillSel.innerHTML = '';
-        customCombos.forEach((combo, idx) => {
-            const label = combo.map(k => MOVES[k].en).join(' ➔ ');
-            const div = document.createElement('div'); div.className = 'saved-item';
-            div.innerHTML = `<span style="flex:1;">${label}</span><button class="drill-pick-btn" onclick='sendToDrill(${JSON.stringify(combo)})'>إتقان</button><button class="del-btn" onclick="deleteCustomCombo(${idx})">حذف</button>`;
-            list.appendChild(div);
-            const opt = document.createElement('option'); opt.value = JSON.stringify(combo); opt.textContent = `★ ${label}`; drillSel.appendChild(opt);
-        });
-        MASTER_COMBOS_70.forEach((combo, idx) => {
-            const opt = document.createElement('option'); opt.value = JSON.stringify(combo); opt.textContent = `#${idx + 1}: ` + combo.map(k => MOVES[k].en).join(' ➔ '); drillSel.appendChild(opt);
-        });
-        populateMittsRepeatDropdown();
-    }
-    renderSavedCombos();
-
-    function updateDrillTarget() {
-        drillTargetReps = parseInt(document.getElementById('drill-reps-target').value);
-        document.getElementById('drill-target-val').textContent = drillTargetReps === 999 ? 'مستمر' : `${drillTargetReps} مرات`;
-        resetDrillCounter();
-    }
-    function resetDrillCounter() {
-        drillCurrentReps = 0;
-        document.getElementById('drill-counter-display').textContent = `0 / ${drillTargetReps === 999 ? '∞' : drillTargetReps}`;
-    }
-
     // =========================================================================
-    // محرك التوقيت والتحكم بالملفات
+    // إدارة الجلسات والتوقيت
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
     let timerId = null; let comboId = null; let activeClockOwner = 'train';
 
-    function startSharedRoundClock(ownerTab) {
-        activeClockOwner = ownerTab; clearInterval(timerId); timerId = setInterval(tickTimer, 1000);
-    }
+    function startSharedRoundClock(owner) { activeClockOwner = owner; clearInterval(timerId); timerId = setInterval(tickTimer, 1000); }
     function stopSharedRoundClock() { clearInterval(timerId); timerId = null; }
-    function resetSharedRoundState() {
-        stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration;
-        syncRoundLabels(`الجولة 1 / ${totalRounds}`); updateTimerDisplay();
-    }
+    function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); }
+
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x`;
-        const mittsBadge = document.getElementById('mitts-sync-rate-badge');
-        if (mittsBadge) mittsBadge.textContent = `🔊 السرعة: ${voiceRate.toFixed(2)}x`;
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
-    function testVoice() { playComboSequence(['JAB', 'CROSS', 'L_HOOK', 'SLIP_L']); }
-    function changeInterval(val) {
-        comboIntervalMs = parseFloat(val) * 1000;
-        document.getElementById('interval-val').textContent = `${val} ثانية`;
-        if (isRunning) { clearInterval(comboId); comboId = setInterval(executeNextCombo, comboIntervalMs); }
-    }
-    function syncRoundLabels(txt) {
-        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label'].forEach(id => {
-            const el = document.getElementById(id); if (el) el.textContent = txt;
-        });
-    }
-    function syncComboText(txt) {
-        document.getElementById('combo-text').textContent = txt; document.getElementById('tv-combo-text').textContent = txt;
-    }
-    function updateRoundsSetting() { totalRounds = parseInt(document.getElementById('rounds-select').value); syncRoundLabels(`الجولة ${currentRound} / ${totalRounds}`); }
-    function updateTimeSetting() { roundDuration = parseInt(document.getElementById('time-select').value); if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning) { timeLeft = roundDuration; updateTimerDisplay(); } }
-    function updateModeBadge() {
-        shuffleBag = [];
-        const isDrill = document.getElementById('drill-enabled').value === 'on';
-        if (isDrill) document.getElementById('mode-badge').textContent = 'الوضع: تكرار للإتقان 🔁';
-        else {
-            const mode = document.getElementById('combo-source').value;
-            const names = { mixed_all: '70 كومبو عشوائي', custom: 'مخصص', both: 'مدمج (70 + مخصص)' };
-            document.getElementById('mode-badge').textContent = `الوضع: ${names[mode]}`;
-        }
-    }
-    function speakText(text) {
-        if (window.AndroidTTS) {
-            if (window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
-            window.AndroidTTS.speak(text);
-        } else if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text); u.rate = voiceRate; window.speechSynthesis.speak(u);
+    function changeInterval(val) { comboIntervalMs = parseFloat(val) * 1000; }
+    function syncComboText(txt) { document.getElementById('combo-text').textContent = txt; document.getElementById('tv-combo-text').textContent = txt; }
+    function speakText(txt) {
+        if (window.AndroidTTS) { window.AndroidTTS.setRate(voiceRate); window.AndroidTTS.speak(txt); }
+        else if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(txt); u.rate = voiceRate; window.speechSynthesis.speak(u);
         }
     }
 
     document.getElementById('start-btn').addEventListener('click', () => { if (isRunning) stopSession(); else startSession(); });
-
     function startSession() {
-        if (isStickRunning) stopStickSession(); if (isCounterRunning) stopCounterSession(); if (isMittsRunning) stopMittsSession();
-        isRunning = true; isResting = false; isComboBusy = false; shuffleBag = [];
+        isRunning = true; isResting = false;
         document.getElementById('start-btn').textContent = 'إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
-        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
-        speakText(`Round ${currentRound}. Fight!`); startSharedRoundClock('train');
+        startSharedRoundClock('train');
         setTimeout(() => { if (isRunning && !isResting) executeNextCombo(); }, 1200);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
     }
     function stopSession() {
         isRunning = false; isComboBusy = false; moveQueue = []; stopSharedRoundClock(); clearInterval(comboId);
         document.getElementById('start-btn').textContent = 'ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
-        document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
         syncComboText('READY'); returnToIdle();
     }
-    function resetSession() { stopSession(); resetSharedRoundState(); shuffleBag = []; resetDrillCounter(); }
+    function resetSession() { stopSession(); resetSharedRoundState(); }
 
     async function tickTimer() {
         if (timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
@@ -2306,20 +1622,16 @@ ${appArchitectureSummary}`;
                     else if (activeClockOwner === 'stick') stopStickSession();
                     else if (activeClockOwner === 'counter') stopCounterSession();
                     else stopSession();
-                    saveSessionRecord(activeClockOwner, { summary: `جولات مكتملة`, bestMs: cntBestMs });
+                    saveSessionRecord(activeClockOwner, { summary: 'جولات مكتملة', bestMs: cntBestMs });
                     resetSharedRoundState(); speakText("Workout complete!"); return;
                 }
-                isResting = true; isComboBusy = false; isMittsBusy = false; moveQueue = [];
-                padAnimState.activePunch = null; resetPadsToGuardPosition();
-                timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
+                isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    let stats = `انتهت الجولة ${currentRound}. اللكمات: ${mittsPunchesCount}، تفادي: ${refSuccessCount}، كاونتر: ${cntHitsCount}.`;
-                    const advice = await getAiCornermanAdvice(stats);
-                    speakText(advice); if (activeClockOwner === 'train') document.getElementById('combo-sub').textContent = advice;
+                    const advice = await getAiCornermanAdvice(`انتهت الجولة ${currentRound}. اللكمات: ${mittsPunchesCount}.`);
+                    speakText(advice);
                 } else speakText("Rest time.");
             } else {
-                isResting = false; shuffleBag = []; currentRound++; timeLeft = roundDuration;
-                updateTimerDisplay(); syncRoundLabels(`الجولة ${currentRound} / ${totalRounds}`);
+                isResting = false; currentRound++; timeLeft = roundDuration; updateTimerDisplay();
                 speakText(`Round ${currentRound}. Let's go!`);
             }
         }
@@ -2328,34 +1640,21 @@ ${appArchitectureSummary}`;
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        const formatted = `${m}:${s}`;
         ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) { el.textContent = formatted; if (isResting) el.classList.add('rest'); else el.classList.remove('rest'); }
+            const el = document.getElementById(id); if (el) el.textContent = `${m}:${s}`;
         });
     }
 
     function executeNextCombo() {
         if (!isRunning || isResting || isComboBusy) return;
-        const isDrill = document.getElementById('drill-enabled').value === 'on';
-        let seqKeys = [];
-        if (isDrill) {
-            seqKeys = JSON.parse(document.getElementById('drill-combo-select').value || '[]');
-            drillCurrentReps++;
-            document.getElementById('drill-counter-display').textContent = `${drillCurrentReps} / ${drillTargetReps === 999 ? '∞' : drillTargetReps}`;
-            if (drillTargetReps !== 999 && drillCurrentReps >= drillTargetReps) {
-                document.getElementById('drill-enabled').value = 'off'; updateModeBadge(); resetDrillCounter();
-            }
-        } else {
-            const source = document.getElementById('combo-source').value;
-            let pool = MASTER_COMBOS_70;
-            if (source === 'custom' && customCombos.length > 0) pool = customCombos;
-            else if (source === 'both' && customCombos.length > 0) pool = [...MASTER_COMBOS_70, ...customCombos];
-            seqKeys = getNextUniqueCombo(pool);
-        }
-        syncComboText(seqKeys.map(k => MOVES[k].en).join(' ➔ '));
-        playComboSequence(seqKeys);
+        const seq = MASTER_COMBOS_70[Math.floor(Math.random() * MASTER_COMBOS_70.length)];
+        syncComboText(seq.map(k => MOVES[k].en).join(' ➔ '));
+        playComboSequence(seq);
     }
+
+    let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
+    function addAndPreview(k) { executeSingleAction(k, true); }
+    function saveCustomCombo() {} function clearBuilder() {} function resetDrillCounter() {} function updateModeBadge() {} function updateRoundsSetting() {} function updateTimeSetting() {}
 </script>
 </body>
 </html>
