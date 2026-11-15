@@ -37,10 +37,7 @@
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
         .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
         .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.88); color: var(--text); border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; }
-        
-        /* زر الكاميرا الجديد للخصم التخيلي */
         .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
@@ -86,7 +83,6 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ 3D والضبط</button>
     </div>
 
-    <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
             <span class="badge-stance">MOCAP SYNC ENGINE</span>
@@ -115,7 +111,6 @@
         </div>
     </div>
 
-    <!-- التبويب 2: الإتقان -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -150,7 +145,6 @@
         </div>
     </div>
 
-    <!-- التبويب 3: الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
@@ -199,7 +193,6 @@
         </div>
     </div>
 
-    <!-- التبويب 4: مجسم 3D والإعدادات -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
             <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
@@ -285,10 +278,10 @@
     let loadedClipsCount = 0;
     
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
-    let isFPV = false; // متغير حالة منظور الكاميرا
+    let isFPV = false;
 
     function toggleModelFacing() {
-        if (isFPV) return; // منع عكس الاتجاه أثناء منظور الخصم
+        if (isFPV) return;
         facingFlip = (facingFlip === 0) ? Math.PI : 0;
         localStorage.setItem('boxer_facing_flip', facingFlip === 0 ? '0' : '1');
         if (modelRoot) modelRoot.rotation.y = facingFlip;
@@ -298,25 +291,21 @@
         isFPV = !isFPV;
         const btn = document.getElementById('cam-btn');
         if (isFPV) {
-            // تفعيل منظور الخصم (النزال التخيلي)
-            // إجبار الملاكم على مواجهتك
             facingFlip = 0;
             localStorage.setItem('boxer_facing_flip', '0');
             if (modelRoot) modelRoot.rotation.y = 0;
             
-            // وضع الكاميرا أمام الملاكم (بمستوى الرأس)
-            camera.position.set(0, 1.55, 1.25); 
-            camera.lookAt(0, 1.45, 0);
+            camera.position.set(0, 1.30, 2.45);
+            camera.lookAt(0, 0.85, 0);
             
             btn.textContent = '🎥 المنظور الخارجي';
-            btn.style.background = 'rgba(16, 185, 129, 0.88)'; // زر أخضر
+            btn.style.background = 'rgba(16, 185, 129, 0.88)';
         } else {
-            // العودة للمنظور العادي الافتراضي
             camera.position.set(0.15, 1.25, 3.05);
             camera.lookAt(0, 0.92, 0);
             
             btn.textContent = '🎥 منظور الخصم';
-            btn.style.background = 'rgba(220, 38, 38, 0.88)'; // زر أحمر
+            btn.style.background = 'rgba(220, 38, 38, 0.88)';
         }
     }
 
@@ -325,7 +314,6 @@
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
-        // الوضع الافتراضي
         camera.position.set(0.15, 1.25, 3.05);
         camera.lookAt(0, 0.92, 0);
 
