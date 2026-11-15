@@ -85,7 +85,7 @@
     <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">MOCAP 3D ENGINE</span>
+            <span class="badge-stance">MOCAP SYNC ENGINE</span>
             <span class="badge-action" id="live-move-badge">IDLE</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <div id="canvas-3d"></div>
@@ -155,7 +155,7 @@
                 <option value="both">دمج الشامل مع كومبوهاتي</option>
             </select>
 
-            <div class="cat-title">🥊 اللكمات (اضغط لتجربة الحركة الحقيقية):</div>
+            <div class="cat-title">🥊 اللكمات (اضغط لاختبار كل لكمة على حدة):</div>
             <div class="move-chips">
                 <button class="chip" onclick="addAndPreview('JAB')">1 Jab</button>
                 <button class="chip" onclick="addAndPreview('CROSS')">2 Cross</button>
@@ -200,7 +200,7 @@
             <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <button class="btn secondary small" onclick="toggleModelFacing()">🔄 عكس وجه المجسم (180°)</button>
-                <button class="btn secondary small" onclick="playAction('IDLE')">🛡️ العودة للوقفة</button>
+                <button class="btn secondary small" onclick="returnToIdle()">🛡️ العودة للوقفة</button>
             </div>
             <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة في assets...</div>
         </div>
@@ -218,9 +218,9 @@
             <div class="setting-item" style="margin-top: 8px;">
                 <div class="setting-header">
                     <span>الفاصل بين الكومبوهات:</span>
-                    <span id="interval-val" style="color: var(--accent);">4.2 ثانية</span>
+                    <span id="interval-val" style="color: var(--accent);">4.5 ثانية</span>
                 </div>
-                <input type="range" id="combo-interval" min="2.2" max="6.5" step="0.2" value="4.2" oninput="changeInterval(this.value)">
+                <input type="range" id="combo-interval" min="2.5" max="7.0" step="0.2" value="4.5" oninput="changeInterval(this.value)">
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
@@ -254,7 +254,6 @@
         btn.classList.add('active');
     }
 
-    // ربط كل حركة بالاسم الفعلي للملف المرفوع في assets
     const MOVES = {
         JAB:       { en: '1 Jab',        say: 'Jab',           file: 'jab.fbx' },
         CROSS:     { en: '2 Cross',      say: 'Cross',         file: 'cross.fbx' },
@@ -276,6 +275,7 @@
     let clock = new THREE.Clock();
     let actions = {};
     let activeAction = null;
+    let moveQueue = [];
     let loadedClipsCount = 0;
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
 
@@ -318,14 +318,16 @@
         animate3D();
     }
 
-    function sanitizeClip(clip) {
+    function sanitizeClip(clip, uniqueName) {
+        // 1. تسمية المقطع باسم فريد لمنع تداخل مقاطع Mixamo ذات الاسم الموحد (mixamo.com)
+        clip.name = uniqueName;
         clip.tracks.forEach(track => {
             if (track.name.endsWith('.position') && track.name.toLowerCase().includes('hips')) {
                 const v = track.values;
                 const baseX = v[0], baseZ = v[2];
                 for (let i = 0; i < v.length; i += 3) {
-                    v[i] = baseX + (v[i] - baseX) * 0.25;
-                    v[i + 2] = baseZ + (v[i + 2] - baseZ) * 0.35;
+                    v[i] = baseX + (v[i] - baseX) * 0.22;
+                    v[i + 2] = baseZ + (v[i + 2] - baseZ) * 0.30;
                 }
             }
         });
@@ -352,12 +354,18 @@
             scene.add(modelRoot);
 
             mixer = new THREE.AnimationMixer(modelRoot);
+            // عند انتهاء أي حركة، نفذ الحركة التالية في الطابور أو عد للوقفة
             mixer.addEventListener('finished', () => {
-                playAction('IDLE');
+                if (moveQueue.length > 0) {
+                    const nextKey = moveQueue.shift();
+                    executeSingleAction(nextKey);
+                } else {
+                    returnToIdle();
+                }
             });
 
             if (fbxObj.animations && fbxObj.animations.length > 0) {
-                const idleClip = sanitizeClip(fbxObj.animations[0]);
+                const idleClip = sanitizeClip(fbxObj.animations[0].clone(), 'CLIP_IDLE');
                 const idleAct = mixer.clipAction(idleClip);
                 idleAct.setLoop(THREE.LoopRepeat);
                 idleAct.play();
@@ -374,64 +382,73 @@
         const keys = Object.keys(MOVES);
         const logBox = document.getElementById('detected-clips-list');
         const loadedNames = ['IDLE (boxer.fbx)'];
-        const fileCache = {};
 
         keys.forEach(key => {
             const fileName = MOVES[key].file;
-            if (fileCache[fileName]) {
-                actions[key] = fileCache[fileName];
-                loadedClipsCount++;
-                loadedNames.push(`✓ ${key} ➔ ${fileName}`);
-                logBox.textContent = `تم ربط ${loadedClipsCount} حركة واقعية:\n` + loadedNames.join('\n');
-                return;
-            }
-
+            // تحميل مستقل لكل مفتاح حركة مع تسمية فريدة CLIP_KEY لمنع الكاش المشترك
             loader.load(encodeURI(fileName), (animFbx) => {
                 if (animFbx.animations && animFbx.animations.length > 0) {
-                    const clip = sanitizeClip(animFbx.animations[0]);
-                    const act = mixer.clipAction(clip);
+                    const rawClip = animFbx.animations[0].clone();
+                    const namedClip = sanitizeClip(rawClip, 'CLIP_' + key);
+                    const act = mixer.clipAction(namedClip);
                     act.setLoop(THREE.LoopOnce, 1);
                     act.clampWhenFinished = false;
                     actions[key] = act;
-                    fileCache[fileName] = act;
                     loadedClipsCount++;
                     loadedNames.push(`✓ ${key} ➔ ${fileName}`);
-                    logBox.textContent = `تم ربط ${loadedClipsCount} حركة واقعية:\n` + loadedNames.join('\n');
+                    logBox.textContent = `تم ربط ${loadedClipsCount} حركة مستقلة:\n` + loadedNames.join('\n');
                 }
             }, undefined, () => {});
         });
     }
 
-    function playAction(moveKey) {
+    function returnToIdle() {
+        const idleAct = actions['IDLE'];
+        if (!idleAct) return;
+        document.getElementById('live-move-badge').textContent = 'IDLE';
+        if (activeAction && activeAction !== idleAct) {
+            idleAct.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.14).play();
+            activeAction.fadeOut(0.14);
+            activeAction = idleAct;
+        }
+    }
+
+    function executeSingleAction(moveKey) {
         if (!mixer || Object.keys(actions).length === 0) return;
 
         const targetKey = actions[moveKey] ? moveKey : 'IDLE';
         const nextAction = actions[targetKey];
         if (!nextAction) return;
 
-        document.getElementById('live-move-badge').textContent =
-            targetKey === 'IDLE' ? 'IDLE' : (MOVES[moveKey] ? MOVES[moveKey].en.toUpperCase() : targetKey);
-
         if (targetKey === 'IDLE') {
-            if (activeAction && activeAction !== nextAction) {
-                nextAction.reset().setEffectiveTimeScale(1).setEffectiveWeight(1).fadeIn(0.16).play();
-                activeAction.fadeOut(0.16);
-                activeAction = nextAction;
-            }
+            returnToIdle();
             return;
         }
 
-        const punchSpeed = Math.max(1.2, voiceRate * 1.4);
+        document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
+
+        // ضبط سرعة اللكمة لتتناسب مع طول المقطع وسرعة الصوت
+        const clipDur = nextAction.getClip().duration || 1.2;
+        const targetDur = Math.max(0.55, 0.72 / voiceRate);
+        const dynamicSpeed = Math.min(2.6, Math.max(1.25, clipDur / targetDur));
+
         nextAction.reset();
-        nextAction.setEffectiveTimeScale(punchSpeed);
+        nextAction.setEffectiveTimeScale(dynamicSpeed);
         nextAction.setEffectiveWeight(1);
-        nextAction.fadeIn(0.08);
+        nextAction.fadeIn(0.07);
         nextAction.play();
 
         if (activeAction && activeAction !== nextAction) {
-            activeAction.fadeOut(0.08);
+            activeAction.fadeOut(0.07);
         }
         activeAction = nextAction;
+    }
+
+    // تشغيل تسلسل الكومبو بالترتيب الدقيق
+    function playComboSequence(seqKeys) {
+        if (!seqKeys || seqKeys.length === 0) return;
+        moveQueue = seqKeys.slice(1);
+        executeSingleAction(seqKeys[0]);
     }
 
     function animate3D() {
@@ -463,7 +480,8 @@
             currentBuilder.push(moveKey);
             renderBuilder();
         }
-        playAction(moveKey);
+        moveQueue = [];
+        executeSingleAction(moveKey);
     }
 
     function clearBuilder() { currentBuilder = []; renderBuilder(); }
@@ -545,7 +563,7 @@
     }
 
     let voiceRate = 0.90;
-    let comboIntervalMs = 4200;
+    let comboIntervalMs = 4500;
     let totalRounds = 3;
     let roundDuration = 180;
     let currentRound = 1;
@@ -622,13 +640,14 @@
 
     function stopSession() {
         isRunning = false;
+        moveQueue = [];
         clearInterval(timerId);
         clearInterval(comboId);
         const btn = document.getElementById('start-btn');
         btn.textContent = 'ابدأ الجلسة';
         btn.classList.remove('danger');
         document.getElementById('combo-text').textContent = 'READY';
-        playAction('IDLE');
+        returnToIdle();
     }
 
     function resetSession() {
@@ -649,10 +668,11 @@
             if (!isResting) {
                 if (currentRound >= totalRounds) { stopSession(); speakText("Workout complete!"); return; }
                 isResting = true;
+                moveQueue = [];
                 timeLeft = 60;
                 document.getElementById('combo-text').textContent = 'REST';
                 document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس';
-                playAction('IDLE');
+                returnToIdle();
                 speakText("Rest time.");
             } else {
                 isResting = false;
@@ -718,12 +738,8 @@
         document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
         speakText(seqKeys.map(k => MOVES[k].say).join(', '));
 
-        const stepDelay = Math.max(540, Math.round(700 / voiceRate));
-        seqKeys.forEach((moveKey, idx) => {
-            setTimeout(() => {
-                if (isRunning && !isResting) playAction(moveKey);
-            }, idx * stepDelay);
-        });
+        // تنفيذ تسلسل الحركات في الطابور بالتزامن الدقيق مع الكومبو المنطوق
+        playComboSequence(seqKeys);
     }
 </script>
 </body>
