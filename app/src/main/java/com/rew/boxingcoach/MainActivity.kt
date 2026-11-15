@@ -1,6 +1,7 @@
 package com.rew.boxingcoach
 
 import android.Manifest
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.ViewGroup
@@ -8,7 +9,6 @@ import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
-import android.app.Activity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
@@ -20,7 +20,7 @@ class MainActivity : Activity() {
         super.onCreate(savedInstanceState)
         
         try {
-            // إنشاء الـ WebView برمجياً بالكامل لتجنب أي أخطاء في ملفات الـ XML أو الموارد
+            // 1. إنشاء الحاوية برمجياً لتجنب أي أعطال متعلقة بالواجهة
             webView = WebView(this).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -29,21 +29,17 @@ class MainActivity : Activity() {
             }
             setContentView(webView)
 
-            // طلب إذن الكاميرا وقت التشغيل
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
-            }
-
-            // إعدادات الـ WebView والـ Assets المحلية والـ Web Worker
+            // 2. إعدادات المتصفح اللازمة لتشغيل الكاميرا دون تعارض
             val webSettings: WebSettings = webView.settings
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
-            webSettings.mediaPlaybackRequiresUserGesture = false
+            webSettings.mediaPlaybackRequiresUserGesture = false // يسمح بفتح الكاميرا فوراً بدون نقر إضافي
             webSettings.allowFileAccess = true
             webSettings.allowContentAccess = true
+            webSettings.allowFileAccessFromFileURLs = true
             webSettings.allowUniversalAccessFromFileURLs = true
 
-            // السماح التلقائي لطلبات الكاميرا في الـ WebView لمنع الشاشة السوداء
+            // 3. إدارة إذن الكاميرا داخل المتصفح
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
@@ -52,14 +48,21 @@ class MainActivity : Activity() {
                 }
             }
 
-            // تحميل واجهة التطبيق من مجلد الـ assets
-            webView.loadUrl("file:///android_asset/index.html")
+            // 4. التحقق من إذن الكاميرا في الأندرويد قبل تحميل الصفحة
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                // إذا لم يكن الإذن ممنوحاً، نطلبه (ولا نحمل الصفحة الآن لمنع التعارض)
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+            } else {
+                // إذا كان الإذن ممنوحاً مسبقاً، نحمل الصفحة بأمان
+                webView.loadUrl("file:///android_asset/index.html")
+            }
 
         } catch (e: Exception) {
             e.printStackTrace()
         }
     }
 
+    // 5. هذه الدالة تعمل فور رد المستخدم على طلب الصلاحية
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -67,10 +70,9 @@ class MainActivity : Activity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                if (::webView.isInitialized) {
-                    webView.reload()
-                }
+            // سواء وافق المستخدم أو رفض، نقوم بتحميل الواجهة الآن
+            if (::webView.isInitialized) {
+                webView.loadUrl("file:///android_asset/index.html")
             }
         }
     }
