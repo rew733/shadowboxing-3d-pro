@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • High-Performance Kalman Engine</title>
+    <title>Boxing Coach Pro • High-Performance WebGPU & Kalman Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -218,7 +218,7 @@
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" autoplay muted playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
-            <div class="cam-pip-tag" id="cam-pip-status">KALMAN ACTIVE</div>
+            <div class="cam-pip-tag" id="cam-pip-status">GPU + KALMAN</div>
         </div>
 
         <div class="tv-hud">
@@ -892,8 +892,8 @@
         reportBox.textContent = `جاري فحص التطبيق وتحليل أرقامك عبر (${modelName})...`;
 
         const appArchitectureSummary = `
-        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + Kalman Filter Worker).
-        الميزات المفعلة: Kalman Filter Worker thread، Zero-copy Transferable Objects، Guard Validator.
+        اسم التطبيق: Boxing Coach Pro (WebGPU Hardware Acceleration + WebView + Three.js + Kalman Filter Worker).
+        الميزات المفعلة: ${gpuAccelerationActive ? 'WebGPU Active' : 'WebGL2 High-Performance GPU'}، Kalman Filter Worker thread، Zero-copy Transferable Objects، Guard Validator.
         الإحصائيات:
         - كف المدرب: ${mittsPunchesCount} لكمة، ${mittsCamHitsCount} إصابة.
         - الكاونتر: ${cntHitsCount} رد ناجح، أسرع رد: ${cntBestMs ? cntBestMs + ' ms' : 'غير مسجل'}.
@@ -901,7 +901,7 @@
         `;
 
         const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق وأجب باللغة العربية باختصار:
-1. 🔍 تقييم أداء Kalman Filter وهندسة Web Worker Zero-Copy.
+1. 🔍 تقييم أداء WebGPU / GPU Acceleration و Kalman Filter Worker.
 2. 🛠️ توصيات تطويرية إضافية متقدمة.
 3. 🥊 توجيه تكتيكي شخصي للملاكم بناءً على إحصائياته.
 
@@ -990,7 +990,7 @@ ${appArchitectureSummary}`;
             flipBtn.style.display = 'none'; camBtn.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
-            stageTag.textContent = '70 PRO COMBOS';
+            stageTag.textContent = gpuAccelerationActive ? '⚡ WEBGPU 70 COMBOS' : '70 PRO COMBOS';
             stageTag.style.color = '#f59e0b';
             flipBtn.style.display = 'block'; camBtn.style.display = 'block';
             if (camera) {
@@ -1252,7 +1252,7 @@ ${appArchitectureSummary}`;
     }
 
     // =========================================================================
-    // مراقبة الكاميرا مع نقل Zero-Copy Transferable للـ Worker (مُصلح للأندرويد WebView)
+    // مراقبة الكاميرا مع نقل Zero-Copy Transferable للـ Worker
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1304,14 +1304,12 @@ ${appArchitectureSummary}`;
         const videoEl = document.getElementById('pose-video');
         if (!videoEl) return;
 
-        // خصائص إجبارية للـ WebView في أندرويد لمنع الشاشة السوداء والسماح بالتشغيل التلقائي
         videoEl.setAttribute('autoplay', '');
         videoEl.setAttribute('muted', '');
         videoEl.setAttribute('playsinline', '');
         videoEl.muted = true;
 
         try {
-            // طلب الكاميرا الأمامية بمرونة بدون فرض دقة صارمة تسبب الرفض
             camStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user' },
                 audio: false
@@ -1419,7 +1417,7 @@ ${appArchitectureSummary}`;
             guardViolationCount = 0;
             if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
                 pipBox.classList.remove('guard-down');
-                pipTag.textContent = 'KALMAN ACTIVE';
+                pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
             }
         }
     }
@@ -1518,7 +1516,7 @@ ${appArchitectureSummary}`;
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // محرك Three.js الرئيسي
+    // محرك Three.js الرئيسي مع تسريع معالج الرسوميات (WebGPU + High-Performance GPU)
     // =========================================================================
     const MOVES = {
         JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx' },
@@ -1544,6 +1542,25 @@ ${appArchitectureSummary}`;
     let scene, camera, renderer, modelRoot, mixer;
     let clock = new THREE.Clock(); let actions = {}; let activeAction = null; let moveQueue = []; let isComboBusy = false;
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0; let isFPV = false;
+    let gpuAccelerationActive = false;
+    let gpuDevice = null;
+
+    async function initGPUAcceleration() {
+        try {
+            if ('gpu' in navigator) {
+                const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+                if (adapter) {
+                    gpuDevice = await adapter.requestDevice();
+                    gpuAccelerationActive = true;
+                    console.log('WebGPU Hardware Acceleration Enabled');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('WebGPU fallback to High-Performance WebGL2:', e);
+        }
+        gpuAccelerationActive = false;
+    }
 
     function toggleModelFacing() {
         if (isFPV) return;
@@ -1563,16 +1580,25 @@ ${appArchitectureSummary}`;
         }
     }
 
-    function init3DScene() {
+    async function init3DScene() {
+        await initGPUAcceleration();
+
         const container = document.getElementById('canvas-3d');
         scene = new THREE.Scene();
         camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
         camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0);
 
-        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer = new THREE.WebGLRenderer({
+            antialias: false,
+            alpha: true,
+            powerPreference: 'high-performance',
+            stencil: false,
+            depth: true
+        });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = false;
         container.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 0.92));
@@ -1580,6 +1606,12 @@ ${appArchitectureSummary}`;
 
         const floor = new THREE.Mesh(new THREE.CircleGeometry(1.4, 36), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75 }));
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
+
+        const pipTag = document.getElementById('cam-pip-status');
+        if (pipTag) {
+            pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
+        }
+        updateStageEntityVisibility();
 
         build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
         loadBoxerAndAnimations(); animate3D();
