@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • Web Worker & 3D Engine</title>
+    <title>Boxing Coach Pro • High-Performance Kalman Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -79,10 +79,7 @@
         body.tv-fullscreen .main-btns,
         body.tv-fullscreen .flip-quick-btn { display: none !important; }
         body.tv-fullscreen .app { max-width: 100vw; width: 100vw; height: 100vh; gap: 0; }
-        body.tv-fullscreen .stage-box {
-            position: fixed; inset: 0; width: 100vw; height: 100vh;
-            border-radius: 0; border: none; z-index: 100;
-        }
+        body.tv-fullscreen .stage-box { position: fixed; inset: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 100; }
         body.tv-fullscreen .cam-pip-box { bottom: 14px; left: 50%; transform: translateX(-50%); width: 112px; height: 126px; z-index: 125; }
         body.tv-fullscreen .camera-btn { bottom: 18px; right: 18px; z-index: 120; font-size: 0.82rem; padding: 8px 14px; }
         body.tv-fullscreen .badge-stance { top: 16px; left: 16px; z-index: 120; font-size: 0.8rem; }
@@ -221,7 +218,7 @@
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
-            <div class="cam-pip-tag" id="cam-pip-status">WORKER ACTIVE</div>
+            <div class="cam-pip-tag" id="cam-pip-status">KALMAN ACTIVE</div>
         </div>
 
         <div class="tv-hud">
@@ -295,7 +292,7 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (Worker)</button>
+                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (Kalman)</button>
                 <button class="btn secondary small" id="mitts-sync-rate-badge" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[8])">🔊 السرعة: 0.75x</button>
             </div>
 
@@ -703,55 +700,77 @@
     }
 
     // =========================================================================
-    // 🧵 برمجة وتفعيل Web Worker (خيط مستقل لمعالجة الكاميرا والـ Guard)
+    // 🧵 Web Worker المتطور مع معالجة Kalman Filter ونقل Zero-Copy Transferable
     // =========================================================================
     let poseWorker = null;
 
     function initPoseWorker() {
         const workerCode = `
-            self.onmessage = function(e) {
-                const data = e.data;
-                if (data.type === 'CHECK_GUARD') {
-                    const lm = data.landmarks;
-                    if (!lm || lm.length === 0) return;
-                    
-                    const lShoulder = lm[11];
-                    const rShoulder = lm[12];
-                    const lWrist = lm[15];
-                    const rWrist = lm[16];
-                    
-                    if (lShoulder && rShoulder && lWrist && rWrist) {
-                        const shoulderAvgY = (lShoulder.y + rShoulder.y) / 2;
-                        const leftGuardOk = (lWrist.y < shoulderAvgY + 0.08);
-                        const rightGuardOk = (rWrist.y < shoulderAvgY + 0.08);
-                        
-                        self.postMessage({
-                            type: 'GUARD_RESULT',
-                            guardDown: (!leftGuardOk || !rightGuardOk)
-                        });
-                    }
+            class KalmanFilter1D {
+                constructor(q = 0.02, r = 0.12) {
+                    this.q = q; this.r = r; this.x = 0; this.p = 1; this.initialized = false;
                 }
+                filter(measurement) {
+                    if (!this.initialized) { this.x = measurement; this.initialized = true; return this.x; }
+                    this.p = this.p + this.q;
+                    const k = this.p / (this.p + this.r);
+                    this.x = this.x + k * (measurement - this.x);
+                    this.p = (1 - k) * this.p;
+                    return this.x;
+                }
+            }
+
+            const kfNoseX = new KalmanFilter1D();
+            const kfNoseY = new KalmanFilter1D();
+            const kfLWristX = new KalmanFilter1D();
+            const kfLWristY = new KalmanFilter1D();
+            const kfRWristX = new KalmanFilter1D();
+            const kfRWristY = new KalmanFilter1D();
+
+            self.onmessage = function(e) {
+                const arr = new Float32Array(e.data);
+                if (arr.length < 16) return;
+
+                // استخراج إحداثيات الكتفين والمعصمين والأنف من المصفوفة المنقولة
+                const nX = kfNoseX.filter(arr[0]);
+                const nY = kfNoseY.filter(arr[1]);
+                const lShX = arr[2], lShY = arr[3];
+                const rShX = arr[4], rShY = arr[5];
+                const lWX = kfLWristX.filter(arr[6]);
+                const lWY = kfLWristY.filter(arr[7]);
+                const rWX = kfRWristX.filter(arr[8]);
+                const rWY = kfRWristY.filter(arr[9]);
+
+                const shoulderAvgY = (lShY + rShY) / 2;
+                const leftGuardOk = (lWY < shoulderAvgY + 0.09);
+                const rightGuardOk = (rWY < shoulderAvgY + 0.09);
+
+                self.postMessage({
+                    type: 'KALMAN_RESULT',
+                    guardDown: (!leftGuardOk || !rightGuardOk),
+                    nose: { x: nX, y: nY },
+                    leftWrist: { x: lWX, y: lWY },
+                    rightWrist: { x: rWX, y: rWY }
+                });
             };
         `;
         const blob = new Blob([workerCode], { type: 'application/javascript' });
         poseWorker = new Worker(URL.createObjectURL(blob));
         poseWorker.onmessage = function(e) {
-            if (e.data.type === 'GUARD_RESULT') {
-                handleWorkerGuardResult(e.data.guardDown);
+            if (e.data.type === 'KALMAN_RESULT') {
+                handleKalmanWorkerResult(e.data);
             }
         };
     }
 
-    let workerGuardDownFlag = false;
-    function handleWorkerGuardResult(isDown) {
-        workerGuardDownFlag = isDown;
+    function handleKalmanWorkerResult(data) {
         const pipBox = document.getElementById('cam-pip-box');
         const pipTag = document.getElementById('cam-pip-status');
         if (!pipBox || !pipTag) return;
 
-        if (isDown) {
+        if (data.guardDown) {
             guardViolationCount++;
-            if (guardViolationCount > 20) {
+            if (guardViolationCount > 18) {
                 pipBox.classList.add('guard-down');
                 pipTag.textContent = '⚠️ GUARD UP!';
                 if (Math.random() < 0.07) speakText("Guard up!");
@@ -760,7 +779,7 @@
             guardViolationCount = 0;
             if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
                 pipBox.classList.remove('guard-down');
-                pipTag.textContent = 'WORKER ACTIVE';
+                pipTag.textContent = 'KALMAN ACTIVE';
             }
         }
     }
@@ -818,7 +837,6 @@
         const listEl = document.getElementById('session-history-list');
         const totalSessionsEl = document.getElementById('stat-total-sessions');
         const bestReactionEl = document.getElementById('stat-best-reaction');
-        const guardRateEl = document.getElementById('stat-guard-rate');
 
         if (totalSessionsEl) totalSessionsEl.textContent = sessionHistory.length;
 
@@ -896,8 +914,8 @@
         reportBox.textContent = `جاري فحص التطبيق وتحليل أرقامك عبر (${modelName})...`;
 
         const appArchitectureSummary = `
-        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + MediaPipe + Web Worker).
-        الميزات المفعلة: Web Worker Thread معالج الكاميرا، مُحلل الحماية Guard Validator، لوحة التحليلات.
+        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + Kalman Filter Worker).
+        الميزات المفعلة: Kalman Filter Worker thread، Zero-copy Transferable Objects، Guard Validator.
         الإحصائيات:
         - كف المدرب: ${mittsPunchesCount} لكمة، ${mittsCamHitsCount} إصابة.
         - الكاونتر: ${cntHitsCount} رد ناجح، أسرع رد: ${cntBestMs ? cntBestMs + ' ms' : 'غير مسجل'}.
@@ -905,7 +923,7 @@
         `;
 
         const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق وأجب باللغة العربية باختصار:
-1. 🔍 تقييم أداء Web Worker وهندسة الكود.
+1. 🔍 تقييم أداء Kalman Filter وهندسة Web Worker Zero-Copy.
 2. 🛠️ توصيات تطويرية إضافية متقدمة.
 3. 🥊 توجيه تكتيكي شخصي للملاكم بناءً على إحصائياته.
 
@@ -1256,7 +1274,7 @@ ${appArchitectureSummary}`;
     }
 
     // =========================================================================
-    // مراقبة الكاميرا + تفاعل Web Worker اللحظي
+    // مراقبة الكاميرا مع نقل Zero-Copy Transferable للـ Worker
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1324,14 +1342,19 @@ ${appArchitectureSummary}`;
         const lWrist = lm[15]; const rWrist = lm[16];
 
         if (nose && lShoulder && rShoulder) {
-            hasPoseFrame = true; curNoseX = nose.x; curNoseY = nose.y;
+            hasPoseFrame = true;
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
-            if (lWrist && lWrist.visibility > 0.35) curLeftWrist = { x: lWrist.x, y: lWrist.y };
-            if (rWrist && rWrist.visibility > 0.35) curRightWrist = { x: rWrist.x, y: rWrist.y };
 
-            // إرسال الإحداثيات للـ Web Worker في الخلفية للمعالجة دون إبطاء الـ 3D
+            // إرسال البيانات للـ Web Worker عبر Transferable Objects لضمان صفر تأخير (Zero-copy)
             if (poseWorker) {
-                poseWorker.postMessage({ type: 'CHECK_GUARD', landmarks: lm });
+                const buffer = new Float32Array([
+                    nose.x, nose.y,
+                    lShoulder.x, lShoulder.y,
+                    rShoulder.x, rShoulder.y,
+                    lWrist ? lWrist.x : 0, lWrist ? lWrist.y : 0,
+                    rWrist ? rWrist.x : 0, rWrist ? rWrist.y : 0
+                ]);
+                poseWorker.postMessage(buffer.buffer, [buffer.buffer]);
             }
 
             if (!stickState.active) { strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan; }
@@ -1354,6 +1377,32 @@ ${appArchitectureSummary}`;
 
             prevLeftWrist = curLeftWrist ? { ...curLeftWrist } : null;
             prevRightWrist = curRightWrist ? { ...curRightWrist } : null;
+        }
+    }
+
+    // استقبال نتائج معالجة Kalman Filter من الـ Worker
+    function handleKalmanWorkerResult(data) {
+        curNoseX = data.nose.x; curNoseY = data.nose.y;
+        if (data.leftWrist) curLeftWrist = data.leftWrist;
+        if (data.rightWrist) curRightWrist = data.rightWrist;
+
+        const pipBox = document.getElementById('cam-pip-box');
+        const pipTag = document.getElementById('cam-pip-status');
+        if (!pipBox || !pipTag) return;
+
+        if (data.guardDown) {
+            guardViolationCount++;
+            if (guardViolationCount > 18) {
+                pipBox.classList.add('guard-down');
+                pipTag.textContent = '⚠️ GUARD UP!';
+                if (Math.random() < 0.07) speakText("Guard up!");
+            }
+        } else {
+            guardViolationCount = 0;
+            if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
+                pipBox.classList.remove('guard-down');
+                pipTag.textContent = 'KALMAN ACTIVE';
+            }
         }
     }
 
