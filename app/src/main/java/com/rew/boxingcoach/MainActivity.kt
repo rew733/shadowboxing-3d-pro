@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
@@ -25,6 +26,10 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // إبقاء شاشة الهاتف مضاءة طوال فترة التدريب لمنع قفل الجهاز أثناء الجولات
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+
+        // تهيئة محرك النطق الصوتي للأندرويد
         tts = TextToSpeech(this, this)
 
         try {
@@ -46,6 +51,7 @@ class MainActivity : Activity(), TextToSpeech.OnInitListener {
             webSettings.allowFileAccessFromFileURLs = true
             webSettings.allowUniversalAccessFromFileURLs = true
 
+            // ربط جسر الصوت AndroidTTS مع الجافاسكربت
             webView.addJavascriptInterface(WebAppInterface(), "AndroidTTS")
 
             webView.webChromeClient = object : WebChromeClient() {
