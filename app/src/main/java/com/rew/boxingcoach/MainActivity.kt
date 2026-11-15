@@ -3,11 +3,11 @@ package com.rew.boxingcoach
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.view.ViewGroup
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,32 +18,41 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         try {
-            // 1. إنشاء الـ WebView برمجياً بالكامل لتجنب الحاجة لأي ملفات XML خارجية
+            // إنشاء حاوية آمنة برمجياً لتجنب أي انهيار في الـ WebView
+            val container = FrameLayout(this).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                setBackgroundColor(0xFF070b14.toInt())
+            }
+
             webView = WebView(this).apply {
-                layoutParams = ViewGroup.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.MATCH_PARENT
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
                 )
             }
-            setContentView(webView)
 
-            // 2. طلب إذن الكاميرا وقت التشغيل
+            container.addView(webView)
+            setContentView(container)
+
+            // طلب إذن الكاميرا وقت التشغيل
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
             }
 
-            // 3. إعدادات الـ WebView والـ Assets المحلية
+            // إعدادات الـ WebView وتشغيل الـ Assets المحلية والـ Web Worker
             val webSettings: WebSettings = webView.settings
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
             webSettings.mediaPlaybackRequiresUserGesture = false
             webSettings.allowFileAccess = true
             webSettings.allowContentAccess = true
-            webSettings.allowUniversalAccessFromFileURLs = true // ضروري لتشغيل ملفات الـ Assets والـ Web Worker محلياً
+            webSettings.allowUniversalAccessFromFileURLs = true
 
-            // 4. السماح التلقائي لطلبات الكاميرا في الـ WebView لمنع الشاشة السوداء
+            // السماح التلقائي لطلبات الكاميرا لمنع الشاشة السوداء
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
@@ -52,7 +61,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            // 5. تحميل واجهة التطبيق
+            // تحميل واجهة التطبيق
             webView.loadUrl("file:///android_asset/index.html")
 
         } catch (e: Exception) {
