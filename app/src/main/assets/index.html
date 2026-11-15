@@ -163,7 +163,7 @@
         .setting-item { display: flex; flex-direction: column; gap: 6px; margin-bottom: 11px; }
         .setting-header { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
         input[type="range"] { width: 100%; accent-color: var(--accent); }
-        select { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.82rem; width: 100%; }
+        select, .text-input { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.82rem; width: 100%; }
 
         .cat-title { font-size: 0.74rem; color: var(--accent); font-weight: 800; margin-top: 7px; margin-bottom: 4px; }
         .move-chips { display: flex; flex-wrap: wrap; gap: 5px; direction: ltr; }
@@ -178,7 +178,6 @@
         .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 4px 8px; border-radius: 6px; font-weight: 800; cursor: pointer; }
         .clips-box { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 8px; font-size: 0.72rem; color: var(--success); direction: ltr; max-height: 140px; overflow-y: auto; margin-top: 8px; line-height: 1.5; white-space: pre-line; }
 
-        /* صندوق تقرير فاحص الذكاء الاصطناعي */
         .ai-audit-report {
             background: rgba(0, 0, 0, 0.45);
             border: 1px solid rgba(168, 85, 247, 0.45);
@@ -550,10 +549,11 @@
         </div>
     </div>
 
-    <!-- التبويب 7: الضبط + فاحص التطبيق الذكي واقتراح التحسينات -->
+    <!-- التبويب 7: الضبط + حرية اختيار النموذج وفاحص التطبيق الذكي -->
     <div id="tab-settings" class="tab-content">
         <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
-            <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي وفاحص التطبيق (AI Auditor):</span></div>
+            <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman & Auditor):</span></div>
+            
             <div class="setting-item">
                 <span class="setting-header"><span>حالة الذكاء الاصطناعي:</span></span>
                 <select id="ai-mode-select" onchange="updateAiSettings()">
@@ -561,12 +561,25 @@
                     <option value="on">مفعل (تحليل وتوجيه ذكي بين الجولات)</option>
                 </select>
             </div>
-            <div class="setting-item" style="margin-top: 6px;">
-                <span class="setting-header"><span>مفتاح Google AI Studio API Key:</span></span>
-                <input type="password" id="gemini-api-key" placeholder="AIzaSy... أو AQ...." oninput="updateAiSettings()" style="background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.8rem; width: 100%; direction: ltr;">
+
+            <!-- اختيار النموذج بحرية -->
+            <div class="setting-item">
+                <span class="setting-header"><span>اختيار نموذج الذكاء الاصطناعي (Model):</span></span>
+                <select id="ai-model-select" onchange="onAiModelSelectChange()">
+                    <option value="gemini-3.8-flash" selected>gemini-3.8-flash (الأحدث والموصى به)</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash (للحسابات القديمة)</option>
+                    <option value="gemini-2.5-pro">gemini-2.5-pro (تحليل عميق)</option>
+                    <option value="gemini-2.0-flash">gemini-2.0-flash (سريع وخفيف)</option>
+                    <option value="custom">✏️ كتابة اسم نموذج مخصص يدوياً...</option>
+                </select>
+                <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اكتب اسم النموذج هنا مثلاً: gemini-3.8-flash" oninput="updateAiSettings()" style="display: none; margin-top: 5px; direction: ltr;">
             </div>
 
-            <!-- زر فحص التطبيق واقتراح التحسينات -->
+            <div class="setting-item" style="margin-top: 4px;">
+                <span class="setting-header"><span>مفتاح Google AI Studio API Key:</span></span>
+                <input type="password" id="gemini-api-key" class="text-input" placeholder="AIzaSy... أو AQ...." oninput="updateAiSettings()" style="direction: ltr;">
+            </div>
+
             <button class="btn counter-btn small" id="ai-audit-btn" style="width: 100%; margin-top: 4px;" onclick="runAiAppAudit()">🔍 فحص التطبيق واقتراح التحسينات</button>
             <div class="ai-audit-report" id="ai-audit-report"></div>
             <div id="ai-audit-actions" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
@@ -630,28 +643,59 @@
 
     let aiEnabled = localStorage.getItem('boxing_ai_enabled') === 'on';
     let geminiApiKey = localStorage.getItem('boxing_gemini_key') || '';
+    let selectedAiModel = localStorage.getItem('boxing_ai_model') || 'gemini-3.8-flash';
+    let customAiModelName = localStorage.getItem('boxing_ai_custom_model') || '';
     let lastAuditText = '';
+
+    function getActiveAiModelName() {
+        if (selectedAiModel === 'custom') {
+            return customAiModelName || 'gemini-3.8-flash';
+        }
+        return selectedAiModel || 'gemini-3.8-flash';
+    }
+
+    function onAiModelSelectChange() {
+        const sel = document.getElementById('ai-model-select');
+        const customInput = document.getElementById('ai-custom-model-input');
+        selectedAiModel = sel.value;
+        customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
+        updateAiSettings();
+    }
 
     function updateAiSettings() {
         aiEnabled = document.getElementById('ai-mode-select').value === 'on';
         geminiApiKey = document.getElementById('gemini-api-key').value.trim();
+        selectedAiModel = document.getElementById('ai-model-select').value;
+        customAiModelName = document.getElementById('ai-custom-model-input').value.trim();
+
         localStorage.setItem('boxing_ai_enabled', aiEnabled ? 'on' : 'off');
         localStorage.setItem('boxing_gemini_key', geminiApiKey);
+        localStorage.setItem('boxing_ai_model', selectedAiModel);
+        localStorage.setItem('boxing_ai_custom_model', customAiModelName);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
         const aiSel = document.getElementById('ai-mode-select');
         const keyInput = document.getElementById('gemini-api-key');
+        const modelSel = document.getElementById('ai-model-select');
+        const customInput = document.getElementById('ai-custom-model-input');
+
         if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
         if (keyInput) keyInput.value = geminiApiKey;
+        if (modelSel) {
+            modelSel.value = selectedAiModel;
+            customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
+        }
+        if (customInput) customInput.value = customAiModelName;
     });
 
     async function getAiCornermanAdvice(statsText) {
         if (!aiEnabled || !geminiApiKey || !navigator.onLine) {
             return "جولة رائعة! حافظ على توازن وقفتك وسرعة استجابتك.";
         }
+        const modelName = getActiveAiModelName();
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${geminiApiKey}`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -669,11 +713,11 @@
         return "أداء قوي! ركز على رفع اليدين وحماية الوجه في الجولة القادمة.";
     }
 
-    // دالة فحص التطبيق الشاملة واقتراح التحسينات البرمجية والتدريبية
     async function runAiAppAudit() {
         const reportBox = document.getElementById('ai-audit-report');
         const actionsBox = document.getElementById('ai-audit-actions');
         const btn = document.getElementById('ai-audit-btn');
+        const modelName = getActiveAiModelName();
 
         if (!geminiApiKey) {
             reportBox.style.display = 'block';
@@ -686,14 +730,14 @@
             return;
         }
 
-        btn.textContent = '⏳ جاري فحص بنية التطبيق وإحصائياتك...';
+        btn.textContent = `⏳ جاري الفحص عبر (${modelName})...`;
         btn.disabled = true;
         reportBox.style.display = 'block';
-        reportBox.textContent = 'يقوم المدرب الذكي بتحليل مكونات التطبيق الـ 3D، نظام الكاميرا، وأرقام أدائك...';
+        reportBox.textContent = `يقوم المدرب الذكي (${modelName}) بتحليل مكونات التطبيق الـ 3D، نظام الكاميرا، وأرقام أدائك...`;
 
-        // تجميع المواصفات الفنية والحية للتطبيق لإرسالها للذكاء الاصطناعي
         const appArchitectureSummary = `
         اسم التطبيق: Boxing Coach Pro (تطبيق أندرويد هجين WebView + Three.js + MediaPipe Pose).
+        النموذج المستخدم: ${modelName}
         الميزات الموجودة حالياً:
         1. تبويب التدريب (70 كومبو جاهز مع مجسم 3D محمل بـ ${loadedClipsCount} حركة FBX مستقلة، ومنظور الخصم FPV، ووضع ملء الشاشة للتلفزيون TV).
         2. تبويب كف المدرب (Focus Mitts): كفوف 3D تتحرك حسب اللكمة (Jab, Cross, Hooks, Uppercuts) متزامنة مع سرعة النطق voiceRate (${voiceRate}x)، مع تبويب داخلي لتكرار كومبو محدد ومؤقت جولات.
@@ -716,7 +760,7 @@
 ${appArchitectureSummary}`;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${geminiApiKey}`;
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -730,7 +774,7 @@ ${appArchitectureSummary}`;
                 reportBox.textContent = lastAuditText;
                 actionsBox.style.display = 'grid';
             } else if (data.error) {
-                reportBox.textContent = `❌ خطأ من المفتاح: ${data.error.message}`;
+                reportBox.textContent = `❌ خطأ من النموذج (${modelName}): ${data.error.message}\n\n💡 جرب اختيار نموذج آخر من القائمة أعلاه (مثل gemini-2.0-flash أو كتابة اسم النموذج يدوياً).`;
             }
         } catch (err) {
             reportBox.textContent = '❌ تعذر الاتصال بخادم الذكاء الاصطناعي. تأكد من الإنترنت وصحة المفتاح.';
