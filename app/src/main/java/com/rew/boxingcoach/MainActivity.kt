@@ -1,8 +1,10 @@
-package com.example.shadowboxing
+package com.rew.boxingcoach
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.speech.tts.TextToSpeech
 import android.webkit.JavascriptInterface
@@ -11,12 +13,9 @@ import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.activity.ComponentActivity
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import java.util.Locale
 
-class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
+class MainActivity : Activity(), TextToSpeech.OnInitListener {
 
     private lateinit var webView: WebView
     private var tts: TextToSpeech? = null
@@ -49,28 +48,24 @@ class MainActivity : ComponentActivity(), TextToSpeech.OnInitListener {
             override fun onPermissionRequest(request: PermissionRequest?) {
                 if (request == null) return
                 runOnUiThread {
-                    val hasCamera = ContextCompat.checkSelfPermission(
-                        this@MainActivity,
-                        Manifest.permission.CAMERA
-                    ) == PackageManager.PERMISSION_GRANTED
-
-                    if (hasCamera) {
-                        request.grant(request.resources)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
+                            request.grant(request.resources)
+                        } else {
+                            pendingWebPermissionRequest = request
+                            requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+                        }
                     } else {
-                        pendingWebPermissionRequest = request
-                        ActivityCompat.requestPermissions(
-                            this@MainActivity,
-                            arrayOf(Manifest.permission.CAMERA),
-                            CAMERA_PERMISSION_CODE
-                        )
+                        request.grant(request.resources)
                     }
                 }
             }
         }
 
-        // طلب إذن الكاميرا مسبقاً عند فتح التطبيق ليكون جاهزاً فوراً
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+            }
         }
 
         webView.loadUrl("file:///android_asset/index.html")
