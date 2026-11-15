@@ -1,116 +1,70 @@
-package com.rew.boxingcoach
+package com.example.boxingcoachpro; // (استبدل باسم حزمة مشروعك الفعلي)
 
-import android.Manifest
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.Bundle
-import android.speech.tts.TextToSpeech
-import android.webkit.JavascriptInterface
-import android.webkit.PermissionRequest
-import android.webkit.WebChromeClient
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.webkit.WebViewClient
-import java.util.Locale
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.os.Bundle;
+import android.webkit.PermissionRequest;
+import android.webkit.WebChromeClient;
+import android.webkit.WebSettings;
+import android.webkit.WebView;
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
-class MainActivity : Activity(), TextToSpeech.OnInitListener {
+public class MainActivity extends AppCompatActivity {
+    private static final int CAMERA_PERMISSION_CODE = 100;
+    private WebView webView;
 
-    private lateinit var webView: WebView
-    private var tts: TextToSpeech? = null
-    private var pendingWebPermissionRequest: PermissionRequest? = null
-    private val CAMERA_PERMISSION_CODE = 1001
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main); // تأكد من مطابقة ملف الـ layout لديك
 
-    @SuppressLint("SetJavaScriptEnabled")
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
+        // 1. طلب إذن الكاميرا من نظام أندرويد وقت التشغيل (Runtime Permission)
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_CODE);
+        }
 
-        tts = TextToSpeech(this, this)
+        webView = findViewById(R.id.webview); // تأكد أن معرف الـ WebView في ملف الـ XML هو webview
+        WebSettings webSettings = webView.getSettings();
+        
+        // تفعيل خصائص الـ JavaScript والبيانات المحلية لتشغيل Three.js و MediaPipe بسلاسة
+        webSettings.setJavaScriptEnabled(true);
+        webSettings.setDomStorageEnabled(true);
+        webSettings.setMediaPlaybackRequiresUserGesture(false);
+        webSettings.setAllowFileAccess(true);
+        webSettings.setAllowContentAccess(true);
 
-        webView = WebView(this)
-        setContentView(webView)
-
-        val settings: WebSettings = webView.settings
-        settings.javaScriptEnabled = true
-        settings.domStorageEnabled = true
-        settings.allowFileAccess = true
-        settings.allowContentAccess = true
-        settings.allowFileAccessFromFileURLs = true
-        settings.allowUniversalAccessFromFileURLs = true
-        settings.mediaPlaybackRequiresUserGesture = false
-        settings.cacheMode = WebSettings.LOAD_DEFAULT
-
-        webView.addJavascriptInterface(WebAppInterface(), "AndroidTTS")
-        webView.webViewClient = WebViewClient()
-
-        webView.webChromeClient = object : WebChromeClient() {
-            override fun onPermissionRequest(request: PermissionRequest?) {
-                if (request == null) return
-                runOnUiThread {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        if (checkSelfPermission(Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                            request.grant(request.resources)
-                        } else {
-                            pendingWebPermissionRequest = request
-                            requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
-                        }
-                    } else {
-                        request.grant(request.resources)
+        // 2. الحل الجذري لشاشة الكاميرا السوداء: السماح التلقائي لطلبات الكاميرا في الـ WebView
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onPermissionRequest(final PermissionRequest request) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // منح جميع الأذونات المطلوبة (مثل الكاميرا) لصفحة الـ HTML داخل الـ WebView
+                        request.grant(request.getResources());
                     }
+                });
+            }
+        });
+
+        // 3. تحميل ملف index.html الموجود في مجلد assets
+        webView.loadUrl("file:///android_asset/index.html");
+    }
+
+    // استقبال نتيجة نافذة طلب إذن الكاميرا من المستخدم
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == CAMERA_PERMISSION_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // إذا وافق المستخدم، قم بتحديث أو إعادة تحميل الـ WebView لتفعيل الكاميرا فوراً
+                if (webView != null) {
+                    webView.reload();
                 }
             }
         }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
-            }
-        }
-
-        webView.loadUrl("file:///android_asset/index.html")
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == CAMERA_PERMISSION_CODE) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                pendingWebPermissionRequest?.grant(pendingWebPermissionRequest?.resources)
-            } else {
-                pendingWebPermissionRequest?.deny()
-            }
-            pendingWebPermissionRequest = null
-        }
-    }
-
-    override fun onInit(status: Int) {
-        if (status == TextToSpeech.SUCCESS) {
-            tts?.language = Locale.US
-            tts?.setSpeechRate(0.75f)
-        }
-    }
-
-    inner class WebAppInterface {
-        @JavascriptInterface
-        fun speak(text: String) {
-            tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "BOXING_CUE")
-        }
-
-        @JavascriptInterface
-        fun setRate(rate: Float) {
-            runOnUiThread {
-                tts?.setSpeechRate(rate)
-            }
-        }
-    }
-
-    override fun onDestroy() {
-        tts?.stop()
-        tts?.shutdown()
-        super.onDestroy()
     }
 }
