@@ -18,6 +18,7 @@
             --defense: #38bdf8;
             --stick: #f43f5e;
             --counter: #a855f7;
+            --mitt: #10b981;
             --danger: #ef4444;
             --success: #10b981;
             --text: #f9fafb;
@@ -28,39 +29,41 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 8px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 9px; }
         
-        .tabs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 9px; font-size: 0.58rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .tabs { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 8px; font-size: 0.52rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
         .tab-btn.stick-tab.active { background: var(--stick); color: #fff; }
         .tab-btn.counter-tab.active { background: var(--counter); color: #fff; }
+        .tab-btn.mitt-tab.active { background: var(--mitt); color: #000; }
         .tab-btn.tv-tab { color: #38bdf8; }
 
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        .stage-box { width: 100%; height: 295px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stage-box { width: 100%; height: 310px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
         #canvas-3d { width: 100%; height: 100%; }
         
-        .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
-        .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
+        .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.65rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
+        .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
         .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.88); color: var(--text); border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; }
         .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
+        /* نافذة الكاميرا في منتصف أسفل الشاشة حتى لا تحجب كفوف المدرب أو العصا */
         .cam-pip-box {
-            display: none; position: absolute; bottom: 10px; right: 10px; z-index: 15;
-            width: 104px; height: 132px; border-radius: 12px; overflow: hidden;
+            display: none; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15;
+            width: 86px; height: 96px; border-radius: 12px; overflow: hidden;
             border: 2px solid var(--defense); background: #000;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.75); transition: border-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.85); transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 16px rgba(16, 185, 129, 0.9); }
+        .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 16px rgba(16, 185, 129, 0.95); }
         .cam-pip-box.hit-counter { border-color: var(--counter); box-shadow: 0 0 18px rgba(168, 85, 247, 0.95); }
-        .cam-pip-box.hit-fail { border-color: var(--danger); box-shadow: 0 0 16px rgba(239, 68, 68, 0.9); }
+        .cam-pip-box.hit-fail { border-color: var(--danger); box-shadow: 0 0 16px rgba(239, 68, 68, 0.95); }
         #pose-video { display: none; }
         #pose-canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .cam-pip-tag {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.75); color: #fff; font-size: 0.6rem;
+            background: rgba(0,0,0,0.78); color: #fff; font-size: 0.56rem;
             text-align: center; padding: 2px 0; font-weight: 800; direction: ltr;
         }
 
@@ -76,7 +79,7 @@
             border-radius: 0; border: none; z-index: 100;
         }
         body.tv-fullscreen .cam-pip-box {
-            bottom: 72px; right: 18px; width: 130px; height: 165px; z-index: 125;
+            bottom: 14px; left: 50%; transform: translateX(-50%); width: 112px; height: 126px; z-index: 125;
         }
         body.tv-fullscreen .camera-btn {
             bottom: 18px; right: 18px; z-index: 120; font-size: 0.82rem; padding: 8px 14px;
@@ -86,7 +89,7 @@
 
         body.tv-fullscreen .tv-hud {
             display: flex; flex-direction: column; justify-content: space-between;
-            position: fixed; inset: 0; z-index: 110; pointer-events: none; padding: 52px 18px 18px 18px;
+            position: fixed; inset: 0; z-index: 110; pointer-events: none; padding: 52px 18px 145px 18px;
         }
         .tv-top-bar {
             display: flex; justify-content: space-between; align-items: center;
@@ -99,9 +102,9 @@
             align-self: center; text-align: center;
             background: rgba(7, 11, 20, 0.72); backdrop-filter: blur(5px);
             border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 14px;
-            padding: 10px 22px; margin-bottom: 54px; max-width: 92vw;
+            padding: 8px 18px; max-width: 92vw;
         }
-        .tv-combo-banner h2 { color: var(--accent); font-size: 1.35rem; font-weight: 900; }
+        .tv-combo-banner h2 { color: var(--accent); font-size: 1.3rem; font-weight: 900; }
         .tv-actions-bar {
             position: fixed; bottom: 18px; left: 18px; z-index: 120;
             display: flex; gap: 8px; pointer-events: auto;
@@ -121,10 +124,12 @@
         .combo-display h2 { color: var(--accent); font-size: 1.15rem; font-weight: 900; line-height: 1.35; }
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
-        .stick-box { background: rgba(244, 63, 94, 0.08); border: 2px solid var(--stick); border-radius: 14px; padding: 10px; text-align: center; min-height: 86px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
+        .stick-box { background: rgba(244, 63, 94, 0.08); border: 2px solid var(--stick); border-radius: 14px; padding: 10px; text-align: center; min-height: 84px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
         .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
+        .stick-box.mitt-theme { background: rgba(16, 185, 129, 0.09); border-color: var(--mitt); }
         .stick-move-title { font-size: 1.12rem; color: #fda4af; font-weight: 900; direction: ltr; }
         .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
+        .stick-box.mitt-theme .stick-move-title { color: #6ee7b7; }
         .stick-dodge-cue { font-size: 0.92rem; color: #fff; font-weight: 800; }
         .stick-sub-hint { font-size: 0.72rem; color: var(--muted); }
         
@@ -137,6 +142,7 @@
         .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px; font-size: 0.92rem; font-weight: 800; cursor: pointer; }
         .btn.stick-btn { background: var(--stick); color: #fff; }
         .btn.counter-btn { background: var(--counter); color: #fff; }
+        .btn.mitt-btn { background: var(--mitt); color: #000; }
         .btn.cam-ref-btn { background: var(--defense); color: #000; }
         .btn.danger { background: var(--danger); color: #fff; }
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
@@ -166,6 +172,7 @@
 <div class="app">
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
+        <button class="tab-btn mitt-tab" onclick="switchTab('mitts', this)">🧤 كف المدرب</button>
         <button class="tab-btn stick-tab" onclick="switchTab('stick', this)">🥢 العصا</button>
         <button class="tab-btn counter-tab" onclick="switchTab('counter', this)">⚡ كاونتر</button>
         <button class="tab-btn tv-tab" onclick="enterTvFullscreen()">📺 TV</button>
@@ -174,6 +181,7 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
+    <!-- مسرح العرض ثلاثي الأبعاد -->
     <div class="stage-box" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
@@ -182,9 +190,10 @@
         <div id="canvas-3d"></div>
         <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
 
+        <!-- نافذة الكاميرا في منتصف أسفل الشاشة حتى لا تحجب الأهداف -->
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" playsinline></video>
-            <canvas id="pose-canvas" width="208" height="264"></canvas>
+            <canvas id="pose-canvas" width="172" height="192"></canvas>
             <div class="cam-pip-tag" id="cam-pip-status">TRACKING</div>
         </div>
 
@@ -213,7 +222,7 @@
             <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ للتدريب العادي أو اختر 🥢 العصا أو ⚡ كاونتر</span>
+                <span id="combo-sub">اضغط ابدأ للتدريب العادي أو اختر 🧤 كف المدرب</span>
             </div>
         </div>
 
@@ -223,7 +232,61 @@
         </div>
     </div>
 
-    <!-- التبويب 2: العصا (دفاع صرف كما هو تماماً) -->
+    <!-- التبويب 2: كف المدرب الشخصي (Focus Mitts Pad Work - هجوم شخصي بدون كاونتر) -->
+    <div id="tab-mitts" class="tab-content">
+        <div class="panel">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (اختياري)</button>
+                <select id="mitts-speed" style="padding: 6px; font-size: 0.74rem;">
+                    <option value="0.70">بطيء</option>
+                    <option value="1.0" selected>متوسط</option>
+                    <option value="1.35">سريع</option>
+                </select>
+            </div>
+
+            <div class="stick-box mitt-theme">
+                <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS WORKOUT</div>
+                <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ ليرفع المدرب الكف في مكان اللكمة</div>
+                <div class="stick-sub-hint" id="mitts-hint-label">يظهر الكف في اليمين أو اليسار أو بزاوية الهوك والأبركت حسب اللكمة المنطوقة</div>
+            </div>
+
+            <!-- أزرار اختبار فورية لموضع كل لكمة -->
+            <div class="move-chips" style="margin-top: 8px; justify-content: center;">
+                <button class="chip" onclick="previewSinglePad('JAB')">1 Jab</button>
+                <button class="chip" onclick="previewSinglePad('CROSS')">2 Cross</button>
+                <button class="chip" onclick="previewSinglePad('L_HOOK')">3 L-Hook</button>
+                <button class="chip" onclick="previewSinglePad('R_HOOK')">4 R-Hook</button>
+                <button class="chip" onclick="previewSinglePad('L_UPPER')">5 L-Upper</button>
+                <button class="chip" onclick="previewSinglePad('R_UPPER')">6 R-Upper</button>
+            </div>
+
+            <div class="score-grid">
+                <div class="score-card">
+                    <span>اللكمات المسددة</span>
+                    <strong id="mitts-punches-count" style="color: var(--mitt);">0</strong>
+                </div>
+                <div class="score-card">
+                    <span>إصابات الكاميرا</span>
+                    <strong id="mitts-cam-hits" style="color: var(--accent);">0</strong>
+                </div>
+                <div class="score-card">
+                    <span>الكومبوهات</span>
+                    <strong id="mitts-combos-count" style="color: var(--defense);">0</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 7px;">
+                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('mitts')">📺 عرض كف المدرب على التلفزيون</button>
+            </div>
+        </div>
+
+        <div class="main-btns">
+            <button class="btn mitt-btn" id="mitts-start-btn" onclick="toggleMittsSession()">🧤 ابدأ تمرين كف المدرب</button>
+            <button class="btn secondary" onclick="resetMittsSession()">تصفير</button>
+        </div>
+    </div>
+
+    <!-- التبويب 3: العصا (دفاع صرف) -->
     <div id="tab-stick" class="tab-content">
         <div class="panel">
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
@@ -281,12 +344,12 @@
         </div>
     </div>
 
-    <!-- التبويب 3: الرد الهجومي بعد التفادي (Dodge & Counter Vision) -->
+    <!-- التبويب 4: الرد الهجومي بعد التفادي (Dodge & Counter Vision) -->
     <div id="tab-counter" class="tab-content">
         <div class="panel">
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
                 <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-2" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
-                <button class="btn secondary small" onclick="testMittPreview()">🎯 تجربة كف المدرب</button>
+                <button class="btn secondary small" onclick="testMittPreview()">🎯 تجربة كف الرد</button>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
@@ -339,7 +402,7 @@
         </div>
     </div>
 
-    <!-- التبويب 4: الإتقان -->
+    <!-- التبويب 5: الإتقان -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -374,7 +437,7 @@
         </div>
     </div>
 
-    <!-- التبويب 5: الكومبوهات -->
+    <!-- التبويب 6: الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
@@ -423,7 +486,7 @@
         </div>
     </div>
 
-    <!-- التبويب 6: الضبط -->
+    <!-- التبويب 7: الضبط -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
             <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
@@ -481,7 +544,8 @@
     function switchTab(tabId, btn) {
         if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) stopStickSession();
         if (activeTabName === 'counter' && tabId !== 'counter' && isCounterRunning) stopCounterSession();
-        if (activeTabName === 'train' && (tabId === 'stick' || tabId === 'counter') && isRunning) stopSession();
+        if (activeTabName === 'mitts' && tabId !== 'mitts' && isMittsRunning) stopMittsSession();
+        if (activeTabName === 'train' && (tabId === 'stick' || tabId === 'counter' || tabId === 'mitts') && isRunning) stopSession();
 
         activeTabName = tabId;
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -495,15 +559,23 @@
 
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
+        const isMittsTab = (activeTabName === 'mitts');
         const stageTag = document.getElementById('stage-mode-tag');
         const flipBtn = document.getElementById('flip-btn');
         const camBtn = document.getElementById('cam-btn');
 
-        if (modelRoot) modelRoot.visible = !isStickOrCounter;
+        if (modelRoot) modelRoot.visible = (!isStickOrCounter && !isMittsTab);
         if (stickGroup) stickGroup.visible = isStickOrCounter;
         if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
+        if (coachPadsGroup) coachPadsGroup.visible = isMittsTab;
 
-        if (activeTabName === 'stick') {
+        if (activeTabName === 'mitts') {
+            stageTag.textContent = '🧤 FOCUS MITTS WORKOUT';
+            stageTag.style.color = '#6ee7b7';
+            flipBtn.style.display = 'none';
+            camBtn.style.display = 'none';
+            if (camera) { camera.position.set(0, 1.38, 2.35); camera.lookAt(0, 1.32, 0); }
+        } else if (activeTabName === 'stick') {
             stageTag.textContent = isCamRefActive ? 'AR STICK DEFENSE' : '3D SPARRING STICK';
             stageTag.style.color = '#fda4af';
             flipBtn.style.display = 'none';
@@ -543,10 +615,12 @@
     function enterTvFullscreen() {
         document.body.classList.add('tv-fullscreen');
         document.getElementById('tv-actions-bar').style.display = 'flex';
-        if (activeTabName !== 'stick' && activeTabName !== 'counter' && !isFPV) toggleCameraView();
+        if (activeTabName === 'train' && !isFPV) toggleCameraView();
 
         const tvBtn = document.getElementById('tv-start-btn');
-        const activeNow = (activeTabName === 'stick') ? isStickRunning : (activeTabName === 'counter' ? isCounterRunning : isRunning);
+        const activeNow = (activeTabName === 'stick') ? isStickRunning :
+                          (activeTabName === 'counter' ? isCounterRunning :
+                          (activeTabName === 'mitts' ? isMittsRunning : isRunning));
         tvBtn.textContent = activeNow ? '⏹ إيقاف' : '▶ ابدأ';
         if (activeNow) tvBtn.classList.add('stop'); else tvBtn.classList.remove('stop');
 
@@ -573,11 +647,251 @@
     function toggleSessionFromTV() {
         if (activeTabName === 'stick') toggleStickSession();
         else if (activeTabName === 'counter') toggleCounterSession();
+        else if (activeTabName === 'mitts') toggleMittsSession();
         else { if (isRunning) stopSession(); else startSession(); }
     }
 
     // =========================================================================
-    // نظام المراقبة بالكاميرا الأمامية (تتبع الرأس + تتبع اللكمات المضادة)
+    // تبويب كفوف المدرب الشخصي (Focus Mitts Pad Work - تمرين هجومي شخصي)
+    // =========================================================================
+    let coachPadsGroup = null;
+    let leftPadMesh = null;
+    let rightPadMesh = null;
+    let padAnimState = {
+        activePunch: null,
+        hitPulse: 0,
+        camTargetX: 0.5,
+        camTargetY: 0.45,
+        camScoredThisPad: false
+    };
+
+    // إحداثيات وزوايا كف المدرب التشريحية الدقيقة لكل لكمة
+    const PAD_POSITIONS = {
+        JAB:     { hand: 'LEFT',  x: -0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY:  0.15, rotZ: 0,     camX: 0.35, camY: 0.40, label: '1 JAB (كف أمامي - أعلى اليسار)', say: 'Jab' },
+        CROSS:   { hand: 'RIGHT', x:  0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY: -0.15, rotZ: 0,     camX: 0.65, camY: 0.40, label: '2 CROSS (كف خلفي - أعلى اليمين)', say: 'Cross' },
+        L_HOOK:  { hand: 'LEFT',  x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY:  0.75, rotZ: 0,     camX: 0.28, camY: 0.45, label: '3 LEAD HOOK (كف جانبي مائل للخطاف)', say: 'Lead Hook' },
+        R_HOOK:  { hand: 'RIGHT', x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY: -0.75, rotZ: 0,     camX: 0.72, camY: 0.45, label: '4 REAR HOOK (كف جانبي مائل لليمين)', say: 'Rear Hook' },
+        L_UPPER: { hand: 'LEFT',  x: -0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY:  0.10, rotZ: 0,     camX: 0.40, camY: 0.58, label: '5 LEAD UPPERCUT (كف منخفض للأبركت)', say: 'Lead Uppercut' },
+        R_UPPER: { hand: 'RIGHT', x:  0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY: -0.10, rotZ: 0,     camX: 0.60, camY: 0.58, label: '6 REAR UPPERCUT (كف منخفض لليمين)', say: 'Rear Uppercut' }
+    };
+
+    const MITT_COMBOS = [
+        ['JAB'],
+        ['JAB', 'CROSS'],
+        ['JAB', 'JAB', 'CROSS'],
+        ['JAB', 'CROSS', 'L_HOOK'],
+        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'],
+        ['JAB', 'R_UPPER', 'L_HOOK'],
+        ['L_HOOK', 'CROSS', 'L_HOOK'],
+        ['JAB', 'CROSS', 'L_UPPER', 'R_HOOK'],
+        ['JAB', 'JAB', 'L_HOOK', 'CROSS'],
+        ['R_UPPER', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'R_HOOK', 'L_HOOK'],
+        ['JAB', 'L_UPPER', 'CROSS', 'L_HOOK']
+    ];
+
+    let isMittsRunning = false;
+    let mittsIntervalId = null;
+    let mittsStepTimers = [];
+    let mittsBag = [];
+    let mittsPunchesCount = 0;
+    let mittsCamHitsCount = 0;
+    let mittsCombosCount = 0;
+
+    function createSinglePadMesh(mainColorHex, ringColorHex) {
+        const g = new THREE.Group();
+        const padGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.09, 32);
+        const padMat = new THREE.MeshStandardMaterial({
+            color: mainColorHex,
+            emissive: mainColorHex,
+            emissiveIntensity: 0.28,
+            roughness: 0.35
+        });
+        const pad = new THREE.Mesh(padGeo, padMat);
+        pad.rotation.x = Math.PI / 2;
+        g.add(pad);
+
+        const targetGeo = new THREE.CylinderGeometry(0.095, 0.095, 0.11, 24);
+        const targetMat = new THREE.MeshStandardMaterial({
+            color: ringColorHex,
+            emissive: ringColorHex,
+            emissiveIntensity: 0.55
+        });
+        const target = new THREE.Mesh(targetGeo, targetMat);
+        target.rotation.x = Math.PI / 2;
+        g.add(target);
+
+        return g;
+    }
+
+    function build3DCoachPads() {
+        coachPadsGroup = new THREE.Group();
+
+        // كف المدرب الأيسر (أخضر زمردي / ذهبي)
+        leftPadMesh = createSinglePadMesh(0x10b981, 0xf59e0b);
+        leftPadMesh.position.set(-0.26, 1.48, 0.70);
+        coachPadsGroup.add(leftPadMesh);
+
+        // كف المدرب الأيمن (أزرق سماوي / ذهبي)
+        rightPadMesh = createSinglePadMesh(0x0ea5e9, 0xf59e0b);
+        rightPadMesh.position.set(0.26, 1.48, 0.70);
+        coachPadsGroup.add(rightPadMesh);
+
+        coachPadsGroup.visible = false;
+        scene.add(coachPadsGroup);
+    }
+
+    function resetPadsToGuardPosition() {
+        if (!leftPadMesh || !rightPadMesh) return;
+        leftPadMesh.position.set(-0.26, 1.48, 0.70);
+        leftPadMesh.rotation.set(0.1, 0.1, 0);
+        leftPadMesh.scale.set(0.85, 0.85, 0.85);
+
+        rightPadMesh.position.set(0.26, 1.48, 0.70);
+        rightPadMesh.rotation.set(0.1, -0.1, 0);
+        rightPadMesh.scale.set(0.85, 0.85, 0.85);
+    }
+
+    function presentPadForPunch(punchKey, speakCue = true) {
+        const cfg = PAD_POSITIONS[punchKey];
+        if (!cfg || !leftPadMesh || !rightPadMesh) return;
+
+        resetPadsToGuardPosition();
+        padAnimState.activePunch = punchKey;
+        padAnimState.hitPulse = 1.0;
+        padAnimState.camTargetX = cfg.camX;
+        padAnimState.camTargetY = cfg.camY;
+        padAnimState.camScoredThisPad = false;
+
+        const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
+        targetPad.position.set(cfg.x, cfg.y, cfg.z);
+        targetPad.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ);
+        targetPad.scale.set(1.22, 1.22, 1.22);
+
+        mittsPunchesCount++;
+        document.getElementById('mitts-punches-count').textContent = mittsPunchesCount;
+        document.getElementById('mitts-current-punch').textContent = cfg.label;
+        document.getElementById('live-move-badge').textContent = punchKey;
+        syncComboText(cfg.label);
+
+        if (speakCue) speakText(cfg.say);
+    }
+
+    function previewSinglePad(punchKey) {
+        if (activeTabName !== 'mitts') return;
+        presentPadForPunch(punchKey, true);
+    }
+
+    function updateCoachPadsAnimation(delta) {
+        if (!coachPadsGroup || !coachPadsGroup.visible) return;
+        if (padAnimState.hitPulse > 0) {
+            padAnimState.hitPulse = Math.max(0, padAnimState.hitPulse - delta * 2.5);
+            const cfg = PAD_POSITIONS[padAnimState.activePunch];
+            if (cfg) {
+                const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
+                const kickZ = cfg.z - Math.sin(padAnimState.hitPulse * Math.PI) * 0.08;
+                targetPad.position.z = kickZ;
+            }
+        }
+    }
+
+    function getNextMittCombo() {
+        if (mittsBag.length === 0) {
+            mittsBag = [...MITT_COMBOS];
+            for (let i = mittsBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [mittsBag[i], mittsBag[j]] = [mittsBag[j], mittsBag[i]];
+            }
+        }
+        return mittsBag.shift();
+    }
+
+    function executeNextMittCombo() {
+        if (!isMittsRunning) return;
+        const seq = getNextMittCombo();
+        mittsCombosCount++;
+        document.getElementById('mitts-combos-count').textContent = mittsCombosCount;
+        document.getElementById('mitts-combo-title').textContent = seq.map(k => MOVES[k].en).join(' ➔ ');
+
+        const speedMult = parseFloat(document.getElementById('mitts-speed').value);
+        const stepMs = Math.max(550, Math.round(850 / speedMult));
+
+        mittsStepTimers.forEach(t => clearTimeout(t));
+        mittsStepTimers = [];
+
+        seq.forEach((pKey, idx) => {
+            const tid = setTimeout(() => {
+                if (isMittsRunning) presentPadForPunch(pKey, true);
+            }, idx * stepMs);
+            mittsStepTimers.push(tid);
+        });
+
+        const resetTid = setTimeout(() => {
+            if (isMittsRunning) {
+                padAnimState.activePunch = null;
+                resetPadsToGuardPosition();
+            }
+        }, seq.length * stepMs + 450);
+        mittsStepTimers.push(resetTid);
+    }
+
+    function toggleMittsSession() {
+        if (isMittsRunning) stopMittsSession(); else startMittsSession();
+    }
+
+    function startMittsSession() {
+        isMittsRunning = true;
+        updateStageEntityVisibility();
+        resetPadsToGuardPosition();
+
+        const btn = document.getElementById('mitts-start-btn');
+        btn.textContent = '⏹ إيقاف التمرين';
+        btn.classList.add('danger');
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '⏹ إيقاف';
+        tvBtn.classList.add('stop');
+
+        const speedMult = parseFloat(document.getElementById('mitts-speed').value);
+        const cycleMs = Math.max(2600, Math.round(3800 / speedMult));
+
+        setTimeout(() => { if (isMittsRunning) executeNextMittCombo(); }, 500);
+        mittsIntervalId = setInterval(executeNextMittCombo, cycleMs);
+    }
+
+    function stopMittsSession() {
+        isMittsRunning = false;
+        padAnimState.activePunch = null;
+        clearInterval(mittsIntervalId);
+        mittsStepTimers.forEach(t => clearTimeout(t));
+        mittsStepTimers = [];
+        resetPadsToGuardPosition();
+
+        const btn = document.getElementById('mitts-start-btn');
+        btn.textContent = '🧤 ابدأ تمرين كف المدرب';
+        btn.classList.remove('danger');
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '▶ ابدأ';
+        tvBtn.classList.remove('stop');
+
+        document.getElementById('mitts-current-punch').textContent = 'تم إيقاف تمرين الكفوف';
+    }
+
+    function resetMittsSession() {
+        stopMittsSession();
+        mittsBag = [];
+        mittsPunchesCount = 0;
+        mittsCamHitsCount = 0;
+        mittsCombosCount = 0;
+        document.getElementById('mitts-punches-count').textContent = '0';
+        document.getElementById('mitts-cam-hits').textContent = '0';
+        document.getElementById('mitts-combos-count').textContent = '0';
+        document.getElementById('mitts-combo-title').textContent = '🧤 FOCUS MITTS WORKOUT';
+    }
+
+    // =========================================================================
+    // نظام المراقبة بالكاميرا الأمامية (تتبع الرأس + تتبع اللكمات)
     // =========================================================================
     let isCamRefActive = false;
     let camStream = null;
@@ -639,16 +953,16 @@
     }
 
     function syncCamButtonsUI(isActive, textOverride) {
-        const b1 = document.getElementById('cam-ref-toggle-btn');
-        const b2 = document.getElementById('cam-ref-toggle-btn-2');
-        [b1, b2].forEach(b => {
+        const ids = ['cam-ref-toggle-btn', 'cam-ref-toggle-btn-2', 'cam-ref-toggle-btn-3'];
+        ids.forEach(id => {
+            const b = document.getElementById(id);
             if (!b) return;
             if (textOverride) { b.textContent = textOverride; return; }
             if (isActive) {
-                b.textContent = '⏹ إيقاف مراقبة الكاميرا';
+                b.textContent = '⏹ إيقاف الكاميرا';
                 b.classList.add('danger');
             } else {
-                b.textContent = '📷 تفعيل مراقبة الكاميرا';
+                b.textContent = '📷 تفعيل الكاميرا';
                 b.classList.remove('danger');
             }
         });
@@ -659,7 +973,7 @@
         const videoEl = document.getElementById('pose-video');
 
         try {
-            syncCamButtonsUI(false, '⏳ جاري فتح الكاميرا...');
+            syncCamButtonsUI(false, '⏳ فتح الكاميرا...');
             camStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
                 audio: false
@@ -672,7 +986,6 @@
             syncCamButtonsUI(true);
             updateStageEntityVisibility();
 
-            // إعادة تنشيط محرك الصوت بعد فتح الكاميرا لمنع استحواذ الكاميرا على قناة الصوت في أندرويد
             if (window.AndroidTTS && window.AndroidTTS.setRate) {
                 window.AndroidTTS.setRate(voiceRate);
             }
@@ -750,22 +1063,47 @@
             ctx.strokeStyle = '#f43f5e';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 15, 0, Math.PI * 2);
+            ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2);
             ctx.stroke();
 
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
-            ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 7, 0, Math.PI * 2);
+            ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2);
             ctx.fill();
 
             [curLeftWrist, curRightWrist].forEach(w => {
                 if (w) {
                     ctx.fillStyle = '#f59e0b';
                     ctx.beginPath();
-                    ctx.arc(w.x * canvasEl.width, w.y * canvasEl.height, 7, 0, Math.PI * 2);
+                    ctx.arc(w.x * canvasEl.width, w.y * canvasEl.height, 6, 0, Math.PI * 2);
                     ctx.fill();
                 }
             });
+
+            // فحص إصابة كف المدرب الشخصي في تبويب كف المدرب
+            if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
+                const tx = padAnimState.camTargetX;
+                const ty = padAnimState.camTargetY;
+                ctx.strokeStyle = '#10b981';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2);
+                ctx.stroke();
+
+                const hitCheck = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
+                if (hitCheck(curLeftWrist) || hitCheck(curRightWrist)) {
+                    padAnimState.camScoredThisPad = true;
+                    mittsCamHitsCount++;
+                    document.getElementById('mitts-cam-hits').textContent = mittsCamHitsCount;
+                    const pipBox = document.getElementById('cam-pip-box');
+                    pipBox.classList.add('hit-ok');
+                    document.getElementById('cam-pip-status').textContent = '✓ PAD HIT!';
+                    setTimeout(() => {
+                        pipBox.classList.remove('hit-ok');
+                        document.getElementById('cam-pip-status').textContent = 'TRACKING';
+                    }, 500);
+                }
+            }
 
             if (counterWindow.active) {
                 const targetX = counterWindow.targetSide === 'LEFT' ? 0.32 : 0.68;
@@ -773,13 +1111,12 @@
                 ctx.strokeStyle = '#a855f7';
                 ctx.lineWidth = 4;
                 ctx.beginPath();
-                ctx.arc(targetX * canvasEl.width, targetY * canvasEl.height, 28, 0, Math.PI * 2);
+                ctx.arc(targetX * canvasEl.width, targetY * canvasEl.height, 25, 0, Math.PI * 2);
                 ctx.stroke();
 
                 evaluateCounterPunch(targetX, targetY);
             }
 
-            // توسيع نافذة اكتشاف التفادي (15% إلى 95%) لكي لا يفوت التفادي السريع
             if (stickState.active && !stickState.evaluated && stickState.progress >= 0.15 && stickState.progress <= 0.95) {
                 evaluatePlayerDefenseMove();
             }
@@ -850,7 +1187,7 @@
             pipBox.classList.add('hit-ok');
             pipTag.textContent = '✓ +10 DODGED!';
             document.getElementById('stick-hint-label').textContent = '✓ تفادي مثالي في الاتجاه المعاكس (+10 نقاط)';
-            syncComboText('✓ تفادي مثالي (+10)');
+            syncComboText('✓ تفادي ممتاز (+10)');
         } else {
             pipBox.classList.remove('hit-ok', 'hit-counter');
             pipBox.classList.add('hit-fail');
@@ -868,14 +1205,13 @@
     }
 
     // =========================================================================
-    // محرك كف المدرب ثلاثي الأبعاد والرد الهجومي (Focus Mitt Counter Engine)
+    // محرك كف المدرب للرد الهجومي في تبويب كاونتر (Counter Mitt)
     // =========================================================================
     let mittGroup = null;
 
     function build3DFocusMitt() {
         mittGroup = new THREE.Group();
 
-        // وسادة كف المدرب الدائرية الكبيرة والبارزة
         const padGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.12, 32);
         const padMat = new THREE.MeshStandardMaterial({
             color: 0xa855f7,
@@ -887,7 +1223,6 @@
         padMesh.rotation.x = Math.PI / 2;
         mittGroup.add(padMesh);
 
-        // مركز الهدف الذهبي المضيء داخل الكف
         const bullseyeGeo = new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24);
         const bullseyeMat = new THREE.MeshStandardMaterial({
             color: 0xf59e0b,
@@ -898,15 +1233,13 @@
         bullseyeMesh.rotation.x = Math.PI / 2;
         mittGroup.add(bullseyeMesh);
 
-        mittGroup.position.set(0, 1.32, 0.80);
+        mittGroup.position.set(0, 1.42, 0.80);
         mittGroup.visible = false;
         scene.add(mittGroup);
     }
 
     function testMittPreview() {
-        if (!isCamRefActive) {
-            startCameraReferee();
-        }
+        if (!isCamRefActive) startCameraReferee();
         stickState.currentScenario = STICK_PATTERNS[0];
         activateCounterFocusMitt();
     }
@@ -921,9 +1254,8 @@
         counterWindow.targetSide = sc.mittSide;
         counterWindow.punchName = sc.counterPunch;
 
-        // وضع كف المدرب 3D في مجال رؤية الكاميرا الواضح (Z = 0.78)
         const mittX = sc.mittSide === 'LEFT' ? -0.26 : 0.26;
-        mittGroup.position.set(mittX, 1.32, 0.78);
+        mittGroup.position.set(mittX, 1.44, 0.78);
         mittGroup.visible = true;
 
         const pipBox = document.getElementById('cam-pip-box');
@@ -1190,7 +1522,6 @@
         return bagRef.shift();
     }
 
-    // --- دوال تبويب العصا (دفاع فقط) ---
     function triggerStickStrike() {
         if (!isStickRunning || stickState.active) return;
 
@@ -1268,7 +1599,6 @@
         document.getElementById('stick-dodge-label').textContent = 'تم تصفير النقاط والعداد';
     }
 
-    // --- دوال تبويب الكاونتر (دفاع + هجوم مضاد) ---
     function triggerCounterStrike() {
         if (!isCounterRunning || stickState.active || counterWindow.active) return;
 
@@ -1288,9 +1618,7 @@
         document.getElementById('live-move-badge').textContent = 'DODGE FIRST';
         syncComboText(pat.dodge);
 
-        if (voiceMode === 'voiced') {
-            speakText(pat.say);
-        }
+        if (voiceMode === 'voiced') speakText(pat.say);
 
         stickState.type = pat.type;
         stickState.currentScenario = pat;
@@ -1308,9 +1636,7 @@
         isCounterRunning = true;
         updateStageEntityVisibility();
 
-        if (!isCamRefActive) {
-            startCameraReferee();
-        }
+        if (!isCamRefActive) startCameraReferee();
 
         const btn = document.getElementById('counter-start-btn');
         btn.textContent = '⏹ إيقاف الكاونتر';
@@ -1544,6 +1870,7 @@
 
         build3DSparringStick();
         build3DFocusMitt();
+        build3DCoachPads();
         loadBoxerAndAnimations();
         animate3D();
     }
@@ -1579,7 +1906,7 @@
             const center = scaledBox.getCenter(new THREE.Vector3());
             modelRoot.position.set(-center.x, -scaledBox.min.y, -center.z);
             modelRoot.rotation.y = facingFlip;
-            modelRoot.visible = (activeTabName !== 'stick' && activeTabName !== 'counter');
+            modelRoot.visible = (activeTabName !== 'stick' && activeTabName !== 'counter' && activeTabName !== 'mitts');
 
             scene.add(modelRoot);
 
@@ -1689,6 +2016,8 @@
         const delta = clock.getDelta();
         if (activeTabName === 'stick' || activeTabName === 'counter') {
             updateStickAnimation(delta);
+        } else if (activeTabName === 'mitts') {
+            updateCoachPadsAnimation(delta);
         } else if (mixer) {
             mixer.update(delta);
         }
@@ -1746,7 +2075,7 @@
         document.getElementById('drill-enabled').value = 'on';
         resetDrillCounter();
         updateModeBadge();
-        switchTab('drill', document.querySelectorAll('.tab-btn')[4]);
+        switchTab('drill', document.querySelectorAll('.tab-btn')[5]);
     }
 
     function renderSavedCombos() {
@@ -1876,6 +2205,7 @@
     function startSession() {
         if (isStickRunning) stopStickSession();
         if (isCounterRunning) stopCounterSession();
+        if (isMittsRunning) stopMittsSession();
         isRunning = true;
         isComboBusy = false;
         shuffleBag = [];
