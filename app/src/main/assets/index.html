@@ -24,9 +24,10 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 8px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 9px; }
         
-        .tabs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; background: var(--panel); padding: 5px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 9px 2px; border-radius: 10px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .tabs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 3px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 10px; font-size: 0.68rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
+        .tab-btn.tv-tab { color: #38bdf8; }
 
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
@@ -39,6 +40,54 @@
         .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.88); color: var(--text); border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; }
         .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
+
+        /* --- تنسيقات وضع ملء الشاشة للتلفزيون (TV Arena Fullscreen) --- */
+        .tv-hud { display: none; }
+        body.tv-fullscreen { padding: 0; overflow: hidden; }
+        body.tv-fullscreen .tabs,
+        body.tv-fullscreen #train-controls-panel,
+        body.tv-fullscreen #train-main-btns,
+        body.tv-fullscreen .flip-quick-btn { display: none !important; }
+        body.tv-fullscreen .app { max-width: 100vw; width: 100vw; height: 100vh; gap: 0; }
+        body.tv-fullscreen #tab-train { display: flex !important; width: 100vw; height: 100vh; }
+        body.tv-fullscreen .stage-box {
+            position: fixed; inset: 0; width: 100vw; height: 100vh;
+            border-radius: 0; border: none; z-index: 100;
+        }
+        body.tv-fullscreen .camera-btn {
+            bottom: 18px; right: 18px; z-index: 120; font-size: 0.82rem; padding: 8px 14px;
+        }
+        body.tv-fullscreen .badge-stance { top: 16px; left: 16px; z-index: 120; font-size: 0.8rem; }
+        body.tv-fullscreen .badge-action { top: 16px; right: 16px; z-index: 120; font-size: 0.85rem; padding: 6px 12px; }
+
+        body.tv-fullscreen .tv-hud {
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: fixed; inset: 0; z-index: 110; pointer-events: none; padding: 52px 18px 18px 18px;
+        }
+        .tv-top-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(7, 11, 20, 0.55); backdrop-filter: blur(4px);
+            padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);
+        }
+        .tv-timer { font-size: 1.8rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .tv-round { font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+        .tv-combo-banner {
+            align-self: center; text-align: center;
+            background: rgba(7, 11, 20, 0.65); backdrop-filter: blur(5px);
+            border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 14px;
+            padding: 10px 22px; margin-bottom: 54px; direction: ltr; max-width: 90vw;
+        }
+        .tv-combo-banner h2 { color: var(--accent); font-size: 1.45rem; font-weight: 900; }
+        .tv-actions-bar {
+            position: fixed; bottom: 18px; left: 18px; z-index: 120;
+            display: flex; gap: 8px; pointer-events: auto;
+        }
+        .tv-ctrl-btn {
+            background: var(--accent); color: #000; border: none;
+            padding: 9px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 900; cursor: pointer;
+        }
+        .tv-ctrl-btn.exit { background: rgba(31, 41, 55, 0.92); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .tv-ctrl-btn.stop { background: var(--danger); color: #fff; }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
         .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
@@ -78,22 +127,38 @@
 <div class="app">
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
+        <button class="tab-btn tv-tab" onclick="enterTvFullscreen()">📺 حلبة TV</button>
         <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
         <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبو</button>
-        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ 3D والضبط</button>
+        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
     <div id="tab-train" class="tab-content active">
-        <div class="stage-box">
+        <div class="stage-box" id="stage-box">
             <span class="badge-stance">70 PRO COMBOS</span>
             <span class="badge-action" id="live-move-badge">IDLE</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <button class="camera-btn" id="cam-btn" onclick="toggleCameraView()">🎥 منظور الخصم</button>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
+
+            <!-- طبقة العرض العائمة فوق ملء الشاشة للتلفزيون -->
+            <div class="tv-hud">
+                <div class="tv-top-bar">
+                    <span class="tv-round" id="tv-round-label">الجولة 1 / 3</span>
+                    <span class="tv-timer" id="tv-timer-display">03:00</span>
+                </div>
+                <div class="tv-combo-banner">
+                    <h2 id="tv-combo-text">READY FOR SPARRING</h2>
+                </div>
+            </div>
+            <div class="tv-actions-bar" id="tv-actions-bar" style="display:none;">
+                <button class="tv-ctrl-btn" id="tv-start-btn" onclick="toggleSessionFromTV()">▶ ابدأ</button>
+                <button class="tv-ctrl-btn exit" onclick="exitTvFullscreen()">✕ تصغير</button>
+            </div>
         </div>
 
-        <div class="panel">
+        <div class="panel" id="train-controls-panel">
             <div class="status-row">
                 <span id="round-label">الجولة 1 / 3</span>
                 <span id="mode-badge" style="color: var(--accent);">الوضع: 70 كومبو عشوائي</span>
@@ -101,11 +166,11 @@
             <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ لبدء التمرين (ترتيب متجدد كل جلسة)</span>
+                <span id="combo-sub">اضغط ابدأ أو اختر "📺 حلبة TV" للبث على التلفزيون</span>
             </div>
         </div>
 
-        <div class="main-btns">
+        <div class="main-btns" id="train-main-btns">
             <button class="btn" id="start-btn">ابدأ الجلسة</button>
             <button class="btn secondary" onclick="resetSession()">إعادة</button>
         </div>
@@ -249,7 +314,54 @@
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
         document.getElementById('tab-' + tabId).classList.add('active');
-        btn.classList.add('active');
+        if (btn) btn.classList.add('active');
+        resize3DRenderer();
+    }
+
+    // --- دوال وضع ملء الشاشة للبث على التلفزيون (TV Arena Mode) ---
+    function resize3DRenderer() {
+        setTimeout(() => {
+            const container = document.getElementById('canvas-3d');
+            if (renderer && camera && container && container.clientWidth > 0 && container.clientHeight > 0) {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
+        }, 60);
+    }
+
+    window.addEventListener('resize', resize3DRenderer);
+
+    function enterTvFullscreen() {
+        document.body.classList.add('tv-fullscreen');
+        document.getElementById('tv-actions-bar').style.display = 'flex';
+        // تفعيل منظور الخصم تلقائياً عند البث على التلفزيون إذا لم يكن مفعلاً
+        if (!isFPV) {
+            toggleCameraView();
+        }
+        // طلب ملء الشاشة من المتصفح/النظام إن أمكن
+        const docEl = document.documentElement;
+        if (docEl.requestFullscreen) {
+            docEl.requestFullscreen().catch(() => {});
+        } else if (docEl.webkitRequestFullscreen) {
+            docEl.webkitRequestFullscreen();
+        }
+        resize3DRenderer();
+    }
+
+    function exitTvFullscreen() {
+        document.body.classList.remove('tv-fullscreen');
+        document.getElementById('tv-actions-bar').style.display = 'none';
+        if (document.fullscreenElement && document.exitFullscreen) {
+            document.exitFullscreen().catch(() => {});
+        } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+        resize3DRenderer();
+    }
+
+    function toggleSessionFromTV() {
+        if (isRunning) stopSession(); else startSession();
     }
 
     const MOVES = {
@@ -269,9 +381,7 @@
         PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right',   file: 'Right Pivot.fbx' }
     };
 
-    // --- مكتبة 70 كومبو ملاكمة احترافي (قصير + متوسط + دفاع + حركة قدمين) ---
     const MASTER_COMBOS_70 = [
-        // 1-15: كومبوهات قصيرة وحادة مع حركة رأس أو قدمين
         ['JAB', 'CROSS', 'STEP_BACK'],
         ['JAB', 'JAB', 'CROSS'],
         ['STEP_IN', 'JAB', 'CROSS'],
@@ -288,7 +398,6 @@
         ['JAB', 'CROSS', 'PIVOT_R'],
         ['PULL', 'CROSS', 'L_HOOK'],
 
-        // 16-35: كومبوهات متوسطة متوازنة (هجوم + مراوغة + زاوية)
         ['JAB', 'CROSS', 'L_HOOK', 'CROSS'],
         ['JAB', 'JAB', 'CROSS', 'L_HOOK'],
         ['STEP_IN', 'JAB', 'CROSS', 'SLIP_L', 'CROSS'],
@@ -310,7 +419,6 @@
         ['JAB', 'PULL', 'JAB', 'CROSS'],
         ['SLIP_R', 'CROSS', 'L_UPPER', 'CROSS'],
 
-        // 36-55: كومبوهات الرد الهجومي وتغيير الزوايا (Counter & Angles)
         ['PULL', 'CROSS', 'L_HOOK', 'CROSS'],
         ['SLIP_L', 'JAB', 'CROSS', 'PIVOT_L'],
         ['SLIP_R', 'CROSS', 'L_HOOK', 'PIVOT_R'],
@@ -332,7 +440,6 @@
         ['SLIP_R', 'R_HOOK', 'L_UPPER', 'CROSS'],
         ['JAB', 'CROSS', 'L_HOOK', 'ROLL', 'CROSS'],
 
-        // 56-70: سلاسل احترافية متكاملة (قدمين + لكمات مركبة + خروج آمن)
         ['STEP_IN', 'JAB', 'CROSS', 'SLIP_R', 'CROSS', 'STEP_BACK'],
         ['JAB', 'SLIP_L', 'CROSS', 'L_HOOK', 'PIVOT_L'],
         ['JAB', 'SLIP_R', 'L_HOOK', 'CROSS', 'PIVOT_R'],
@@ -350,7 +457,6 @@
         ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'CROSS', 'STEP_BACK']
     ];
 
-    // حقيبة الخلط العشوائي لضمان عدم التكرار وعدم البدء بنفس الترتيب أبداً
     let shuffleBag = [];
     let lastPlayedSignature = '';
 
@@ -360,7 +466,6 @@
             const j = Math.floor(Math.random() * (i + 1));
             [copy[i], copy[j]] = [copy[j], copy[i]];
         }
-        // التأكد من أن أول عنصر بعد الخلط لا يطابق آخر عنصر لُعب قبل الخلط
         if (copy.length > 1 && JSON.stringify(copy[0]) === lastPlayedSignature) {
             const swapIdx = 1 + Math.floor(Math.random() * (copy.length - 1));
             [copy[0], copy[swapIdx]] = [copy[swapIdx], copy[0]];
@@ -644,7 +749,7 @@
         document.getElementById('drill-enabled').value = 'on';
         resetDrillCounter();
         updateModeBadge();
-        switchTab('drill', document.querySelectorAll('.tab-btn')[1]);
+        switchTab('drill', document.querySelectorAll('.tab-btn')[2]);
     }
 
     function renderSavedCombos() {
@@ -723,9 +828,19 @@
         }
     }
 
+    function syncRoundLabels(txt) {
+        document.getElementById('round-label').textContent = txt;
+        document.getElementById('tv-round-label').textContent = txt;
+    }
+
+    function syncComboText(txt) {
+        document.getElementById('combo-text').textContent = txt;
+        document.getElementById('tv-combo-text').textContent = txt;
+    }
+
     function updateRoundsSetting() {
         totalRounds = parseInt(document.getElementById('rounds-select').value);
-        document.getElementById('round-label').textContent = `الجولة ${currentRound} / ${totalRounds}`;
+        syncRoundLabels(`الجولة ${currentRound} / ${totalRounds}`);
     }
 
     function updateTimeSetting() {
@@ -764,11 +879,15 @@
     function startSession() {
         isRunning = true;
         isComboBusy = false;
-        // إعادة خلط الحقيبة في بداية كل جلسة لضمان عدم البدء بنفس التمرين أبداً
         shuffleBag = [];
         const btn = document.getElementById('start-btn');
         btn.textContent = 'إيقاف الجلسة';
         btn.classList.add('danger');
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '⏹ إيقاف';
+        tvBtn.classList.add('stop');
+
         speakText(`Round ${currentRound}. Fight!`);
         timerId = setInterval(tickTimer, 1000);
         setTimeout(() => { if (isRunning) executeNextCombo(); }, 1200);
@@ -784,7 +903,12 @@
         const btn = document.getElementById('start-btn');
         btn.textContent = 'ابدأ الجلسة';
         btn.classList.remove('danger');
-        document.getElementById('combo-text').textContent = 'READY';
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '▶ ابدأ';
+        tvBtn.classList.remove('stop');
+
+        syncComboText('READY');
         returnToIdle();
     }
 
@@ -795,7 +919,7 @@
         isResting = false;
         timeLeft = roundDuration;
         resetDrillCounter();
-        document.getElementById('round-label').textContent = `الجولة 1 / ${totalRounds}`;
+        syncRoundLabels(`الجولة 1 / ${totalRounds}`);
         updateTimerDisplay();
     }
 
@@ -810,17 +934,16 @@
                 isComboBusy = false;
                 moveQueue = [];
                 timeLeft = 60;
-                document.getElementById('combo-text').textContent = 'REST';
+                syncComboText('REST');
                 document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس';
                 returnToIdle();
                 speakText("Rest time.");
             } else {
                 isResting = false;
-                // خلط جديد مع بداية كل جولة
                 shuffleBag = [];
                 currentRound++;
                 timeLeft = roundDuration;
-                document.getElementById('round-label').textContent = `الجولة ${currentRound} / ${totalRounds}`;
+                syncRoundLabels(`الجولة ${currentRound} / ${totalRounds}`);
                 speakText(`Round ${currentRound}. Let's go!`);
             }
         }
@@ -829,7 +952,9 @@
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        document.getElementById('timer-display').textContent = `${m}:${s}`;
+        const formatted = `${m}:${s}`;
+        document.getElementById('timer-display').textContent = formatted;
+        document.getElementById('tv-timer-display').textContent = formatted;
     }
 
     function getActiveComboPool() {
@@ -869,7 +994,7 @@
             document.getElementById('combo-sub').textContent = `متجدد بدون تكرار (متبقي ${remaining} في الدورة الحالية)`;
         }
 
-        document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
+        syncComboText(seqKeys.map(k => MOVES[k].en).join(' ➔ '));
         playComboSequence(seqKeys);
     }
 </script>
