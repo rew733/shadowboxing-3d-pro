@@ -4,24 +4,30 @@ import android.Manifest
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.tts.TextToSpeech
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebSettings
 import android.webkit.WebView
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import java.util.Locale
 
-class MainActivity : Activity() {
+class MainActivity : Activity(), TextToSpeech.OnInitListener {
     private val CAMERA_PERMISSION_CODE = 100
     private lateinit var webView: WebView
+    private var tts: TextToSpeech? = null
+    private var isTtsReady = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
+
+        tts = TextToSpeech(this, this)
+
         try {
-            // 1. إنشاء حاوية المتصفح وتفعيل تسريع العتاد الصلب (GPU Layer)
             webView = WebView(this).apply {
                 layoutParams = ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -31,7 +37,6 @@ class MainActivity : Activity() {
             }
             setContentView(webView)
 
-            // 2. إعدادات المتصفح اللازمة لتشغيل الكاميرا والذكاء الاصطناعي بأقصى أداء
             val webSettings: WebSettings = webView.settings
             webSettings.javaScriptEnabled = true
             webSettings.domStorageEnabled = true
@@ -41,7 +46,8 @@ class MainActivity : Activity() {
             webSettings.allowFileAccessFromFileURLs = true
             webSettings.allowUniversalAccessFromFileURLs = true
 
-            // 3. إدارة إذن الكاميرا داخل المتصفح
+            webView.addJavascriptInterface(WebAppInterface(), "AndroidTTS")
+
             webView.webChromeClient = object : WebChromeClient() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     runOnUiThread {
@@ -50,7 +56,6 @@ class MainActivity : Activity() {
                 }
             }
 
-            // 4. التحقق من إذن الكاميرا في الأندرويد قبل تحميل الصفحة
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
             } else {
@@ -62,7 +67,29 @@ class MainActivity : Activity() {
         }
     }
 
-    // 5. تحميل الصفحة فور رد المستخدم على طلب الصلاحية
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            val result = tts?.setLanguage(Locale.US)
+            isTtsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
+        }
+    }
+
+    inner class WebAppInterface {
+        @JavascriptInterface
+        fun speak(text: String) {
+            if (isTtsReady) {
+                tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "BOXING_CUE")
+            }
+        }
+
+        @JavascriptInterface
+        fun setRate(rate: Float) {
+            if (isTtsReady) {
+                tts?.setSpeechRate(rate)
+            }
+        }
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<String>,
@@ -74,5 +101,11 @@ class MainActivity : Activity() {
                 webView.loadUrl("file:///android_asset/index.html")
             }
         }
+    }
+
+    override fun onDestroy() {
+        tts?.stop()
+        tts?.shutdown()
+        super.onDestroy()
     }
 }
