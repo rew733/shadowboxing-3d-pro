@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • High-Performance WebGPU & Kalman Engine</title>
+    <title>Boxing Coach Pro • High-Performance WebGPU & Predictive Kalman Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -45,7 +45,8 @@
         .sub-tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 4px; border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .sub-tab-btn.active { background: var(--mitt); color: #000; }
 
-        .stage-box { width: 100%; height: 290px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .stage-box { width: 100%; height: 290px; background: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%); border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; transition: height 0.3s; }
+        .stage-box.audio-only-collapsed { height: 74px; }
         #canvas-3d { width: 100%; height: 100%; }
         
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.62rem; padding: 4px 8px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
@@ -68,7 +69,7 @@
         #pose-canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .cam-pip-tag {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.78); color: #fff; font-size: 0.52rem;
+            background: rgba(0,0,0,0.78); color: #fff; font-size: 0.50rem;
             text-align: center; padding: 2px 0; font-weight: 800; direction: ltr;
         }
 
@@ -114,6 +115,8 @@
         .panel { background: var(--panel); border-radius: 16px; padding: 10px; border: 1px solid var(--border); }
         .status-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-weight: 700; }
         .timer { text-align: center; font-size: 2.1rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
+        .timer.burnout { color: var(--danger); animation: pulseBurnout 0.8s infinite alternate; }
+        @keyframes pulseBurnout { from { transform: scale(1); } to { transform: scale(1.06); } }
         
         .mini-timer-bar {
             display: flex; justify-content: space-between; align-items: center;
@@ -123,6 +126,7 @@
         .mini-timer-bar .round-txt { font-size: 0.75rem; color: var(--muted); font-weight: 800; }
         .mini-timer-bar .clock-txt { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
         .mini-timer-bar .clock-txt.rest { color: var(--accent); }
+        .mini-timer-bar .clock-txt.burnout { color: var(--danger); }
 
         .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 9px; text-align: center; min-height: 74px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
         .combo-display h2 { color: var(--accent); font-size: 1.1rem; font-weight: 900; line-height: 1.35; }
@@ -218,7 +222,7 @@
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" autoplay muted playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
-            <div class="cam-pip-tag" id="cam-pip-status">GPU + KALMAN</div>
+            <div class="cam-pip-tag" id="cam-pip-status">PRED-KALMAN</div>
         </div>
 
         <div class="tv-hud">
@@ -581,6 +585,45 @@
 
     <!-- التبويب 8: الضبط -->
     <div id="tab-settings" class="tab-content">
+        <!-- الميزات الذكية والتدريبية المتقدمة -->
+        <div class="panel" style="border: 1px solid var(--mitt); background: rgba(16, 185, 129, 0.05);">
+            <div class="setting-header" style="margin-bottom: 6px; color: var(--mitt);"><span>🔥 أوضاع التدريب الاحترافية وتوفير الطاقة:</span></div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div class="setting-item" style="margin-bottom: 4px;">
+                    <span class="setting-header"><span>تحدي آخر 30 ثانية:</span></span>
+                    <select id="burnout-mode-select" onchange="updateAdvancedTrainingOptions()">
+                        <option value="on" selected>مفعل (سرعة قصوى 🔥)</option>
+                        <option value="off">متوقف (إيقاع ثابت)</option>
+                    </select>
+                </div>
+                <div class="setting-item" style="margin-bottom: 4px;">
+                    <span class="setting-header"><span>التكييف الذكي التلقائي:</span></span>
+                    <select id="adaptive-ai-select" onchange="updateAdvancedTrainingOptions()">
+                        <option value="on" selected>مفعل (تصحيح الأخطاء)</option>
+                        <option value="off">متوقف (عشوائي)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+                <div class="setting-item" style="margin-bottom: 0;">
+                    <span class="setting-header"><span>المؤثرات الصوتية:</span></span>
+                    <select id="sfx-mode-select" onchange="updateAdvancedTrainingOptions()">
+                        <option value="on" selected>مفعلة (جرس وارتطام 🔔)</option>
+                        <option value="off">صامتة</option>
+                    </select>
+                </div>
+                <div class="setting-item" style="margin-bottom: 0;">
+                    <span class="setting-header"><span>وضع العرض (3D / صوت):</span></span>
+                    <select id="audio-only-select" onchange="toggleAudioOnlyMode()">
+                        <option value="3d" selected>عرض 3D كامل</option>
+                        <option value="audio">صوت فقط (توفير البطارية)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
         <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
             <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman & Auditor):</span></div>
             
@@ -633,7 +676,7 @@
                     <span id="voice-rate-val" style="color: var(--accent);">0.75x (هادئ وواضح)</span>
                 </div>
                 <input type="range" id="voice-rate" min="0.25" max="1.40" step="0.05" value="0.75" oninput="changeVoiceRate(this.value)">
-                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت</button>
+                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت والجرس</button>
             </div>
 
             <div class="setting-item" style="margin-top: 8px;">
@@ -677,6 +720,109 @@
     let lastAuditText = '';
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
 
+    // إعدادات الميزات الاحترافية
+    let burnoutEnabled = true;
+    let adaptiveDifficultyEnabled = true;
+    let sfxEnabled = true;
+    let isAudioOnlyMode = false;
+    let isBurnoutActiveNow = false;
+    let sessionGuardViolations = 0;
+
+    function updateAdvancedTrainingOptions() {
+        burnoutEnabled = document.getElementById('burnout-mode-select').value === 'on';
+        adaptiveDifficultyEnabled = document.getElementById('adaptive-ai-select').value === 'on';
+        sfxEnabled = document.getElementById('sfx-mode-select').value === 'on';
+    }
+
+    function toggleAudioOnlyMode() {
+        isAudioOnlyMode = document.getElementById('audio-only-select').value === 'audio';
+        const stageBox = document.getElementById('stage-box');
+        const canvas3d = document.getElementById('canvas-3d');
+        if (isAudioOnlyMode) {
+            stageBox.classList.add('audio-only-collapsed');
+            if (canvas3d) canvas3d.style.display = 'none';
+            speakText("Audio only battery saver active");
+        } else {
+            stageBox.classList.remove('audio-only-collapsed');
+            if (canvas3d) canvas3d.style.display = 'block';
+            resize3DRenderer();
+        }
+    }
+
+    // =========================================================================
+    // 🔊 محرك المؤثرات الصوتية الرقمية (Web Audio API - صفر ملفات خارجية)
+    // =========================================================================
+    let audioCtx = null;
+    function initAudioEngine() {
+        if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    function playBoxingSFX(type) {
+        if (!sfxEnabled) return;
+        try {
+            initAudioEngine();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            if (type === 'BELL') {
+                [523.25, 783.99, 1046.5, 1318.5].forEach((freq, idx) => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = idx % 2 === 0 ? 'sine' : 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+                    gain.gain.setValueAtTime(0.25 / (idx + 1), now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 1.8);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now);
+                    osc.stop(now + 1.8);
+                });
+            } else if (type === 'CLAPPER') {
+                [0, 0.14].forEach(offset => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(950, now + offset);
+                    osc.frequency.exponentialRampToValueAtTime(220, now + offset + 0.06);
+                    gain.gain.setValueAtTime(0.3, now + offset);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.07);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start(now + offset);
+                    osc.stop(now + offset + 0.07);
+                });
+            } else if (type === 'PAD_HIT') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(160, now);
+                osc.frequency.exponentialRampToValueAtTime(38, now + 0.11);
+                gain.gain.setValueAtTime(0.45, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'GUARD_WARN') {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(280, now);
+                osc.frequency.linearRampToValueAtTime(190, now + 0.15);
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.16);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.16);
+            }
+        } catch (e) {}
+    }
+
     function getActiveAiModelName() {
         if (selectedAiModel === 'custom') return customAiModelName || 'gemini-2.0-flash';
         return selectedAiModel || 'gemini-2.0-flash';
@@ -700,31 +846,40 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker مع Kalman Filter
+    // 🧵 Web Worker المطور: Kalman Filter + التنبؤ بالمسار (Trajectory Prediction)
     // =========================================================================
     let poseWorker = null;
+    let predictedLeftWrist = null;
+    let predictedRightWrist = null;
 
     function initPoseWorker() {
         const workerCode = `
-            class KalmanFilter1D {
-                constructor(q = 0.02, r = 0.12) {
-                    this.q = q; this.r = r; this.x = 0; this.p = 1; this.initialized = false;
+            class PredictiveKalman1D {
+                constructor(q = 0.025, r = 0.10) {
+                    this.q = q; this.r = r; this.x = 0; this.v = 0; this.p = 1; this.initialized = false;
                 }
                 filter(measurement) {
-                    if (!this.initialized) { this.x = measurement; this.initialized = true; return this.x; }
+                    if (!this.initialized) {
+                        this.x = measurement; this.v = 0; this.initialized = true;
+                        return { pos: this.x, pred: this.x, vel: 0 };
+                    }
+                    const prevX = this.x;
                     this.p = this.p + this.q;
                     const k = this.p / (this.p + this.r);
                     this.x = this.x + k * (measurement - this.x);
                     this.p = (1 - k) * this.p;
-                    return this.x;
+                    this.v = (this.x - prevX);
+                    const predictedPos = this.x + (this.v * 1.8);
+                    return { pos: this.x, pred: predictedPos, vel: this.v };
                 }
             }
-            const kfNoseX = new KalmanFilter1D();
-            const kfNoseY = new KalmanFilter1D();
-            const kfLWristX = new KalmanFilter1D();
-            const kfLWristY = new KalmanFilter1D();
-            const kfRWristX = new KalmanFilter1D();
-            const kfRWristY = new KalmanFilter1D();
+
+            const kfNoseX = new PredictiveKalman1D(0.02, 0.12);
+            const kfNoseY = new PredictiveKalman1D(0.02, 0.12);
+            const kfLWristX = new PredictiveKalman1D();
+            const kfLWristY = new PredictiveKalman1D();
+            const kfRWristX = new PredictiveKalman1D();
+            const kfRWristY = new PredictiveKalman1D();
 
             self.onmessage = function(e) {
                 const arr = new Float32Array(e.data);
@@ -739,15 +894,17 @@
                 const rWY = kfRWristY.filter(arr[9]);
 
                 const shoulderAvgY = (lShY + rShY) / 2;
-                const leftGuardOk = (lWY < shoulderAvgY + 0.09);
-                const rightGuardOk = (rWY < shoulderAvgY + 0.09);
+                const leftGuardOk = (lWY.pos < shoulderAvgY + 0.09);
+                const rightGuardOk = (rWY.pos < shoulderAvgY + 0.09);
 
                 self.postMessage({
                     type: 'KALMAN_RESULT',
                     guardDown: (!leftGuardOk || !rightGuardOk),
-                    nose: { x: nX, y: nY },
-                    leftWrist: { x: lWX, y: lWY },
-                    rightWrist: { x: rWX, y: rWY }
+                    nose: { x: nX.pos, y: nY.pos },
+                    leftWrist: { x: lWX.pos, y: lWY.pos },
+                    rightWrist: { x: rWX.pos, y: rWY.pos },
+                    predLeftWrist: { x: lWX.pred, y: lWY.pred },
+                    predRightWrist: { x: rWX.pred, y: rWY.pred }
                 });
             };
         `;
@@ -883,7 +1040,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Kalman Worker + TTS) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد، أسرع رد ${cntBestMs || '--'} ms.`;
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Predictive Kalman Worker + WebAudio SFX + Adaptive AI) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة (${mittsCamHitsCount} إصابة)، الكاونتر ${cntHitsCount} رد، أسرع رد ${cntBestMs || '--'} ms.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1044,6 +1201,12 @@
         ['JAB', 'CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'R_UPPER', 'L_HOOK'], ['L_HOOK', 'CROSS', 'L_HOOK']
     ];
 
+    const BURNOUT_MITT_COMBOS = [
+        ['JAB', 'CROSS', 'JAB', 'CROSS'],
+        ['L_HOOK', 'R_HOOK', 'L_HOOK', 'R_HOOK'],
+        ['L_UPPER', 'R_UPPER', 'L_HOOK', 'CROSS']
+    ];
+
     let mittsSubMode = 'random';
     let mittsRepeatDone = 0;
     let isMittsRunning = false;
@@ -1156,6 +1319,9 @@
     }
 
     function getNextMittCombo() {
+        if (isBurnoutActiveNow) {
+            return BURNOUT_MITT_COMBOS[Math.floor(Math.random() * BURNOUT_MITT_COMBOS.length)];
+        }
         if (mittsBag.length === 0) {
             mittsBag = [...MITT_COMBOS];
             for (let i = mittsBag.length - 1; i > 0; i--) {
@@ -1169,7 +1335,7 @@
     function executeNextMittCombo() {
         if (!isMittsRunning || isResting || isMittsBusy) return;
         let seq = [];
-        if (mittsSubMode === 'repeat') {
+        if (mittsSubMode === 'repeat' && !isBurnoutActiveNow) {
             const selVal = document.getElementById('mitts-repeat-select').value;
             seq = selVal ? JSON.parse(selVal) : MITT_COMBOS[0];
             const target = parseInt(document.getElementById('mitts-repeat-target').value);
@@ -1183,7 +1349,8 @@
         }
 
         isMittsBusy = true;
-        const comboStr = seq.map(k => MOVES[k].en).join(' ➔ ');
+        const speedBoost = isBurnoutActiveNow ? 1.45 : 1.0;
+        const comboStr = (isBurnoutActiveNow ? '🔥 ' : '') + seq.map(k => MOVES[k].en).join(' ➔ ');
         mittsCombosCount++;
         document.getElementById('mitts-combos-count').textContent = mittsCombosCount;
         document.getElementById('mitts-combo-title').textContent = comboStr;
@@ -1192,14 +1359,14 @@
 
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
-        let delay = Math.round(140 / voiceRate);
+        let delay = Math.round(120 / (voiceRate * speedBoost));
         seq.forEach(pKey => {
             mittsStepTimers.push(setTimeout(() => { if (isMittsRunning && !isResting) presentPadForPunch(pKey, false); }, delay));
-            delay += Math.round((PAD_POSITIONS[pKey].baseMs + 140) / voiceRate);
+            delay += Math.round((PAD_POSITIONS[pKey].baseMs + 120) / (voiceRate * speedBoost));
         });
         mittsStepTimers.push(setTimeout(() => {
             if (isMittsRunning) { padAnimState.activePunch = null; resetPadsToGuardPosition(); isMittsBusy = false; }
-        }, delay + 320));
+        }, delay + (isBurnoutActiveNow ? 140 : 300)));
     }
 
     function toggleMittsSession() { if (isMittsRunning) stopMittsSession(); else startMittsSession(); }
@@ -1209,9 +1376,10 @@
         updateStageEntityVisibility(); resetPadsToGuardPosition();
         document.getElementById('mitts-start-btn').textContent = '⏹ إيقاف التمرين'; document.getElementById('mitts-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        playBoxingSFX('BELL');
         speakText(`Round ${currentRound}. Fight!`); startSharedRoundClock('mitts');
         setTimeout(() => { if (isMittsRunning && !isResting) executeNextMittCombo(); }, 800);
-        mittsLoopTimer = setInterval(() => { if (isMittsRunning && !isResting && !isMittsBusy) executeNextMittCombo(); }, Math.max(1200, Math.round(comboIntervalMs * 0.65)));
+        mittsLoopTimer = setInterval(() => { if (isMittsRunning && !isResting && !isMittsBusy) executeNextMittCombo(); }, 800);
     }
     function stopMittsSession() {
         isMittsRunning = false; isMittsBusy = false; padAnimState.activePunch = null; stopSharedRoundClock(); clearInterval(mittsLoopTimer);
@@ -1225,7 +1393,7 @@
     }
 
     // =========================================================================
-    // مراقبة الكاميرا (WebView Safe)
+    // مراقبة الكاميرا مع التنبؤ بالمسار (Trajectory Prediction)
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1353,13 +1521,19 @@
             ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2); ctx.stroke();
             ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
 
+            // فحص الإصابة باستخدام الموضع الفعلي أو المتوقع (Trajectory Prediction)
             if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
                 const tx = padAnimState.camTargetX; const ty = padAnimState.camTargetY;
                 ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2); ctx.stroke();
                 const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-                if (hit(curLeftWrist) || hit(curRightWrist)) {
-                    padAnimState.camScoredThisPad = true; mittsCamHitsCount++;
+                if (hit(curLeftWrist) || hit(curRightWrist) || hit(predictedLeftWrist) || hit(predictedRightWrist)) {
+                    padAnimState.camScoredThisPad = true;
+                    mittsCamHitsCount++;
                     document.getElementById('mitts-cam-hits').textContent = mittsCamHitsCount;
+                    playBoxingSFX('PAD_HIT');
+                    const pipBox = document.getElementById('cam-pip-box');
+                    pipBox.classList.add('hit-ok');
+                    setTimeout(() => pipBox.classList.remove('hit-ok'), 250);
                 }
             }
 
@@ -1375,6 +1549,8 @@
         curNoseX = data.nose.x; curNoseY = data.nose.y;
         if (data.leftWrist) curLeftWrist = data.leftWrist;
         if (data.rightWrist) curRightWrist = data.rightWrist;
+        if (data.predLeftWrist) predictedLeftWrist = data.predLeftWrist;
+        if (data.predRightWrist) predictedRightWrist = data.predRightWrist;
 
         const pipBox = document.getElementById('cam-pip-box');
         const pipTag = document.getElementById('cam-pip-status');
@@ -1382,16 +1558,18 @@
 
         if (data.guardDown) {
             guardViolationCount++;
-            if (guardViolationCount > 18) {
+            if (guardViolationCount === 20) {
+                sessionGuardViolations++;
                 pipBox.classList.add('guard-down');
                 pipTag.textContent = '⚠️ GUARD UP!';
-                if (Math.random() < 0.07) speakText("Guard up!");
+                playBoxingSFX('GUARD_WARN');
+                speakText("Guard up!");
             }
         } else {
             guardViolationCount = 0;
             if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
                 pipBox.classList.remove('guard-down');
-                pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
+                pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
             }
         }
     }
@@ -1441,11 +1619,12 @@
         if (!counterWindow.active) return;
         if (performance.now() > counterWindow.expiresAt) { counterWindow.active = false; if (mittGroup) mittGroup.visible = false; return; }
         const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-        if (hit(curLeftWrist) || hit(curRightWrist)) {
-            const ms = Math.max(120, Math.round(performance.now() - counterWindow.startTime));
+        if (hit(curLeftWrist) || hit(curRightWrist) || hit(predictedLeftWrist) || hit(predictedRightWrist)) {
+            const ms = Math.max(110, Math.round(performance.now() - counterWindow.startTime));
             counterWindow.active = false; if (mittGroup) mittGroup.visible = false;
             cntPoints += 20; cntHitsCount++;
             if (!cntBestMs || ms < cntBestMs) cntBestMs = ms;
+            playBoxingSFX('PAD_HIT');
             updateCounterScoreboard();
             document.getElementById('counter-cue-label').textContent = `💥 إصابة كاونتر ناجحة (${ms}ms)`;
             syncComboText(`💥 +20 BONUS (${ms}ms)`);
@@ -1500,7 +1679,12 @@
         if (stickBag.length === 0) stickBag = [...STICK_PATTERNS];
         const pat = stickBag.shift();
         const speedEl = document.getElementById(activeTabName === 'counter' ? 'counter-speed' : 'stick-speed');
-        const speedMult = speedEl ? parseFloat(speedEl.value) : 1.0;
+        let speedMult = speedEl ? parseFloat(speedEl.value) : 1.0;
+
+        // التكييف الذكي: تسريع العصا تدريجياً إذا كان رد فعل اللاعب سريعاً (< 400ms)
+        if (adaptiveDifficultyEnabled && activeTabName === 'counter' && cntBestMs && cntBestMs < 400) {
+            speedMult *= 1.15;
+        }
 
         stickState.type = pat.type;
         stickState.progress = 0;
@@ -1532,6 +1716,7 @@
         isStickRunning = true; isResting = false; updateStageEntityVisibility();
         document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا'; document.getElementById('stick-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        playBoxingSFX('BELL');
         speakText(`Round ${currentRound}. Defense only!`);
         startSharedRoundClock('stick');
         setTimeout(triggerStickStrike, 900);
@@ -1549,6 +1734,7 @@
         isCounterRunning = true; isResting = false; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
         document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر'; document.getElementById('counter-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        playBoxingSFX('BELL');
         speakText(`Round ${currentRound}. Dodge and counter!`);
         startSharedRoundClock('counter');
         setTimeout(triggerStickStrike, 1000);
@@ -1587,6 +1773,16 @@
         ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R'],
         ['JAB', 'R_UPPER', 'L_HOOK'], ['SLIP_L', 'L_HOOK', 'CROSS'], ['SLIP_R', 'CROSS', 'L_HOOK'],
         ['JAB', 'CROSS', 'ROLL', 'CROSS'], ['STEP_IN', 'JAB', 'L_UPPER', 'CROSS'], ['JAB', 'CROSS', 'PIVOT_L']
+    ];
+    const DEFENSIVE_CORRECTION_COMBOS = [
+        ['JAB', 'CROSS', 'ROLL', 'L_HOOK'],
+        ['JAB', 'SLIP_R', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'CROSS', 'PULL', 'CROSS']
+    ];
+    const BURNOUT_TRAIN_COMBOS = [
+        ['JAB', 'CROSS', 'JAB', 'CROSS'],
+        ['L_HOOK', 'R_HOOK', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'L_UPPER', 'R_UPPER']
     ];
 
     let scene, camera, renderer, modelRoot, mixer;
@@ -1655,7 +1851,7 @@
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
 
         const pipTag = document.getElementById('cam-pip-status');
-        if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + KALMAN' : 'GPU-GL2 + KALMAN';
+        if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
         updateStageEntityVisibility();
 
         build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
@@ -1752,7 +1948,8 @@
         }
         document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
         const act = actions[moveKey];
-        act.timeScale = Math.max(0.5, voiceRate * 1.25);
+        const burnoutBoost = isBurnoutActiveNow ? 1.35 : 1.0;
+        act.timeScale = Math.max(0.5, voiceRate * 1.25 * burnoutBoost);
         act.reset().play();
         if (activeAction && activeAction !== act) activeAction.fadeOut(0.08);
         activeAction = act;
@@ -1768,6 +1965,7 @@
 
     function animate3D() {
         requestAnimationFrame(animate3D);
+        if (isAudioOnlyMode) return; // توفير كامل للـ GPU والبطارية في وضع الصوت فقط
         const delta = clock.getDelta();
         if (activeTabName === 'stick' || activeTabName === 'counter') updateStickAnimation(delta);
         else if (activeTabName === 'mitts') updateCoachPadsAnimation(delta);
@@ -1777,15 +1975,22 @@
     window.addEventListener('load', init3DScene);
 
     // =========================================================================
-    // إدارة الجلسات والتوقيت والصوت
+    // إدارة الجلسات والتوقيت والصوت وتحدي آخر 30 ثانية (Burnout)
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
     let timerId = null; let comboId = null; let activeClockOwner = 'train';
 
     function startSharedRoundClock(owner) { activeClockOwner = owner; clearInterval(timerId); timerId = setInterval(tickTimer, 1000); }
-    function stopSharedRoundClock() { clearInterval(timerId); timerId = null; }
+    function stopSharedRoundClock() { clearInterval(timerId); timerId = null; isBurnoutActiveNow = false; updateBurnoutVisuals(false); }
     function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels(); }
+
+    function updateBurnoutVisuals(active) {
+        ['timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('burnout', active);
+        });
+    }
 
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
@@ -1798,7 +2003,10 @@
         comboIntervalMs = parseFloat(val) * 1000;
         document.getElementById('interval-val').textContent = `${parseFloat(val).toFixed(1)} ثانية`;
     }
-    function testVoice() { speakText("One, Two, Slip Left, Cross!"); }
+    function testVoice() {
+        playBoxingSFX('BELL');
+        setTimeout(() => speakText("One, Two, Slip Left, Cross!"), 500);
+    }
 
     function syncComboText(txt) {
         document.getElementById('combo-text').textContent = txt;
@@ -1820,13 +2028,16 @@
 
     document.getElementById('start-btn').addEventListener('click', () => { if (isRunning) stopSession(); else startSession(); });
     function startSession() {
-        isRunning = true; isResting = false;
+        isRunning = true; isResting = false; sessionGuardViolations = 0;
         document.getElementById('start-btn').textContent = 'إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
+        playBoxingSFX('BELL');
         speakText(`Round ${currentRound}. Fight!`);
         startSharedRoundClock('train');
         setTimeout(() => { if (isRunning && !isResting) executeNextCombo(); }, 1000);
-        comboId = setInterval(executeNextCombo, comboIntervalMs);
+        comboId = setInterval(() => {
+            if (isRunning && !isResting && !isComboBusy) executeNextCombo();
+        }, 1200);
     }
     function stopSession() {
         isRunning = false; isComboBusy = false; moveQueue = []; stopSharedRoundClock(); clearInterval(comboId);
@@ -1836,9 +2047,28 @@
     }
     function resetSession() { stopSession(); resetSharedRoundState(); }
 
+    let lastComboExecutedAt = 0;
+
     async function tickTimer() {
-        if (timeLeft > 0) { timeLeft--; updateTimerDisplay(); }
-        else {
+        if (timeLeft > 0) {
+            timeLeft--;
+            updateTimerDisplay();
+
+            // تفعيل تحدي آخر 30 ثانية (Burnout Finisher)
+            if (!isResting && burnoutEnabled && timeLeft === 30) {
+                isBurnoutActiveNow = true;
+                updateBurnoutVisuals(true);
+                speakText("Last 30 seconds! Non-stop speed!");
+            }
+            // صوت طرق الخشب عند آخر 10 ثوانٍ
+            if (!isResting && timeLeft === 10) {
+                playBoxingSFX('CLAPPER');
+            }
+        } else {
+            isBurnoutActiveNow = false;
+            updateBurnoutVisuals(false);
+            playBoxingSFX('BELL');
+
             if (!isResting) {
                 if (currentRound >= totalRounds) {
                     if (activeClockOwner === 'mitts') stopMittsSession();
@@ -1850,7 +2080,7 @@
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}`);
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}, Guard drops: ${sessionGuardViolations}`);
                     speakText(advice);
                 } else speakText("Rest time.");
             } else {
@@ -1876,7 +2106,7 @@
     }
 
     // =========================================================================
-    // إدارة الكومبوهات المخصصة ووضع الإتقان
+    // إدارة الكومبوهات المخصصة ووضع الإتقان والتكييف الذكي
     // =========================================================================
     let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
     let currentBuilderSeq = [];
@@ -1885,8 +2115,13 @@
     function executeNextCombo() {
         if (!isRunning || isResting || isComboBusy) return;
 
+        const now = performance.now();
+        const requiredWait = isBurnoutActiveNow ? 900 : comboIntervalMs;
+        if (now - lastComboExecutedAt < requiredWait) return;
+        lastComboExecutedAt = now;
+
         const drillMode = document.getElementById('drill-enabled').value === 'on';
-        if (drillMode) {
+        if (drillMode && !isBurnoutActiveNow) {
             const selVal = document.getElementById('drill-combo-select').value;
             const seq = selVal ? JSON.parse(selVal) : MASTER_COMBOS_70[0];
             const target = parseInt(document.getElementById('drill-reps-target').value);
@@ -1902,13 +2137,20 @@
             return;
         }
 
-        const source = document.getElementById('combo-source').value;
         let pool = MASTER_COMBOS_70;
-        if (source === 'custom' && customCombos.length > 0) pool = customCombos;
-        else if (source === 'both' && customCombos.length > 0) pool = [...MASTER_COMBOS_70, ...customCombos];
+        if (isBurnoutActiveNow) {
+            pool = BURNOUT_TRAIN_COMBOS;
+        } else if (adaptiveDifficultyEnabled && sessionGuardViolations >= 2) {
+            // التكييف الذكي: إدراج كومبوهات دفاعية لتعويد الملاكم على رفع اليدين بعد اللكم
+            pool = DEFENSIVE_CORRECTION_COMBOS;
+        } else {
+            const source = document.getElementById('combo-source').value;
+            if (source === 'custom' && customCombos.length > 0) pool = customCombos;
+            else if (source === 'both' && customCombos.length > 0) pool = [...MASTER_COMBOS_70, ...customCombos];
+        }
 
         const seq = pool[Math.floor(Math.random() * pool.length)];
-        syncComboText(seq.map(k => MOVES[k].en).join(' ➔ '));
+        syncComboText((isBurnoutActiveNow ? '🔥 ' : '') + seq.map(k => MOVES[k].en).join(' ➔ '));
         playComboSequence(seq);
     }
 
