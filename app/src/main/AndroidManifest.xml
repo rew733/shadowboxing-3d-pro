@@ -2,22 +2,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.rew.boxingcoach">
 
-    <!-- الصلاحيات الأساسية للإنترنت والكاميرا -->
+    <!-- الصلاحيات الأساسية -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.CAMERA" />
     
     <uses-feature android:name="android.hardware.camera" android:required="true" />
-    <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
+    <uses-feature android:name="android.hardware.camera.any" android:required="false" />
 
     <application
         android:allowBackup="true"
         android:label="Boxing Coach Pro"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
-        android:theme="@android:style/Theme.NoTitleBar.Fullscreen">
+        android:theme="@android:style/Theme.NoTitleBar.Fullscreen"> <!-- ثيم آمن يمنع الانهيار -->
 
+        <!-- استخدام المسار الكامل للملف الرئيسي لمنع خطأ الإطلاق -->
         <activity
-            android:name=".MainActivity"
+            android:name="com.rew.boxingcoach.MainActivity"
             android:exported="true"
             android:screenOrientation="portrait">
             <intent-filter>
