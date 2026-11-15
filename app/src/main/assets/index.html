@@ -45,7 +45,7 @@
         .timer { text-align: center; font-size: 2.4rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
         
         .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 10px; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
-        .combo-display h2 { color: var(--accent); font-size: 1.2rem; font-weight: 900; line-height: 1.35; }
+        .combo-display h2 { color: var(--accent); font-size: 1.15rem; font-weight: 900; line-height: 1.35; }
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
         .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 9px; }
@@ -85,7 +85,7 @@
 
     <div id="tab-train" class="tab-content active">
         <div class="stage-box">
-            <span class="badge-stance">MOCAP SYNC ENGINE</span>
+            <span class="badge-stance">70 PRO COMBOS</span>
             <span class="badge-action" id="live-move-badge">IDLE</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
             <button class="camera-btn" id="cam-btn" onclick="toggleCameraView()">🎥 منظور الخصم</button>
@@ -96,12 +96,12 @@
         <div class="panel">
             <div class="status-row">
                 <span id="round-label">الجولة 1 / 3</span>
-                <span id="mode-badge" style="color: var(--accent);">الوضع: شامل ومتنوع</span>
+                <span id="mode-badge" style="color: var(--accent);">الوضع: 70 كومبو عشوائي</span>
             </div>
             <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ لبدء التمرين</span>
+                <span id="combo-sub">اضغط ابدأ لبدء التمرين (ترتيب متجدد كل جلسة)</span>
             </div>
         </div>
 
@@ -121,7 +121,7 @@
                 </select>
             </div>
             <div class="setting-item">
-                <span class="setting-header"><span>اختر الكومبو المراد إتقانه:</span></span>
+                <span class="setting-header"><span>اختر الكومبو المراد إتقانه (70 كومبو + مخصص):</span></span>
                 <select id="drill-combo-select"></select>
             </div>
             <div class="setting-item">
@@ -149,9 +149,9 @@
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
             <select id="combo-source" style="margin-top: 5px;" onchange="updateModeBadge()">
-                <option value="mixed_all">توليد شامل (لكم + رأس + قدمين)</option>
+                <option value="mixed_all">مكتبة الـ 70 كومبو (شامل ومتجدد)</option>
                 <option value="custom">كومبوهاتي المحفوظة فقط</option>
-                <option value="both">دمج الشامل مع كومبوهاتي</option>
+                <option value="both">دمج الـ 70 كومبو مع كومبوهاتي</option>
             </select>
 
             <div class="cat-title">🥊 اللكمات (اضغط لاختبار كل لكمة على حدة):</div>
@@ -268,6 +268,115 @@
         PIVOT_L:   { en: 'Pivot Left',   say: 'Pivot Left',    file: 'Left Pivot.fbx' },
         PIVOT_R:   { en: 'Pivot Right',  say: 'Pivot Right',   file: 'Right Pivot.fbx' }
     };
+
+    // --- مكتبة 70 كومبو ملاكمة احترافي (قصير + متوسط + دفاع + حركة قدمين) ---
+    const MASTER_COMBOS_70 = [
+        // 1-15: كومبوهات قصيرة وحادة مع حركة رأس أو قدمين
+        ['JAB', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'JAB', 'CROSS'],
+        ['STEP_IN', 'JAB', 'CROSS'],
+        ['JAB', 'L_HOOK', 'STEP_BACK'],
+        ['JAB', 'CROSS', 'SLIP_L'],
+        ['JAB', 'CROSS', 'SLIP_R'],
+        ['JAB', 'CROSS', 'ROLL'],
+        ['JAB', 'PULL', 'CROSS'],
+        ['SLIP_L', 'L_HOOK', 'CROSS'],
+        ['SLIP_R', 'CROSS', 'L_HOOK'],
+        ['JAB', 'R_UPPER', 'STEP_BACK'],
+        ['STEP_IN', 'JAB', 'R_HOOK'],
+        ['JAB', 'CROSS', 'PIVOT_L'],
+        ['JAB', 'CROSS', 'PIVOT_R'],
+        ['PULL', 'CROSS', 'L_HOOK'],
+
+        // 16-35: كومبوهات متوسطة متوازنة (هجوم + مراوغة + زاوية)
+        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'],
+        ['JAB', 'JAB', 'CROSS', 'L_HOOK'],
+        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_L', 'CROSS'],
+        ['JAB', 'SLIP_R', 'CROSS', 'L_HOOK'],
+        ['JAB', 'SLIP_L', 'L_UPPER', 'CROSS'],
+        ['SLIP_R', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['ROLL', 'L_HOOK', 'CROSS', 'STEP_BACK'],
+        ['ROLL', 'R_HOOK', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'ROLL', 'L_HOOK'],
+        ['JAB', 'CROSS', 'ROLL', 'R_HOOK'],
+        ['STEP_IN', 'JAB', 'R_UPPER', 'L_HOOK', 'STEP_BACK'],
+        ['JAB', 'CROSS', 'L_UPPER', 'R_HOOK'],
+        ['JAB', 'JAB', 'SLIP_L', 'CROSS', 'L_HOOK'],
+        ['JAB', 'CROSS', 'SLIP_R', 'R_UPPER', 'L_HOOK'],
+        ['SLIP_L', 'L_HOOK', 'R_UPPER', 'STEP_BACK'],
+        ['JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'],
+        ['JAB', 'CROSS', 'R_HOOK', 'PIVOT_R'],
+        ['STEP_IN', 'L_HOOK', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'PULL', 'JAB', 'CROSS'],
+        ['SLIP_R', 'CROSS', 'L_UPPER', 'CROSS'],
+
+        // 36-55: كومبوهات الرد الهجومي وتغيير الزوايا (Counter & Angles)
+        ['PULL', 'CROSS', 'L_HOOK', 'CROSS'],
+        ['SLIP_L', 'JAB', 'CROSS', 'PIVOT_L'],
+        ['SLIP_R', 'CROSS', 'L_HOOK', 'PIVOT_R'],
+        ['ROLL', 'CROSS', 'L_HOOK', 'R_UPPER'],
+        ['STEP_IN', 'JAB', 'JAB', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'CROSS', 'SLIP_L', 'L_HOOK', 'CROSS'],
+        ['JAB', 'L_HOOK', 'ROLL', 'CROSS'],
+        ['JAB', 'R_HOOK', 'ROLL', 'L_HOOK'],
+        ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'],
+        ['STEP_IN', 'JAB', 'CROSS', 'R_UPPER', 'PIVOT_R'],
+        ['JAB', 'SLIP_R', 'R_HOOK', 'L_HOOK'],
+        ['JAB', 'SLIP_L', 'L_HOOK', 'R_HOOK'],
+        ['PULL', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'PULL', 'CROSS'],
+        ['STEP_IN', 'L_UPPER', 'CROSS', 'L_HOOK'],
+        ['STEP_IN', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['JAB', 'JAB', 'ROLL', 'CROSS', 'L_HOOK'],
+        ['SLIP_L', 'L_UPPER', 'R_HOOK', 'CROSS'],
+        ['SLIP_R', 'R_HOOK', 'L_UPPER', 'CROSS'],
+        ['JAB', 'CROSS', 'L_HOOK', 'ROLL', 'CROSS'],
+
+        // 56-70: سلاسل احترافية متكاملة (قدمين + لكمات مركبة + خروج آمن)
+        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_R', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'SLIP_L', 'CROSS', 'L_HOOK', 'PIVOT_L'],
+        ['JAB', 'SLIP_R', 'L_HOOK', 'CROSS', 'PIVOT_R'],
+        ['ROLL', 'L_UPPER', 'CROSS', 'L_HOOK', 'STEP_BACK'],
+        ['STEP_IN', 'JAB', 'R_HOOK', 'L_UPPER', 'CROSS'],
+        ['JAB', 'JAB', 'CROSS', 'SLIP_L', 'L_HOOK'],
+        ['JAB', 'CROSS', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['PULL', 'CROSS', 'ROLL', 'L_HOOK', 'CROSS'],
+        ['STEP_IN', 'JAB', 'CROSS', 'L_UPPER', 'R_HOOK', 'STEP_BACK'],
+        ['SLIP_R', 'CROSS', 'SLIP_L', 'L_HOOK', 'CROSS'],
+        ['JAB', 'L_HOOK', 'CROSS', 'PIVOT_L', 'CROSS'],
+        ['STEP_IN', 'JAB', 'SLIP_R', 'R_UPPER', 'L_HOOK'],
+        ['JAB', 'CROSS', 'ROLL', 'R_UPPER', 'L_HOOK', 'STEP_BACK'],
+        ['SLIP_L', 'JAB', 'CROSS', 'L_HOOK', 'R_HOOK'],
+        ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'CROSS', 'STEP_BACK']
+    ];
+
+    // حقيبة الخلط العشوائي لضمان عدم التكرار وعدم البدء بنفس الترتيب أبداً
+    let shuffleBag = [];
+    let lastPlayedSignature = '';
+
+    function refillAndShuffleBag(pool) {
+        const copy = pool.map(c => [...c]);
+        for (let i = copy.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [copy[i], copy[j]] = [copy[j], copy[i]];
+        }
+        // التأكد من أن أول عنصر بعد الخلط لا يطابق آخر عنصر لُعب قبل الخلط
+        if (copy.length > 1 && JSON.stringify(copy[0]) === lastPlayedSignature) {
+            const swapIdx = 1 + Math.floor(Math.random() * (copy.length - 1));
+            [copy[0], copy[swapIdx]] = [copy[swapIdx], copy[0]];
+        }
+        return copy;
+    }
+
+    function getNextUniqueCombo(pool) {
+        if (!pool || pool.length === 0) return MASTER_COMBOS_70[0];
+        if (shuffleBag.length === 0) {
+            shuffleBag = refillAndShuffleBag(pool);
+        }
+        const chosen = shuffleBag.shift();
+        lastPlayedSignature = JSON.stringify(chosen);
+        return chosen;
+    }
 
     let scene, camera, renderer, modelRoot, mixer;
     let clock = new THREE.Clock();
@@ -486,15 +595,6 @@
 
     window.addEventListener('load', init3DScene);
 
-    const PRESET_DRILLS = [
-        ['JAB', 'CROSS', 'L_HOOK'],
-        ['JAB', 'JAB', 'CROSS', 'SLIP_L'],
-        ['STEP_IN', 'JAB', 'CROSS', 'STEP_BACK'],
-        ['SLIP_R', 'CROSS', 'L_HOOK', 'CROSS'],
-        ['JAB', 'CROSS', 'ROLL', 'R_UPPER', 'L_HOOK'],
-        ['JAB', 'PULL', 'CROSS', 'PIVOT_L']
-    ];
-
     let currentBuilder = [];
     let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
     let drillCurrentReps = 0;
@@ -523,6 +623,7 @@
         if (currentBuilder.length === 0) return;
         customCombos.push([...currentBuilder]);
         localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
+        shuffleBag = [];
         clearBuilder();
         renderSavedCombos();
     }
@@ -530,6 +631,7 @@
     function deleteCustomCombo(index) {
         customCombos.splice(index, 1);
         localStorage.setItem('user_custom_combos', JSON.stringify(customCombos));
+        shuffleBag = [];
         renderSavedCombos();
     }
 
@@ -567,10 +669,10 @@
             drillSel.appendChild(opt);
         });
 
-        PRESET_DRILLS.forEach(combo => {
+        MASTER_COMBOS_70.forEach((combo, idx) => {
             const opt = document.createElement('option');
             opt.value = JSON.stringify(combo);
-            opt.textContent = combo.map(k => MOVES[k].en).join(' ➔ ');
+            opt.textContent = `#${idx + 1}: ` + combo.map(k => MOVES[k].en).join(' ➔ ');
             drillSel.appendChild(opt);
         });
     }
@@ -632,12 +734,13 @@
     }
 
     function updateModeBadge() {
+        shuffleBag = [];
         const isDrill = document.getElementById('drill-enabled').value === 'on';
         if (isDrill) {
             document.getElementById('mode-badge').textContent = 'الوضع: تكرار للإتقان 🔁';
         } else {
             const mode = document.getElementById('combo-source').value;
-            const names = { mixed_all: 'شامل ومتنوع', custom: 'مخصص', both: 'مدمج' };
+            const names = { mixed_all: '70 كومبو عشوائي', custom: 'مخصص', both: 'مدمج (70 + مخصص)' };
             document.getElementById('mode-badge').textContent = `الوضع: ${names[mode]}`;
         }
     }
@@ -661,6 +764,8 @@
     function startSession() {
         isRunning = true;
         isComboBusy = false;
+        // إعادة خلط الحقيبة في بداية كل جلسة لضمان عدم البدء بنفس التمرين أبداً
+        shuffleBag = [];
         const btn = document.getElementById('start-btn');
         btn.textContent = 'إيقاف الجلسة';
         btn.classList.add('danger');
@@ -685,6 +790,7 @@
 
     function resetSession() {
         stopSession();
+        shuffleBag = [];
         currentRound = 1;
         isResting = false;
         timeLeft = roundDuration;
@@ -710,6 +816,8 @@
                 speakText("Rest time.");
             } else {
                 isResting = false;
+                // خلط جديد مع بداية كل جولة
+                shuffleBag = [];
                 currentRound++;
                 timeLeft = roundDuration;
                 document.getElementById('round-label').textContent = `الجولة ${currentRound} / ${totalRounds}`;
@@ -724,18 +832,15 @@
         document.getElementById('timer-display').textContent = `${m}:${s}`;
     }
 
-    function generateSmartVariedCombo() {
-        const punches = ['JAB', 'CROSS', 'L_HOOK', 'R_HOOK', 'L_UPPER', 'R_UPPER'];
-        const heads = ['SLIP_L', 'SLIP_R', 'ROLL', 'PULL'];
-        const feet = ['STEP_IN', 'STEP_BACK', 'PIVOT_L', 'PIVOT_R'];
-        const templates = [
-            () => [feet[Math.floor(Math.random()*2)], 'JAB', 'CROSS', heads[Math.floor(Math.random()*heads.length)]],
-            () => ['JAB', 'CROSS', 'L_HOOK', feet[2 + Math.floor(Math.random()*2)]],
-            () => [heads[Math.floor(Math.random()*heads.length)], punches[1 + Math.floor(Math.random()*5)], 'L_HOOK', 'CROSS'],
-            () => ['JAB', 'JAB', heads[Math.floor(Math.random()*heads.length)], 'CROSS', 'STEP_BACK'],
-            () => ['STEP_IN', 'JAB', 'R_UPPER', 'L_HOOK', 'PIVOT_L']
-        ];
-        return templates[Math.floor(Math.random() * templates.length)]();
+    function getActiveComboPool() {
+        const source = document.getElementById('combo-source').value;
+        if (source === 'custom' && customCombos.length > 0) {
+            return customCombos;
+        }
+        if (source === 'both' && customCombos.length > 0) {
+            return [...MASTER_COMBOS_70, ...customCombos];
+        }
+        return MASTER_COMBOS_70;
     }
 
     function executeNextCombo() {
@@ -746,7 +851,7 @@
 
         if (isDrill) {
             const selVal = document.getElementById('drill-combo-select').value;
-            seqKeys = selVal ? JSON.parse(selVal) : PRESET_DRILLS[0];
+            seqKeys = selVal ? JSON.parse(selVal) : MASTER_COMBOS_70[0];
             drillCurrentReps++;
             const targetTxt = drillTargetReps === 999 ? '∞' : drillTargetReps;
             document.getElementById('drill-counter-display').textContent = `${drillCurrentReps} / ${targetTxt}`;
@@ -758,15 +863,10 @@
                 resetDrillCounter();
             }
         } else {
-            const source = document.getElementById('combo-source').value;
-            if (source === 'custom' && customCombos.length > 0) {
-                seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
-            } else if (source === 'both' && customCombos.length > 0 && Math.random() > 0.5) {
-                seqKeys = customCombos[Math.floor(Math.random() * customCombos.length)];
-            } else {
-                seqKeys = generateSmartVariedCombo();
-            }
-            document.getElementById('combo-sub').textContent = 'لكم • حركة رأس • حركة قدمين';
+            const pool = getActiveComboPool();
+            seqKeys = getNextUniqueCombo(pool);
+            const remaining = shuffleBag.length;
+            document.getElementById('combo-sub').textContent = `متجدد بدون تكرار (متبقي ${remaining} في الدورة الحالية)`;
         }
 
         document.getElementById('combo-text').textContent = seqKeys.map(k => MOVES[k].en).join(' ➔ ');
