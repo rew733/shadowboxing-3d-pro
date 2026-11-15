@@ -1,4 +1,4 @@
-package com.rew.boxingcoach
+package com.rew.boxingcoach // تأكد من مطابقة اسم الحزمة لديك
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -19,38 +19,45 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 1. إنشاء الـ WebView برمجياً بالكامل لتجنب أي أخطاء في ملفات الـ XML أو الـ R ID
-        webView = WebView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
-        setContentView(webView)
+        try {
+            // 1. إنشاء الـ WebView برمجياً
+            webView = WebView(this).apply {
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT
+                )
+            }
+            setContentView(webView)
 
-        // 2. طلب إذن الكاميرا وقت التشغيل
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
-        }
+            // 2. طلب إذن الكاميرا وقت التشغيل
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), CAMERA_PERMISSION_CODE)
+            }
 
-        val webSettings: WebSettings = webView.settings
-        webSettings.javaScriptEnabled = true
-        webSettings.domStorageEnabled = true
-        webSettings.mediaPlaybackRequiresUserGesture = false
-        webSettings.allowFileAccess = true
-        webSettings.allowContentAccess = true
+            // 3. إعدادات الـ WebView والـ Assets
+            val webSettings: WebSettings = webView.settings
+            webSettings.javaScriptEnabled = true
+            webSettings.domStorageEnabled = true
+            webSettings.mediaPlaybackRequiresUserGesture = false
+            webSettings.allowFileAccess = true
+            webSettings.allowContentAccess = true
+            webSettings.allowUniversalAccessFromFileURLs = true // ضروري لتشغيل الـ Web Workers محلياً
 
-        // 3. السماح التلقائي لطلبات الكاميرا في الـ WebView لمنع الشاشة السوداء
-        webView.webChromeClient = object : WebChromeClient() {
-            override fun onPermissionRequest(request: PermissionRequest) {
-                runOnUiThread {
-                    request.grant(request.resources)
+            // 4. السماح التلقائي لطلبات الكاميرا لمنع الشاشة السوداء
+            webView.webChromeClient = object : WebChromeClient() {
+                override fun onPermissionRequest(request: PermissionRequest) {
+                    runOnUiThread {
+                        request.grant(request.resources)
+                    }
                 }
             }
-        }
 
-        // 4. تحميل واجهة الـ HTML من مجلد الـ assets
-        webView.loadUrl("file:///android_asset/index.html")
+            // 5. تحميل واجهة التطبيق
+            webView.loadUrl("file:///android_asset/index.html")
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     override fun onRequestPermissionsResult(
