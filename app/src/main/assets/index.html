@@ -40,7 +40,6 @@
         .tab-content { display: none; flex-direction: column; gap: 9px; }
         .tab-content.active { display: flex; }
 
-        /* تبويبات داخلية لتبويب كف المدرب */
         .sub-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 8px; }
         .sub-tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 4px; border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .sub-tab-btn.active { background: var(--mitt); color: #000; }
@@ -185,7 +184,6 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
-    <!-- مسرح العرض ثلاثي الأبعاد -->
     <div class="stage-box" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
@@ -194,7 +192,6 @@
         <div id="canvas-3d"></div>
         <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
 
-        <!-- نافذة الكاميرا في منتصف أسفل الشاشة -->
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
@@ -236,16 +233,14 @@
         </div>
     </div>
 
-    <!-- التبويب 2: كف المدرب الشخصي (نطق كومبوهات + تبويب داخلي لتكرار الكومبو) -->
+    <!-- التبويب 2: كف المدرب الشخصي (متزامن 100% مع سرعة النطق) -->
     <div id="tab-mitts" class="tab-content">
         <div class="panel">
-            <!-- التبويبات الداخلية داخل كف المدرب -->
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" id="mitts-sub-random" onclick="switchMittsSubMode('random')">🔄 كومبوهات متنوعة</button>
                 <button class="sub-tab-btn" id="mitts-sub-repeat" onclick="switchMittsSubMode('repeat')">🔁 تكرار الكومبو</button>
             </div>
 
-            <!-- إعدادات التبويب الداخلي: تكرار الكومبو -->
             <div id="mitts-repeat-controls" style="display: none; background: rgba(0,0,0,0.28); padding: 8px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border);">
                 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px;">
                     <div>
@@ -270,17 +265,13 @@
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
                 <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (اختياري)</button>
-                <select id="mitts-speed" style="padding: 6px; font-size: 0.74rem;">
-                    <option value="0.70">بطيء</option>
-                    <option value="1.0" selected>متوسط</option>
-                    <option value="1.35">سريع</option>
-                </select>
+                <button class="btn secondary small" id="mitts-sync-rate-badge" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[7])">🔊 السرعة: 0.75x</button>
             </div>
 
             <div class="stick-box mitt-theme">
                 <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS COMBOS</div>
-                <div class="stick-dodge-cue" id="mitts-current-punch">ينطق المدرب الكومبو كاملاً ويتحرك الكف لكل لكمة</div>
-                <div class="stick-sub-hint" id="mitts-hint-label">اختر "تكرار الكومبو" في الأعلى لتدريب كومبو محدد</div>
+                <div class="stick-dodge-cue" id="mitts-current-punch">حركة الكفوف متزامنة تماماً مع سرعة النطق في الضبط</div>
+                <div class="stick-sub-hint" id="mitts-hint-label">اضغط ابدأ ليرفع المدرب الكف بالتزامن الدقيق مع كل لكمة</div>
             </div>
 
             <div class="move-chips" style="margin-top: 8px; justify-content: center;">
@@ -532,7 +523,7 @@
         <div class="panel">
             <div class="setting-item">
                 <div class="setting-header">
-                    <span>سرعة نطق المدرب وحركة اللكمة معاً:</span>
+                    <span>سرعة نطق المدرب وحركة الكف والمجسم:</span>
                     <span id="voice-rate-val" style="color: var(--accent);">0.75x (هادئ وواضح)</span>
                 </div>
                 <input type="range" id="voice-rate" min="0.25" max="1.40" step="0.05" value="0.75" oninput="changeVoiceRate(this.value)">
@@ -684,7 +675,7 @@
     }
 
     // =========================================================================
-    // تبويب كفوف المدرب الشخصي (نطق الكومبو كاملاً + تبويب تكرار الكومبو)
+    // تبويب كفوف المدرب الشخصي (متزامن 100% مع سرعة النطق voiceRate)
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -697,13 +688,14 @@
         camScoredThisPad: false
     };
 
+    // تضمين المدة التقديرية لنطق كل لكمة عند السرعة 1.0x لمزامنة حركة الكف مع الصوت بدقة
     const PAD_POSITIONS = {
-        JAB:     { hand: 'LEFT',  x: -0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY:  0.15, rotZ: 0,     camX: 0.35, camY: 0.40, label: '1 JAB (كف أمامي - أعلى اليسار)', say: 'Jab' },
-        CROSS:   { hand: 'RIGHT', x:  0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY: -0.15, rotZ: 0,     camX: 0.65, camY: 0.40, label: '2 CROSS (كف خلفي - أعلى اليمين)', say: 'Cross' },
-        L_HOOK:  { hand: 'LEFT',  x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY:  0.75, rotZ: 0,     camX: 0.28, camY: 0.45, label: '3 LEAD HOOK (كف جانبي مائل للخطاف)', say: 'Lead Hook' },
-        R_HOOK:  { hand: 'RIGHT', x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY: -0.75, rotZ: 0,     camX: 0.72, camY: 0.45, label: '4 REAR HOOK (كف جانبي مائل لليمين)', say: 'Rear Hook' },
-        L_UPPER: { hand: 'LEFT',  x: -0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY:  0.10, rotZ: 0,     camX: 0.40, camY: 0.58, label: '5 LEAD UPPERCUT (كف منخفض للأبركت)', say: 'Lead Uppercut' },
-        R_UPPER: { hand: 'RIGHT', x:  0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY: -0.10, rotZ: 0,     camX: 0.60, camY: 0.58, label: '6 REAR UPPERCUT (كف منخفض لليمين)', say: 'Rear Uppercut' }
+        JAB:     { hand: 'LEFT',  x: -0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '1 JAB (كف أمامي - أعلى اليسار)',      say: 'Jab',           baseMs: 460 },
+        CROSS:   { hand: 'RIGHT', x:  0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '2 CROSS (كف خلفي - أعلى اليمين)',     say: 'Cross',         baseMs: 520 },
+        L_HOOK:  { hand: 'LEFT',  x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY:  0.75, rotZ: 0, camX: 0.28, camY: 0.45, label: '3 LEAD HOOK (كف جانبي مائل للخطاف)',  say: 'Lead Hook',     baseMs: 680 },
+        R_HOOK:  { hand: 'RIGHT', x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY: -0.75, rotZ: 0, camX: 0.72, camY: 0.45, label: '4 REAR HOOK (كف جانبي مائل لليمين)',  say: 'Rear Hook',     baseMs: 680 },
+        L_UPPER: { hand: 'LEFT',  x: -0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY:  0.10, rotZ: 0, camX: 0.40, camY: 0.58, label: '5 LEAD UPPERCUT (كف منخفض للأبركت)',  say: 'Lead Uppercut', baseMs: 820 },
+        R_UPPER: { hand: 'RIGHT', x:  0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY: -0.10, rotZ: 0, camX: 0.60, camY: 0.58, label: '6 REAR UPPERCUT (كف منخفض لليمين)',  say: 'Rear Uppercut', baseMs: 820 }
     };
 
     const MITT_COMBOS = [
@@ -724,10 +716,11 @@
         ['JAB', 'R_HOOK', 'L_UPPER', 'CROSS']
     ];
 
-    let mittsSubMode = 'random'; // 'random' or 'repeat'
+    let mittsSubMode = 'random';
     let mittsRepeatDone = 0;
     let isMittsRunning = false;
-    let mittsIntervalId = null;
+    let isMittsBusy = false; // يمنع بدء كومبو جديد قبل اكتمال نطق وحركة الكومبو الحالي
+    let mittsLoopTimer = null;
     let mittsStepTimers = [];
     let mittsBag = [];
     let mittsPunchesCount = 0;
@@ -754,7 +747,6 @@
         if (!sel) return;
         sel.innerHTML = '';
 
-        // إضافة الكومبوهات المخصصة للمستخدم إن كانت تتكون من لكمات
         customCombos.forEach(combo => {
             const punchOnly = combo.filter(k => PAD_POSITIONS[k]);
             if (punchOnly.length > 0) {
@@ -765,7 +757,6 @@
             }
         });
 
-        // إضافة قائمة كومبوهات كف المدرب الجاهزة
         MITT_COMBOS.forEach((combo, idx) => {
             const opt = document.createElement('option');
             opt.value = JSON.stringify(combo);
@@ -826,7 +817,6 @@
         rightPadMesh.scale.set(0.85, 0.85, 0.85);
     }
 
-    // تحريك الكف لموضع اللكمة (مع خيار النطق الفردي عند الاختبار اليدوي فقط)
     function presentPadForPunch(punchKey, speakIndividually = false) {
         const cfg = PAD_POSITIONS[punchKey];
         if (!cfg || !leftPadMesh || !rightPadMesh) return;
@@ -859,7 +849,8 @@
     function updateCoachPadsAnimation(delta) {
         if (!coachPadsGroup || !coachPadsGroup.visible) return;
         if (padAnimState.hitPulse > 0) {
-            padAnimState.hitPulse = Math.max(0, padAnimState.hitPulse - delta * 2.5);
+            // سرعة نبض ارتداد الكف تتناسب مع سرعة النطق voiceRate
+            padAnimState.hitPulse = Math.max(0, padAnimState.hitPulse - delta * (2.4 * voiceRate));
             const cfg = PAD_POSITIONS[padAnimState.activePunch];
             if (cfg) {
                 const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
@@ -881,7 +872,7 @@
     }
 
     function executeNextMittCombo() {
-        if (!isMittsRunning) return;
+        if (!isMittsRunning || isMittsBusy) return;
 
         let seq = [];
         if (mittsSubMode === 'repeat') {
@@ -891,7 +882,7 @@
 
             mittsRepeatDone++;
             document.getElementById('mitts-repeat-progress').textContent = `${mittsRepeatDone} / ${target === 999 ? '∞' : target}`;
-            document.getElementById('mitts-hint-label').textContent = `تكرار الكومبو المختار (${mittsRepeatDone} من ${target === 999 ? '∞' : target})`;
+            document.getElementById('mitts-hint-label').textContent = `تكرار الكومبو (${mittsRepeatDone} من ${target === 999 ? '∞' : target}) • السرعة ${voiceRate.toFixed(2)}x`;
 
             if (target !== 999 && mittsRepeatDone > target) {
                 stopMittsSession();
@@ -901,9 +892,10 @@
             }
         } else {
             seq = getNextMittCombo();
-            document.getElementById('mitts-hint-label').textContent = 'كومبوهات متنوعة متجددة بدون تكرار';
+            document.getElementById('mitts-hint-label').textContent = `متزامن مع سرعة النطق (${voiceRate.toFixed(2)}x)`;
         }
 
+        isMittsBusy = true;
         const comboDisplayStr = seq.map(k => MOVES[k].en).join(' ➔ ');
         const comboSpeechStr = seq.map(k => PAD_POSITIONS[k].say).join(', ');
 
@@ -912,30 +904,32 @@
         document.getElementById('mitts-combo-title').textContent = comboDisplayStr;
         syncComboText(comboDisplayStr);
 
-        // نطق الكومبو كاملاً دفعة واحدة بصوت المدرب
-        speakText(comboSpeechStr);
-
-        // تحريك الكف 3D بالتزامن عبر مواضع كل لكمة في الكومبو
-        const speedMult = parseFloat(document.getElementById('mitts-speed').value);
-        const stepMs = Math.max(480, Math.round(720 / speedMult));
-
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
 
-        seq.forEach((pKey, idx) => {
+        // نطق الكومبو كاملاً مع حساب التوقيت التراكمي الدقيق لكل لكمة بناءً على voiceRate
+        speakText(comboSpeechStr);
+
+        let cumulativeDelayMs = Math.round(140 / voiceRate); // زمن بدء نطق الكلمة الأولى في TTS
+        seq.forEach((pKey) => {
             const tid = setTimeout(() => {
                 if (isMittsRunning) presentPadForPunch(pKey, false);
-            }, idx * stepMs);
+            }, cumulativeDelayMs);
             mittsStepTimers.push(tid);
+
+            const wordDurationMs = Math.round((PAD_POSITIONS[pKey].baseMs + 140) / voiceRate);
+            cumulativeDelayMs += wordDurationMs;
         });
 
-        const resetTid = setTimeout(() => {
+        // إعادة الكف لوضع الحماية وتحرير القفل بعد انتهاء آخر لكمة في الكومبو
+        const finishTid = setTimeout(() => {
             if (isMittsRunning) {
                 padAnimState.activePunch = null;
                 resetPadsToGuardPosition();
+                isMittsBusy = false;
             }
-        }, seq.length * stepMs + 420);
-        mittsStepTimers.push(resetTid);
+        }, cumulativeDelayMs + Math.round(320 / voiceRate));
+        mittsStepTimers.push(finishTid);
     }
 
     function toggleMittsSession() {
@@ -944,6 +938,7 @@
 
     function startMittsSession() {
         isMittsRunning = true;
+        isMittsBusy = false;
         if (mittsSubMode === 'repeat') {
             const target = parseInt(document.getElementById('mitts-repeat-target').value);
             if (target !== 999 && mittsRepeatDone >= target) resetMittsRepeatProgress();
@@ -959,17 +954,20 @@
         tvBtn.textContent = '⏹ إيقاف';
         tvBtn.classList.add('stop');
 
-        const speedMult = parseFloat(document.getElementById('mitts-speed').value);
-        const cycleMs = Math.max(2700, Math.round(3900 / speedMult));
-
-        setTimeout(() => { if (isMittsRunning) executeNextMittCombo(); }, 500);
-        mittsIntervalId = setInterval(executeNextMittCombo, cycleMs);
+        setTimeout(() => { if (isMittsRunning) executeNextMittCombo(); }, 450);
+        // فحص دوري كل 500ms لتشغيل الكومبو التالي فور انتهاء الكومبو الحالي والفاصل الزمني
+        mittsLoopTimer = setInterval(() => {
+            if (isMittsRunning && !isMittsBusy) {
+                executeNextMittCombo();
+            }
+        }, Math.max(1200, Math.round(comboIntervalMs * 0.65)));
     }
 
     function stopMittsSession() {
         isMittsRunning = false;
+        isMittsBusy = false;
         padAnimState.activePunch = null;
-        clearInterval(mittsIntervalId);
+        clearInterval(mittsLoopTimer);
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
         resetPadsToGuardPosition();
@@ -2247,6 +2245,8 @@
                    (voiceRate <= 0.75 ? '(هادئ وواضح)' :
                    (voiceRate <= 1.05 ? '(متوازن)' : '(سريع)'));
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x ${desc}`;
+        const mittsBadge = document.getElementById('mitts-sync-rate-badge');
+        if (mittsBadge) mittsBadge.textContent = `🔊 السرعة: ${voiceRate.toFixed(2)}x`;
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
 
