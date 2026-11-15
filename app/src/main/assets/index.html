@@ -53,7 +53,6 @@
         .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
-        /* نافذة الكاميرا في منتصف أسفل الشاشة */
         .cam-pip-box {
             display: none; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15;
             width: 86px; height: 96px; border-radius: 12px; overflow: hidden;
@@ -124,6 +123,16 @@
         .status-row { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--muted); font-weight: 700; }
         .timer { text-align: center; font-size: 2.3rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
         
+        /* شريط التوقيت المدمج لبقية التبويبات (كف المدرب، العصا، كاونتر) */
+        .mini-timer-bar {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(0, 0, 0, 0.42); padding: 6px 12px; border-radius: 10px;
+            border: 1px solid var(--border); margin-bottom: 8px;
+        }
+        .mini-timer-bar .round-txt { font-size: 0.78rem; color: var(--muted); font-weight: 800; }
+        .mini-timer-bar .clock-txt { font-size: 1.25rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
+        .mini-timer-bar .clock-txt.rest { color: var(--accent); }
+
         .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 10px; text-align: center; min-height: 78px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
         .combo-display h2 { color: var(--accent); font-size: 1.15rem; font-weight: 900; line-height: 1.35; }
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
@@ -236,9 +245,15 @@
         </div>
     </div>
 
-    <!-- التبويب 2: كف المدرب الشخصي -->
+    <!-- التبويب 2: كف المدرب الشخصي (مع مؤقت الجولات + تصحيح اتجاهات الكف) -->
     <div id="tab-mitts" class="tab-content">
         <div class="panel">
+            <!-- شريط توقيت الجولات المدمج -->
+            <div class="mini-timer-bar">
+                <span class="round-txt" id="mitts-round-label">الجولة 1 / 3</span>
+                <span class="clock-txt" id="mitts-timer-display">03:00</span>
+            </div>
+
             <div class="sub-tabs">
                 <button class="sub-tab-btn active" id="mitts-sub-random" onclick="switchMittsSubMode('random')">🔄 كومبوهات متنوعة</button>
                 <button class="sub-tab-btn" id="mitts-sub-repeat" onclick="switchMittsSubMode('repeat')">🔁 تكرار الكومبو</button>
@@ -273,8 +288,8 @@
 
             <div class="stick-box mitt-theme">
                 <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS COMBOS</div>
-                <div class="stick-dodge-cue" id="mitts-current-punch">حركة الكفوف متزامنة تماماً مع سرعة النطق في الضبط</div>
-                <div class="stick-sub-hint" id="mitts-hint-label">اضغط ابدأ ليرفع المدرب الكف بالتزامن الدقيق مع كل لكمة</div>
+                <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة على كفوف المدرب</div>
+                <div class="stick-sub-hint" id="mitts-hint-label">تتوقف الجولة تلقائياً عند انتهاء الوقت وتبدأ الراحة</div>
             </div>
 
             <div class="move-chips" style="margin-top: 8px; justify-content: center;">
@@ -308,13 +323,19 @@
 
         <div class="main-btns">
             <button class="btn mitt-btn" id="mitts-start-btn" onclick="toggleMittsSession()">🧤 ابدأ تمرين كف المدرب</button>
-            <button class="btn secondary" onclick="resetMittsSession()">تصفير</button>
+            <button class="btn secondary" onclick="resetMittsSession()">إعادة</button>
         </div>
     </div>
 
-    <!-- التبويب 3: العصا (دفاع صرف) -->
+    <!-- التبويب 3: العصا (مع مؤقت الجولات) -->
     <div id="tab-stick" class="tab-content">
         <div class="panel">
+            <!-- شريط توقيت الجولات المدمج -->
+            <div class="mini-timer-bar">
+                <span class="round-txt" id="stick-round-label">الجولة 1 / 3</span>
+                <span class="clock-txt" id="stick-timer-display">03:00</span>
+            </div>
+
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
                 <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
                 <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة الوقفة</button>
@@ -366,13 +387,19 @@
 
         <div class="main-btns">
             <button class="btn stick-btn" id="stick-start-btn" onclick="toggleStickSession()">🥢 ابدأ اشتباك العصا</button>
-            <button class="btn secondary" onclick="resetStickSession()">تصفير</button>
+            <button class="btn secondary" onclick="resetStickSession()">إعادة</button>
         </div>
     </div>
 
-    <!-- التبويب 4: الرد الهجومي بعد التفادي -->
+    <!-- التبويب 4: الرد الهجومي بعد التفادي (مع مؤقت الجولات) -->
     <div id="tab-counter" class="tab-content">
         <div class="panel">
+            <!-- شريط توقيت الجولات المدمج -->
+            <div class="mini-timer-bar">
+                <span class="round-txt" id="counter-round-label">الجولة 1 / 3</span>
+                <span class="clock-txt" id="counter-timer-display">03:00</span>
+            </div>
+
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
                 <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-2" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
                 <button class="btn secondary small" onclick="testMittPreview()">🎯 تجربة كف الرد</button>
@@ -424,7 +451,7 @@
 
         <div class="main-btns">
             <button class="btn counter-btn" id="counter-start-btn" onclick="toggleCounterSession()">⚡ ابدأ تدريب الكاونتر</button>
-            <button class="btn secondary" onclick="resetCounterSession()">تصفير</button>
+            <button class="btn secondary" onclick="resetCounterSession()">إعادة</button>
         </div>
     </div>
 
@@ -512,7 +539,7 @@
         </div>
     </div>
 
-    <!-- التبويب 7: الضبط (مضاف إليه إعدادات الذكاء الاصطناعي مع مفتاح تشغيل/إيقاف) -->
+    <!-- التبويب 7: الضبط -->
     <div id="tab-settings" class="tab-content">
         <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
             <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman):</span></div>
@@ -582,7 +609,6 @@
 <script>
     let activeTabName = 'train';
 
-    // إعدادات الذكاء الاصطناعي المخزنة محلياً
     let aiEnabled = localStorage.getItem('boxing_ai_enabled') === 'on';
     let geminiApiKey = localStorage.getItem('boxing_gemini_key') || '';
 
@@ -734,7 +760,7 @@
     }
 
     // =========================================================================
-    // كفوف المدرب الشخصي (مزامنة كاملة مع voiceRate)
+    // كفوف المدرب الشخصي (تم تصحيح عكس الاتجاهات لتطابق يد اللاعب بدقة)
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -747,13 +773,16 @@
         camScoredThisPad: false
     };
 
+    // تصحيح الاتجاهات:
+    // JAB / L_HOOK / L_UPPER ليدك اليسرى -> تظهر في جهة اليسار أمامك (x موجب في منظور الكاميرا المعاكسة، أو عكسنا X مقارنة بالسابق)
+    // تم عكس إشارة x و rotY و camX مقارنة بالإصدار السابق لتطابق يدك اليسرى واليمنى بدقة
     const PAD_POSITIONS = {
-        JAB:     { hand: 'LEFT',  x: -0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '1 JAB (كف أمامي - أعلى اليسار)',      say: 'Jab',           baseMs: 460 },
-        CROSS:   { hand: 'RIGHT', x:  0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '2 CROSS (كف خلفي - أعلى اليمين)',     say: 'Cross',         baseMs: 520 },
-        L_HOOK:  { hand: 'LEFT',  x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY:  0.75, rotZ: 0, camX: 0.28, camY: 0.45, label: '3 LEAD HOOK (كف جانبي مائل للخطاف)',  say: 'Lead Hook',     baseMs: 680 },
-        R_HOOK:  { hand: 'RIGHT', x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,   rotY: -0.75, rotZ: 0, camX: 0.72, camY: 0.45, label: '4 REAR HOOK (كف جانبي مائل لليمين)',  say: 'Rear Hook',     baseMs: 680 },
-        L_UPPER: { hand: 'LEFT',  x: -0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY:  0.10, rotZ: 0, camX: 0.40, camY: 0.58, label: '5 LEAD UPPERCUT (كف منخفض للأبركت)',  say: 'Lead Uppercut', baseMs: 820 },
-        R_UPPER: { hand: 'RIGHT', x:  0.18, y: 1.24, z: 0.90, rotX: 0.85,  rotY: -0.10, rotZ: 0, camX: 0.60, camY: 0.58, label: '6 REAR UPPERCUT (كف منخفض لليمين)',  say: 'Rear Uppercut', baseMs: 820 }
+        JAB:     { hand: 'LEFT',  x:  0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '1 JAB (كف اليسار - لكمة أمامية)',       say: 'Jab',           baseMs: 460 },
+        CROSS:   { hand: 'RIGHT', x: -0.25, y: 1.54, z: 0.85, rotX: 0.05, rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '2 CROSS (كف اليمين - لكمة خلفية)',      say: 'Cross',         baseMs: 520 },
+        L_HOOK:  { hand: 'LEFT',  x:  0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY: -0.75, rotZ: 0, camX: 0.72, camY: 0.45, label: '3 LEAD HOOK (كف اليسار - خطاف أمامي)',   say: 'Lead Hook',     baseMs: 680 },
+        R_HOOK:  { hand: 'RIGHT', x: -0.36, y: 1.48, z: 0.92, rotX: 0.0,  rotY:  0.75, rotZ: 0, camX: 0.28, camY: 0.45, label: '4 REAR HOOK (كف اليمين - خطاف خلفي)',   say: 'Rear Hook',     baseMs: 680 },
+        L_UPPER: { hand: 'LEFT',  x:  0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY: -0.10, rotZ: 0, camX: 0.60, camY: 0.58, label: '5 LEAD UPPERCUT (كف اليسار - أبركت)',    say: 'Lead Uppercut', baseMs: 820 },
+        R_UPPER: { hand: 'RIGHT', x: -0.18, y: 1.24, z: 0.90, rotX: 0.85, rotY:  0.10, rotZ: 0, camX: 0.40, camY: 0.58, label: '6 REAR UPPERCUT (كف اليمين - أبركت)',    say: 'Rear Uppercut', baseMs: 820 }
     };
 
     const MITT_COMBOS = [
@@ -852,11 +881,11 @@
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
         leftPadMesh = createSinglePadMesh(0x10b981, 0xf59e0b);
-        leftPadMesh.position.set(-0.26, 1.48, 0.70);
+        leftPadMesh.position.set(0.26, 1.48, 0.70);
         coachPadsGroup.add(leftPadMesh);
 
         rightPadMesh = createSinglePadMesh(0x0ea5e9, 0xf59e0b);
-        rightPadMesh.position.set(0.26, 1.48, 0.70);
+        rightPadMesh.position.set(-0.26, 1.48, 0.70);
         coachPadsGroup.add(rightPadMesh);
 
         coachPadsGroup.visible = false;
@@ -865,12 +894,12 @@
 
     function resetPadsToGuardPosition() {
         if (!leftPadMesh || !rightPadMesh) return;
-        leftPadMesh.position.set(-0.26, 1.48, 0.70);
-        leftPadMesh.rotation.set(0.1, 0.1, 0);
+        leftPadMesh.position.set(0.26, 1.48, 0.70);
+        leftPadMesh.rotation.set(0.1, -0.1, 0);
         leftPadMesh.scale.set(0.85, 0.85, 0.85);
 
-        rightPadMesh.position.set(0.26, 1.48, 0.70);
-        rightPadMesh.rotation.set(0.1, -0.1, 0);
+        rightPadMesh.position.set(-0.26, 1.48, 0.70);
+        rightPadMesh.rotation.set(0.1, 0.1, 0);
         rightPadMesh.scale.set(0.85, 0.85, 0.85);
     }
 
@@ -928,7 +957,7 @@
     }
 
     function executeNextMittCombo() {
-        if (!isMittsRunning || isMittsBusy) return;
+        if (!isMittsRunning || isResting || isMittsBusy) return;
 
         let seq = [];
         if (mittsSubMode === 'repeat') {
@@ -968,7 +997,7 @@
         let cumulativeDelayMs = Math.round(140 / voiceRate);
         seq.forEach((pKey) => {
             const tid = setTimeout(() => {
-                if (isMittsRunning) presentPadForPunch(pKey, false);
+                if (isMittsRunning && !isResting) presentPadForPunch(pKey, false);
             }, cumulativeDelayMs);
             mittsStepTimers.push(tid);
 
@@ -993,6 +1022,7 @@
     function startMittsSession() {
         isMittsRunning = true;
         isMittsBusy = false;
+        isResting = false;
         if (mittsSubMode === 'repeat') {
             const target = parseInt(document.getElementById('mitts-repeat-target').value);
             if (target !== 999 && mittsRepeatDone >= target) resetMittsRepeatProgress();
@@ -1008,9 +1038,12 @@
         tvBtn.textContent = '⏹ إيقاف';
         tvBtn.classList.add('stop');
 
-        setTimeout(() => { if (isMittsRunning) executeNextMittCombo(); }, 450);
+        speakText(`Round ${currentRound}. Fight!`);
+        startSharedRoundClock('mitts');
+
+        setTimeout(() => { if (isMittsRunning && !isResting) executeNextMittCombo(); }, 800);
         mittsLoopTimer = setInterval(() => {
-            if (isMittsRunning && !isMittsBusy) {
+            if (isMittsRunning && !isResting && !isMittsBusy) {
                 executeNextMittCombo();
             }
         }, Math.max(1200, Math.round(comboIntervalMs * 0.65)));
@@ -1020,6 +1053,7 @@
         isMittsRunning = false;
         isMittsBusy = false;
         padAnimState.activePunch = null;
+        stopSharedRoundClock();
         clearInterval(mittsLoopTimer);
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
@@ -1038,6 +1072,7 @@
 
     function resetMittsSession() {
         stopMittsSession();
+        resetSharedRoundState();
         mittsBag = [];
         mittsPunchesCount = 0;
         mittsCamHitsCount = 0;
@@ -1677,7 +1712,7 @@
     }
 
     function triggerStickStrike() {
-        if (!isStickRunning || stickState.active) return;
+        if (!isStickRunning || isResting || stickState.active) return;
         if (hasPoseFrame) {
             strikeStartX = curNoseX;
             strikeStartY = curNoseY;
@@ -1710,6 +1745,7 @@
 
     function startStickSession() {
         isStickRunning = true;
+        isResting = false;
         updateStageEntityVisibility();
         const btn = document.getElementById('stick-start-btn');
         btn.textContent = '⏹ إيقاف العصا';
@@ -1719,16 +1755,20 @@
         tvBtn.textContent = '⏹ إيقاف';
         tvBtn.classList.add('stop');
 
+        speakText(`Round ${currentRound}. Fight!`);
+        startSharedRoundClock('stick');
+
         const speedMult = parseFloat(document.getElementById('stick-speed').value);
         const intervalMs = Math.max(1950, Math.round(3100 / speedMult));
 
-        setTimeout(() => { if (isStickRunning) triggerStickStrike(); }, 600);
+        setTimeout(() => { if (isStickRunning && !isResting) triggerStickStrike(); }, 800);
         stickLoopTimer = setInterval(triggerStickStrike, intervalMs);
     }
 
     function stopStickSession() {
         isStickRunning = false;
         stickState.active = false;
+        stopSharedRoundClock();
         clearInterval(stickLoopTimer);
 
         const btn = document.getElementById('stick-start-btn');
@@ -1744,6 +1784,7 @@
 
     function resetStickSession() {
         stopStickSession();
+        resetSharedRoundState();
         stickBag = [];
         refPoints = 0; refSuccessCount = 0; refHitCount = 0;
         updateRefereeScoreboard();
@@ -1752,7 +1793,7 @@
     }
 
     function triggerCounterStrike() {
-        if (!isCounterRunning || stickState.active || counterWindow.active) return;
+        if (!isCounterRunning || isResting || stickState.active || counterWindow.active) return;
         if (hasPoseFrame) {
             strikeStartX = curNoseX;
             strikeStartY = curNoseY;
@@ -1785,6 +1826,7 @@
 
     function startCounterSession() {
         isCounterRunning = true;
+        isResting = false;
         updateStageEntityVisibility();
         if (!isCamRefActive) startCameraReferee();
 
@@ -1796,10 +1838,13 @@
         tvBtn.textContent = '⏹ إيقاف';
         tvBtn.classList.add('stop');
 
+        speakText(`Round ${currentRound}. Fight!`);
+        startSharedRoundClock('counter');
+
         const speedMult = parseFloat(document.getElementById('counter-speed').value);
         const intervalMs = Math.max(3600, Math.round(4800 / speedMult));
 
-        setTimeout(() => { if (isCounterRunning) triggerCounterStrike(); }, 1000);
+        setTimeout(() => { if (isCounterRunning && !isResting) triggerCounterStrike(); }, 1000);
         counterLoopTimer = setInterval(triggerCounterStrike, intervalMs);
     }
 
@@ -1808,6 +1853,7 @@
         stickState.active = false;
         counterWindow.active = false;
         if (mittGroup) mittGroup.visible = false;
+        stopSharedRoundClock();
         clearInterval(counterLoopTimer);
 
         const btn = document.getElementById('counter-start-btn');
@@ -1823,6 +1869,7 @@
 
     function resetCounterSession() {
         stopCounterSession();
+        resetSharedRoundState();
         counterBag = [];
         cntPoints = 0; cntHitsCount = 0; cntBestMs = null;
         updateCounterScoreboard();
@@ -2218,6 +2265,9 @@
         document.getElementById('drill-counter-display').textContent = `0 / ${targetTxt}`;
     }
 
+    // =========================================================================
+    // محرك التوقيت الموحد لجميع التبويبات (Shared Round Clock Engine)
+    // =========================================================================
     let voiceRate = 0.75;
     let comboIntervalMs = 5000;
     let totalRounds = 3;
@@ -2228,6 +2278,27 @@
     let isResting = false;
     let timerId = null;
     let comboId = null;
+    let activeClockOwner = 'train';
+
+    function startSharedRoundClock(ownerTab) {
+        activeClockOwner = ownerTab;
+        clearInterval(timerId);
+        timerId = setInterval(tickTimer, 1000);
+    }
+
+    function stopSharedRoundClock() {
+        clearInterval(timerId);
+        timerId = null;
+    }
+
+    function resetSharedRoundState() {
+        stopSharedRoundClock();
+        currentRound = 1;
+        isResting = false;
+        timeLeft = roundDuration;
+        syncRoundLabels(`الجولة 1 / ${totalRounds}`);
+        updateTimerDisplay();
+    }
 
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
@@ -2254,8 +2325,10 @@
     }
 
     function syncRoundLabels(txt) {
-        document.getElementById('round-label').textContent = txt;
-        document.getElementById('tv-round-label').textContent = txt;
+        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = txt;
+        });
     }
 
     function syncComboText(txt) {
@@ -2270,7 +2343,10 @@
 
     function updateTimeSetting() {
         roundDuration = parseInt(document.getElementById('time-select').value);
-        if (!isRunning) { timeLeft = roundDuration; updateTimerDisplay(); }
+        if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning) {
+            timeLeft = roundDuration;
+            updateTimerDisplay();
+        }
     }
 
     function updateModeBadge() {
@@ -2306,6 +2382,7 @@
         if (isCounterRunning) stopCounterSession();
         if (isMittsRunning) stopMittsSession();
         isRunning = true;
+        isResting = false;
         isComboBusy = false;
         shuffleBag = [];
         const btn = document.getElementById('start-btn');
@@ -2317,8 +2394,8 @@
         tvBtn.classList.add('stop');
 
         speakText(`Round ${currentRound}. Fight!`);
-        timerId = setInterval(tickTimer, 1000);
-        setTimeout(() => { if (isRunning) executeNextCombo(); }, 1200);
+        startSharedRoundClock('train');
+        setTimeout(() => { if (isRunning && !isResting) executeNextCombo(); }, 1200);
         comboId = setInterval(executeNextCombo, comboIntervalMs);
     }
 
@@ -2326,7 +2403,7 @@
         isRunning = false;
         isComboBusy = false;
         moveQueue = [];
-        clearInterval(timerId);
+        stopSharedRoundClock();
         clearInterval(comboId);
         const btn = document.getElementById('start-btn');
         btn.textContent = 'ابدأ الجلسة';
@@ -2342,13 +2419,9 @@
 
     function resetSession() {
         stopSession();
+        resetSharedRoundState();
         shuffleBag = [];
-        currentRound = 1;
-        isResting = false;
-        timeLeft = roundDuration;
         resetDrillCounter();
-        syncRoundLabels(`الجولة 1 / ${totalRounds}`);
-        updateTimerDisplay();
     }
 
     async function tickTimer() {
@@ -2357,21 +2430,46 @@
             updateTimerDisplay();
         } else {
             if (!isResting) {
-                if (currentRound >= totalRounds) { stopSession(); speakText("Workout complete!"); return; }
+                if (currentRound >= totalRounds) {
+                    if (activeClockOwner === 'mitts') stopMittsSession();
+                    else if (activeClockOwner === 'stick') stopStickSession();
+                    else if (activeClockOwner === 'counter') stopCounterSession();
+                    else stopSession();
+                    resetSharedRoundState();
+                    speakText("Workout complete!");
+                    return;
+                }
+
                 isResting = true;
                 isComboBusy = false;
+                isMittsBusy = false;
                 moveQueue = [];
+                padAnimState.activePunch = null;
+                resetPadsToGuardPosition();
                 timeLeft = 60;
-                syncComboText('REST');
-                document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس (تحليل الذكاء الاصطناعي...)';
+                updateTimerDisplay();
+                syncComboText('REST (60s)');
                 returnToIdle();
-                
-                // جلب النصيحة التكتيكية من الذكاء الاصطناعي بين الجولات إذا كان مفاعلاً
+
+                if (activeClockOwner === 'mitts') {
+                    document.getElementById('mitts-current-punch').textContent = '⏸ وقت الراحة (دقيقة واحدة)';
+                } else if (activeClockOwner === 'stick') {
+                    document.getElementById('stick-dodge-label').textContent = '⏸ وقت الراحة (دقيقة واحدة)';
+                } else if (activeClockOwner === 'counter') {
+                    document.getElementById('counter-cue-label').textContent = '⏸ وقت الراحة (دقيقة واحدة)';
+                } else {
+                    document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس';
+                }
+
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`جولة رقم ${currentRound} انتهت.`);
+                    let stats = `انتهت الجولة ${currentRound} في وضع ${activeClockOwner}. `;
+                    if (activeClockOwner === 'mitts') stats += `اللكمات المسددة: ${mittsPunchesCount}، إصابات الكاميرا: ${mittsCamHitsCount}.`;
+                    else if (activeClockOwner === 'stick') stats += `تفادي ناجح: ${refSuccessCount}، إصابات: ${refHitCount}.`;
+                    else if (activeClockOwner === 'counter') stats += `نقاط الكاونتر: ${cntPoints}، أسرع رد فعل: ${cntBestMs || 0} ms.`;
+
+                    const advice = await getAiCornermanAdvice(stats);
                     speakText(advice);
-                    syncComboText("AI CORNERMAN ADVICE");
-                    document.getElementById('combo-sub').textContent = advice;
+                    if (activeClockOwner === 'train') document.getElementById('combo-sub').textContent = advice;
                 } else {
                     speakText("Rest time.");
                 }
@@ -2380,6 +2478,7 @@
                 shuffleBag = [];
                 currentRound++;
                 timeLeft = roundDuration;
+                updateTimerDisplay();
                 syncRoundLabels(`الجولة ${currentRound} / ${totalRounds}`);
                 speakText(`Round ${currentRound}. Let's go!`);
             }
@@ -2390,8 +2489,13 @@
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
         const formatted = `${m}:${s}`;
-        document.getElementById('timer-display').textContent = formatted;
-        document.getElementById('tv-timer-display').textContent = formatted;
+        ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.textContent = formatted;
+                if (isResting) el.classList.add('rest'); else el.classList.remove('rest');
+            }
+        });
     }
 
     function getActiveComboPool() {
