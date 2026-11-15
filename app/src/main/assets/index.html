@@ -53,6 +53,7 @@
         .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
+        /* نافذة الكاميرا في منتصف أسفل الشاشة */
         .cam-pip-box {
             display: none; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15;
             width: 86px; height: 96px; border-radius: 12px; overflow: hidden;
@@ -184,6 +185,7 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
+    <!-- مسرح العرض ثلاثي الأبعاد -->
     <div class="stage-box" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
@@ -192,6 +194,7 @@
         <div id="canvas-3d"></div>
         <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
 
+        <!-- نافذة الكاميرا في منتصف أسفل الشاشة -->
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
@@ -233,7 +236,7 @@
         </div>
     </div>
 
-    <!-- التبويب 2: كف المدرب الشخصي (متزامن 100% مع سرعة النطق) -->
+    <!-- التبويب 2: كف المدرب الشخصي -->
     <div id="tab-mitts" class="tab-content">
         <div class="panel">
             <div class="sub-tabs">
@@ -509,8 +512,23 @@
         </div>
     </div>
 
-    <!-- التبويب 7: الضبط -->
+    <!-- التبويب 7: الضبط (مضاف إليه إعدادات الذكاء الاصطناعي مع مفتاح تشغيل/إيقاف) -->
     <div id="tab-settings" class="tab-content">
+        <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
+            <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman):</span></div>
+            <div class="setting-item">
+                <span class="setting-header"><span>حالة الذكاء الاصطناعي:</span></span>
+                <select id="ai-mode-select" onchange="updateAiSettings()">
+                    <option value="off">مغلق (بدون إنترنت / تدريب طبيعي)</option>
+                    <option value="on">مفعل (تحليل وتوجيه ذكي بين الجولات)</option>
+                </select>
+            </div>
+            <div class="setting-item" style="margin-top: 6px;">
+                <span class="setting-header"><span>مفتاح Google AI Studio API Key:</span></span>
+                <input type="password" id="gemini-api-key" placeholder="AIzaSy..." oninput="updateAiSettings()" style="background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px; border-radius: 8px; font-size: 0.8rem; width: 100%; direction: ltr;">
+            </div>
+        </div>
+
         <div class="panel">
             <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -563,6 +581,47 @@
 
 <script>
     let activeTabName = 'train';
+
+    // إعدادات الذكاء الاصطناعي المخزنة محلياً
+    let aiEnabled = localStorage.getItem('boxing_ai_enabled') === 'on';
+    let geminiApiKey = localStorage.getItem('boxing_gemini_key') || '';
+
+    function updateAiSettings() {
+        aiEnabled = document.getElementById('ai-mode-select').value === 'on';
+        geminiApiKey = document.getElementById('gemini-api-key').value.trim();
+        localStorage.setItem('boxing_ai_enabled', aiEnabled ? 'on' : 'off');
+        localStorage.setItem('boxing_gemini_key', geminiApiKey);
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const aiSel = document.getElementById('ai-mode-select');
+        const keyInput = document.getElementById('gemini-api-key');
+        if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
+        if (keyInput) keyInput.value = geminiApiKey;
+    });
+
+    async function getAiCornermanAdvice(statsText) {
+        if (!aiEnabled || !geminiApiKey || !navigator.onLine) {
+            return "جولة رائعة! حافظ على توازن وقفتك وسرعة استجابتك.";
+        }
+        try {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: "أنت مدرب ملاكمة محترف. أعطِ نصيحة تكتيكية تحفيزية مباشرة وموجزة جداً (باللغة العربية) بناءً على إحصائيات هذه الجولة: " + statsText }] }]
+                })
+            });
+            const data = await response.json();
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            }
+        } catch (e) {
+            console.error("AI Cornerman offline fallback:", e);
+        }
+        return "أداء قوي! ركز على رفع اليدين وحماية الوجه في الجولة القادمة.";
+    }
 
     function switchTab(tabId, btn) {
         if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) stopStickSession();
@@ -675,7 +734,7 @@
     }
 
     // =========================================================================
-    // تبويب كفوف المدرب الشخصي (متزامن 100% مع سرعة النطق voiceRate)
+    // كفوف المدرب الشخصي (مزامنة كاملة مع voiceRate)
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -688,7 +747,6 @@
         camScoredThisPad: false
     };
 
-    // تضمين المدة التقديرية لنطق كل لكمة عند السرعة 1.0x لمزامنة حركة الكف مع الصوت بدقة
     const PAD_POSITIONS = {
         JAB:     { hand: 'LEFT',  x: -0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY:  0.15, rotZ: 0, camX: 0.35, camY: 0.40, label: '1 JAB (كف أمامي - أعلى اليسار)',      say: 'Jab',           baseMs: 460 },
         CROSS:   { hand: 'RIGHT', x:  0.25, y: 1.54, z: 0.85, rotX: 0.05,  rotY: -0.15, rotZ: 0, camX: 0.65, camY: 0.40, label: '2 CROSS (كف خلفي - أعلى اليمين)',     say: 'Cross',         baseMs: 520 },
@@ -719,7 +777,7 @@
     let mittsSubMode = 'random';
     let mittsRepeatDone = 0;
     let isMittsRunning = false;
-    let isMittsBusy = false; // يمنع بدء كومبو جديد قبل اكتمال نطق وحركة الكومبو الحالي
+    let isMittsBusy = false;
     let mittsLoopTimer = null;
     let mittsStepTimers = [];
     let mittsBag = [];
@@ -793,7 +851,6 @@
 
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
-
         leftPadMesh = createSinglePadMesh(0x10b981, 0xf59e0b);
         leftPadMesh.position.set(-0.26, 1.48, 0.70);
         coachPadsGroup.add(leftPadMesh);
@@ -849,7 +906,6 @@
     function updateCoachPadsAnimation(delta) {
         if (!coachPadsGroup || !coachPadsGroup.visible) return;
         if (padAnimState.hitPulse > 0) {
-            // سرعة نبض ارتداد الكف تتناسب مع سرعة النطق voiceRate
             padAnimState.hitPulse = Math.max(0, padAnimState.hitPulse - delta * (2.4 * voiceRate));
             const cfg = PAD_POSITIONS[padAnimState.activePunch];
             if (cfg) {
@@ -907,10 +963,9 @@
         mittsStepTimers.forEach(t => clearTimeout(t));
         mittsStepTimers = [];
 
-        // نطق الكومبو كاملاً مع حساب التوقيت التراكمي الدقيق لكل لكمة بناءً على voiceRate
         speakText(comboSpeechStr);
 
-        let cumulativeDelayMs = Math.round(140 / voiceRate); // زمن بدء نطق الكلمة الأولى في TTS
+        let cumulativeDelayMs = Math.round(140 / voiceRate);
         seq.forEach((pKey) => {
             const tid = setTimeout(() => {
                 if (isMittsRunning) presentPadForPunch(pKey, false);
@@ -921,7 +976,6 @@
             cumulativeDelayMs += wordDurationMs;
         });
 
-        // إعادة الكف لوضع الحماية وتحرير القفل بعد انتهاء آخر لكمة في الكومبو
         const finishTid = setTimeout(() => {
             if (isMittsRunning) {
                 padAnimState.activePunch = null;
@@ -955,7 +1009,6 @@
         tvBtn.classList.add('stop');
 
         setTimeout(() => { if (isMittsRunning) executeNextMittCombo(); }, 450);
-        // فحص دوري كل 500ms لتشغيل الكومبو التالي فور انتهاء الكومبو الحالي والفاصل الزمني
         mittsLoopTimer = setInterval(() => {
             if (isMittsRunning && !isMittsBusy) {
                 executeNextMittCombo();
@@ -997,7 +1050,7 @@
     }
 
     // =========================================================================
-    // نظام المراقبة بالكاميرا الأمامية (تتبع الرأس + تتبع اللكمات)
+    // مراقبة الكاميرا الأمامية
     // =========================================================================
     let isCamRefActive = false;
     let camStream = null;
@@ -1011,7 +1064,6 @@
     let hasPoseFrame = false;
 
     let refPoints = 0, refSuccessCount = 0, refHitCount = 0;
-
     let isCounterRunning = false;
     let counterLoopTimer = null;
     let counterBag = [];
@@ -1310,13 +1362,12 @@
     }
 
     // =========================================================================
-    // محرك كف المدرب للرد الهجومي في تبويب كاونتر (Counter Mitt)
+    // محرك كف المدرب للرد الهجومي
     // =========================================================================
     let mittGroup = null;
 
     function build3DFocusMitt() {
         mittGroup = new THREE.Group();
-
         const padGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.12, 32);
         const padMat = new THREE.MeshStandardMaterial({
             color: 0xa855f7,
@@ -1380,7 +1431,6 @@
 
     function evaluateCounterPunch(targetX, targetY) {
         if (!counterWindow.active) return;
-
         const now = performance.now();
         if (now > counterWindow.expiresAt) {
             counterWindow.active = false;
@@ -1525,7 +1575,6 @@
 
     function build3DSparringStick() {
         stickGroup = new THREE.Group();
-
         const foamGeo = new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24);
         const foamMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.45, metalness: 0.1 });
         const foamMesh = new THREE.Mesh(foamGeo, foamMat);
@@ -1629,7 +1678,6 @@
 
     function triggerStickStrike() {
         if (!isStickRunning || stickState.active) return;
-
         if (hasPoseFrame) {
             strikeStartX = curNoseX;
             strikeStartY = curNoseY;
@@ -1663,7 +1711,6 @@
     function startStickSession() {
         isStickRunning = true;
         updateStageEntityVisibility();
-
         const btn = document.getElementById('stick-start-btn');
         btn.textContent = '⏹ إيقاف العصا';
         btn.classList.add('danger');
@@ -1706,7 +1753,6 @@
 
     function triggerCounterStrike() {
         if (!isCounterRunning || stickState.active || counterWindow.active) return;
-
         if (hasPoseFrame) {
             strikeStartX = curNoseX;
             strikeStartY = curNoseY;
@@ -1740,7 +1786,6 @@
     function startCounterSession() {
         isCounterRunning = true;
         updateStageEntityVisibility();
-
         if (!isCamRefActive) startCameraReferee();
 
         const btn = document.getElementById('counter-start-btn');
@@ -1806,76 +1851,31 @@
     };
 
     const MASTER_COMBOS_70 = [
-        ['JAB', 'CROSS', 'STEP_BACK'],
-        ['JAB', 'JAB', 'CROSS'],
-        ['STEP_IN', 'JAB', 'CROSS'],
-        ['JAB', 'L_HOOK', 'STEP_BACK'],
-        ['JAB', 'CROSS', 'SLIP_L'],
-        ['JAB', 'CROSS', 'SLIP_R'],
-        ['JAB', 'CROSS', 'ROLL'],
-        ['JAB', 'PULL', 'CROSS'],
-        ['SLIP_L', 'L_HOOK', 'CROSS'],
-        ['SLIP_R', 'CROSS', 'L_HOOK'],
-        ['JAB', 'R_UPPER', 'STEP_BACK'],
-        ['STEP_IN', 'JAB', 'R_HOOK'],
-        ['JAB', 'CROSS', 'PIVOT_L'],
-        ['JAB', 'CROSS', 'PIVOT_R'],
-        ['PULL', 'CROSS', 'L_HOOK'],
-        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'],
-        ['JAB', 'JAB', 'CROSS', 'L_HOOK'],
-        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_L', 'CROSS'],
-        ['JAB', 'SLIP_R', 'CROSS', 'L_HOOK'],
-        ['JAB', 'SLIP_L', 'L_UPPER', 'CROSS'],
-        ['SLIP_R', 'R_UPPER', 'L_HOOK', 'CROSS'],
-        ['ROLL', 'L_HOOK', 'CROSS', 'STEP_BACK'],
-        ['ROLL', 'R_HOOK', 'L_HOOK', 'CROSS'],
-        ['JAB', 'CROSS', 'ROLL', 'L_HOOK'],
-        ['JAB', 'CROSS', 'ROLL', 'R_HOOK'],
-        ['STEP_IN', 'JAB', 'R_UPPER', 'L_HOOK', 'STEP_BACK'],
-        ['JAB', 'CROSS', 'L_UPPER', 'R_HOOK'],
-        ['JAB', 'JAB', 'SLIP_L', 'CROSS', 'L_HOOK'],
-        ['JAB', 'CROSS', 'SLIP_R', 'R_UPPER', 'L_HOOK'],
-        ['SLIP_L', 'L_HOOK', 'R_UPPER', 'STEP_BACK'],
-        ['JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'],
-        ['JAB', 'CROSS', 'R_HOOK', 'PIVOT_R'],
-        ['STEP_IN', 'L_HOOK', 'CROSS', 'STEP_BACK'],
-        ['JAB', 'PULL', 'JAB', 'CROSS'],
-        ['SLIP_R', 'CROSS', 'L_UPPER', 'CROSS'],
-        ['PULL', 'CROSS', 'L_HOOK', 'CROSS'],
-        ['SLIP_L', 'JAB', 'CROSS', 'PIVOT_L'],
-        ['SLIP_R', 'CROSS', 'L_HOOK', 'PIVOT_R'],
-        ['ROLL', 'CROSS', 'L_HOOK', 'R_UPPER'],
-        ['STEP_IN', 'JAB', 'JAB', 'CROSS', 'STEP_BACK'],
-        ['JAB', 'CROSS', 'SLIP_L', 'L_HOOK', 'CROSS'],
-        ['JAB', 'L_HOOK', 'ROLL', 'CROSS'],
-        ['JAB', 'R_HOOK', 'ROLL', 'L_HOOK'],
-        ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'],
-        ['STEP_IN', 'JAB', 'CROSS', 'R_UPPER', 'PIVOT_R'],
-        ['JAB', 'SLIP_R', 'R_HOOK', 'L_HOOK'],
-        ['JAB', 'SLIP_L', 'L_HOOK', 'R_HOOK'],
-        ['PULL', 'R_UPPER', 'L_HOOK', 'CROSS'],
-        ['JAB', 'CROSS', 'PULL', 'CROSS'],
-        ['STEP_IN', 'L_UPPER', 'CROSS', 'L_HOOK'],
-        ['STEP_IN', 'R_UPPER', 'L_HOOK', 'CROSS'],
-        ['JAB', 'JAB', 'ROLL', 'CROSS', 'L_HOOK'],
-        ['SLIP_L', 'L_UPPER', 'R_HOOK', 'CROSS'],
-        ['SLIP_R', 'R_HOOK', 'L_UPPER', 'CROSS'],
-        ['JAB', 'CROSS', 'L_HOOK', 'ROLL', 'CROSS'],
-        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_R', 'CROSS', 'STEP_BACK'],
-        ['JAB', 'SLIP_L', 'CROSS', 'L_HOOK', 'PIVOT_L'],
-        ['JAB', 'SLIP_R', 'L_HOOK', 'CROSS', 'PIVOT_R'],
-        ['ROLL', 'L_UPPER', 'CROSS', 'L_HOOK', 'STEP_BACK'],
-        ['STEP_IN', 'JAB', 'R_HOOK', 'L_UPPER', 'CROSS'],
-        ['JAB', 'JAB', 'CROSS', 'SLIP_L', 'L_HOOK'],
-        ['JAB', 'CROSS', 'R_UPPER', 'L_HOOK', 'CROSS'],
-        ['PULL', 'CROSS', 'ROLL', 'L_HOOK', 'CROSS'],
-        ['STEP_IN', 'JAB', 'CROSS', 'L_UPPER', 'R_HOOK', 'STEP_BACK'],
-        ['SLIP_R', 'CROSS', 'SLIP_L', 'L_HOOK', 'CROSS'],
-        ['JAB', 'L_HOOK', 'CROSS', 'PIVOT_L', 'CROSS'],
-        ['STEP_IN', 'JAB', 'SLIP_R', 'R_UPPER', 'L_HOOK'],
-        ['JAB', 'CROSS', 'ROLL', 'R_UPPER', 'L_HOOK', 'STEP_BACK'],
-        ['SLIP_L', 'JAB', 'CROSS', 'L_HOOK', 'R_HOOK'],
-        ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'CROSS', 'STEP_BACK']
+        ['JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'JAB', 'CROSS'], ['STEP_IN', 'JAB', 'CROSS'],
+        ['JAB', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L'], ['JAB', 'CROSS', 'SLIP_R'],
+        ['JAB', 'CROSS', 'ROLL'], ['JAB', 'PULL', 'CROSS'], ['SLIP_L', 'L_HOOK', 'CROSS'],
+        ['SLIP_R', 'CROSS', 'L_HOOK'], ['JAB', 'R_UPPER', 'STEP_BACK'], ['STEP_IN', 'JAB', 'R_HOOK'],
+        ['JAB', 'CROSS', 'PIVOT_L'], ['JAB', 'CROSS', 'PIVOT_R'], ['PULL', 'CROSS', 'L_HOOK'],
+        ['JAB', 'CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'JAB', 'CROSS', 'L_HOOK'],
+        ['STEP_IN', 'JAB', 'CROSS', 'SLIP_L', 'CROSS'], ['JAB', 'SLIP_R', 'CROSS', 'L_HOOK'],
+        ['JAB', 'SLIP_L', 'L_UPPER', 'CROSS'], ['SLIP_R', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['ROLL', 'L_HOOK', 'CROSS', 'STEP_BACK'], ['ROLL', 'R_HOOK', 'L_HOOK', 'CROSS'],
+        ['JAB', 'CROSS', 'ROLL', 'L_HOOK'], ['JAB', 'CROSS', 'ROLL', 'R_HOOK'],
+        ['STEP_IN', 'JAB', 'R_UPPER', 'L_HOOK', 'STEP_BACK'], ['JAB', 'CROSS', 'L_UPPER', 'R_HOOK'],
+        ['JAB', 'JAB', 'SLIP_L', 'CROSS', 'L_HOOK'], ['JAB', 'CROSS', 'SLIP_R', 'R_UPPER', 'L_HOOK'],
+        ['SLIP_L', 'L_HOOK', 'R_UPPER', 'STEP_BACK'], ['JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'],
+        ['JAB', 'CROSS', 'R_HOOK', 'PIVOT_R'], ['STEP_IN', 'L_HOOK', 'CROSS', 'STEP_BACK'],
+        ['JAB', 'PULL', 'JAB', 'CROSS'], ['SLIP_R', 'CROSS', 'L_UPPER', 'CROSS'],
+        ['PULL', 'CROSS', 'L_HOOK', 'CROSS'], ['SLIP_L', 'JAB', 'CROSS', 'PIVOT_L'],
+        ['SLIP_R', 'CROSS', 'L_HOOK', 'PIVOT_R'], ['ROLL', 'CROSS', 'L_HOOK', 'R_UPPER'],
+        ['STEP_IN', 'JAB', 'JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'CROSS', 'SLIP_L', 'L_HOOK', 'CROSS'],
+        ['JAB', 'L_HOOK', 'ROLL', 'CROSS'], ['JAB', 'R_HOOK', 'ROLL', 'L_HOOK'],
+        ['STEP_IN', 'JAB', 'CROSS', 'L_HOOK', 'PIVOT_L'], ['STEP_IN', 'JAB', 'CROSS', 'R_UPPER', 'PIVOT_R'],
+        ['JAB', 'SLIP_R', 'R_HOOK', 'L_HOOK'], ['JAB', 'SLIP_L', 'L_HOOK', 'R_HOOK'],
+        ['PULL', 'R_UPPER', 'L_HOOK', 'CROSS'], ['JAB', 'CROSS', 'PULL', 'CROSS'],
+        ['STEP_IN', 'L_UPPER', 'CROSS', 'L_HOOK'], ['STEP_IN', 'R_UPPER', 'L_HOOK', 'CROSS'],
+        ['JAB', 'JAB', 'ROLL', 'CROSS', 'L_HOOK'], ['SLIP_L', 'L_UPPER', 'R_HOOK', 'CROSS'],
+        ['SLIP_R', 'R_HOOK', 'L_UPPER', 'CROSS'], ['JAB', 'CROSS', 'L_HOOK', 'ROLL', 'CROSS']
     ];
 
     let shuffleBag = [];
@@ -1929,16 +1929,13 @@
             facingFlip = 0;
             localStorage.setItem('boxer_facing_flip', '0');
             if (modelRoot) modelRoot.rotation.y = 0;
-            
             camera.position.set(0, 1.30, 2.45);
             camera.lookAt(0, 0.85, 0);
-            
             btn.textContent = '🎥 المنظور الخارجي';
             btn.style.background = 'rgba(16, 185, 129, 0.88)';
         } else {
             camera.position.set(0.15, 1.25, 3.05);
             camera.lookAt(0, 0.92, 0);
-            
             btn.textContent = '🎥 منظور الخصم';
             btn.style.background = 'rgba(220, 38, 38, 0.88)';
         }
@@ -2001,7 +1998,6 @@
 
         loader.load('boxer.fbx', (fbxObj) => {
             modelRoot = fbxObj;
-
             const box = new THREE.Box3().setFromObject(modelRoot);
             const size = box.getSize(new THREE.Vector3());
             const maxDim = Math.max(size.x, size.y, size.z) || 1;
@@ -2076,7 +2072,6 @@
 
     function executeSingleAction(moveKey, withSpeech = false) {
         if (!mixer || Object.keys(actions).length === 0) return;
-
         const targetKey = actions[moveKey] ? moveKey : 'IDLE';
         const nextAction = actions[targetKey];
         if (!nextAction) return;
@@ -2087,10 +2082,7 @@
         }
 
         document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
-
-        if (withSpeech) {
-            speakText(MOVES[moveKey].say);
-        }
+        if (withSpeech) speakText(MOVES[moveKey].say);
 
         const clipDur = nextAction.getClip().duration || 1.25;
         const basePunchTime = 0.85; 
@@ -2103,9 +2095,7 @@
         nextAction.fadeIn(0.08);
         nextAction.play();
 
-        if (activeAction && activeAction !== nextAction) {
-            activeAction.fadeOut(0.08);
-        }
+        if (activeAction && activeAction !== nextAction) activeAction.fadeOut(0.08);
         activeAction = nextAction;
     }
 
@@ -2361,7 +2351,7 @@
         updateTimerDisplay();
     }
 
-    function tickTimer() {
+    async function tickTimer() {
         if (timeLeft > 0) {
             timeLeft--;
             updateTimerDisplay();
@@ -2373,9 +2363,18 @@
                 moveQueue = [];
                 timeLeft = 60;
                 syncComboText('REST');
-                document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس';
+                document.getElementById('combo-sub').textContent = 'وقت الراحة والتنفس (تحليل الذكاء الاصطناعي...)';
                 returnToIdle();
-                speakText("Rest time.");
+                
+                // جلب النصيحة التكتيكية من الذكاء الاصطناعي بين الجولات إذا كان مفاعلاً
+                if (aiEnabled && geminiApiKey) {
+                    const advice = await getAiCornermanAdvice(`جولة رقم ${currentRound} انتهت.`);
+                    speakText(advice);
+                    syncComboText("AI CORNERMAN ADVICE");
+                    document.getElementById('combo-sub').textContent = advice;
+                } else {
+                    speakText("Rest time.");
+                }
             } else {
                 isResting = false;
                 shuffleBag = [];
@@ -2397,18 +2396,13 @@
 
     function getActiveComboPool() {
         const source = document.getElementById('combo-source').value;
-        if (source === 'custom' && customCombos.length > 0) {
-            return customCombos;
-        }
-        if (source === 'both' && customCombos.length > 0) {
-            return [...MASTER_COMBOS_70, ...customCombos];
-        }
+        if (source === 'custom' && customCombos.length > 0) return customCombos;
+        if (source === 'both' && customCombos.length > 0) return [...MASTER_COMBOS_70, ...customCombos];
         return MASTER_COMBOS_70;
     }
 
     function executeNextCombo() {
         if (!isRunning || isResting || isComboBusy) return;
-
         const isDrill = document.getElementById('drill-enabled').value === 'on';
         let seqKeys = [];
 
