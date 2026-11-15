@@ -37,6 +37,10 @@
         .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.68rem; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
         .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.7rem; padding: 4px 9px; border-radius: 20px; font-weight: 800; direction: ltr; }
         .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.88); color: var(--text); border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        
+        /* زر الكاميرا الجديد للخصم التخيلي */
+        .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.68rem; padding: 5px 9px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
+        
         .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.72rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 7px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
         .panel { background: var(--panel); border-radius: 16px; padding: 12px; border: 1px solid var(--border); }
@@ -88,6 +92,7 @@
             <span class="badge-stance">MOCAP SYNC ENGINE</span>
             <span class="badge-action" id="live-move-badge">IDLE</span>
             <button class="flip-quick-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
+            <button class="camera-btn" id="cam-btn" onclick="toggleCameraView()">🎥 منظور الخصم</button>
             <div id="canvas-3d"></div>
             <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
         </div>
@@ -278,12 +283,41 @@
     let moveQueue = [];
     let isComboBusy = false;
     let loadedClipsCount = 0;
+    
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0;
+    let isFPV = false; // متغير حالة منظور الكاميرا
 
     function toggleModelFacing() {
+        if (isFPV) return; // منع عكس الاتجاه أثناء منظور الخصم
         facingFlip = (facingFlip === 0) ? Math.PI : 0;
         localStorage.setItem('boxer_facing_flip', facingFlip === 0 ? '0' : '1');
         if (modelRoot) modelRoot.rotation.y = facingFlip;
+    }
+
+    function toggleCameraView() {
+        isFPV = !isFPV;
+        const btn = document.getElementById('cam-btn');
+        if (isFPV) {
+            // تفعيل منظور الخصم (النزال التخيلي)
+            // إجبار الملاكم على مواجهتك
+            facingFlip = 0;
+            localStorage.setItem('boxer_facing_flip', '0');
+            if (modelRoot) modelRoot.rotation.y = 0;
+            
+            // وضع الكاميرا أمام الملاكم (بمستوى الرأس)
+            camera.position.set(0, 1.55, 1.25); 
+            camera.lookAt(0, 1.45, 0);
+            
+            btn.textContent = '🎥 المنظور الخارجي';
+            btn.style.background = 'rgba(16, 185, 129, 0.88)'; // زر أخضر
+        } else {
+            // العودة للمنظور العادي الافتراضي
+            camera.position.set(0.15, 1.25, 3.05);
+            camera.lookAt(0, 0.92, 0);
+            
+            btn.textContent = '🎥 منظور الخصم';
+            btn.style.background = 'rgba(220, 38, 38, 0.88)'; // زر أحمر
+        }
     }
 
     function init3DScene() {
@@ -291,6 +325,7 @@
         scene = new THREE.Scene();
 
         camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 100);
+        // الوضع الافتراضي
         camera.position.set(0.15, 1.25, 3.05);
         camera.lookAt(0, 0.92, 0);
 
@@ -412,7 +447,6 @@
         }
     }
 
-    // تنفيذ حركة واحدة مع نطق اسمها في نفس اللحظة وبنفس سرعة النطق
     function executeSingleAction(moveKey, withSpeech = false) {
         if (!mixer || Object.keys(actions).length === 0) return;
 
@@ -431,9 +465,8 @@
             speakText(MOVES[moveKey].say);
         }
 
-        // ربط سرعة حركة المجسم مباشرة بمعامل سرعة النطق (voiceRate)
         const clipDur = nextAction.getClip().duration || 1.25;
-        const basePunchTime = 0.85; // المدة المرجعية للكمة عند السرعة 1.0x
+        const basePunchTime = 0.85; 
         const desiredDuration = basePunchTime / voiceRate;
         const syncedSpeed = Math.min(2.4, Math.max(0.35, clipDur / desiredDuration));
 
@@ -465,7 +498,6 @@
 
     window.addEventListener('load', init3DScene);
 
-    // --- إدارة الكومبوهات ووضع التكرار للإتقان ---
     const PRESET_DRILLS = [
         ['JAB', 'CROSS', 'L_HOOK'],
         ['JAB', 'JAB', 'CROSS', 'SLIP_L'],
@@ -568,7 +600,6 @@
         document.getElementById('drill-counter-display').textContent = `0 / ${targetTxt}`;
     }
 
-    // --- التحكم الموسع في سرعة النطق والمزامنة ---
     let voiceRate = 0.75;
     let comboIntervalMs = 5000;
     let totalRounds = 3;
@@ -720,7 +751,6 @@
     }
 
     function executeNextCombo() {
-        // عدم مقاطعة الكومبو الحالي إذا كانت السرعة بطيئة ولم ينتهِ بعد
         if (!isRunning || isResting || isComboBusy) return;
 
         const isDrill = document.getElementById('drill-enabled').value === 'on';
