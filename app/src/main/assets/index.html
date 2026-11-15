@@ -242,7 +242,7 @@
             <div class="stick-box">
                 <div class="stick-move-title" id="stick-attack-label">🥢 SPARRING STICK + CAM</div>
                 <div class="stick-dodge-cue" id="stick-dodge-label">فعّل الكاميرا أو ابدأ اشتباك العصا</div>
-                <div class="stick-sub-hint" id="stick-hint-label">تتجه العصا نحو رأسك مباشرة، ويجب أن تحرك رأسك لتتفاداها</div>
+                <div class="stick-sub-hint" id="stick-hint-label">في الرول: انحنِ للأسفل واخرج في عكس اتجاه قدوم العصا</div>
             </div>
 
             <div class="score-grid">
@@ -519,7 +519,6 @@
     let poseDetector = null;
     let poseLoopReq = null;
 
-    // نقطة انطلاق رأس اللاعب لحظة بدء كل ضربة (لضمان قياس الحركة الفعلية وليس الوقوف الثابت)
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
     let curNoseX = 0.5, curNoseY = 0.45, curShoulderSpan = 0.25;
     let hasPoseFrame = false;
@@ -645,27 +644,23 @@
             curNoseY = nose.y;
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
 
-            // إذا لم تكن هناك ضربة جارية، حدّث نقطة ارتكاز اللاعب باستمرار لقياس الحركة اللحظية عند الانطلاق
             if (!stickState.active) {
                 strikeStartX = curNoseX;
                 strikeStartY = curNoseY;
                 strikeStartSpan = curShoulderSpan;
             }
 
-            // رسم دائرة المرجع (نقطة الخطر التي انطلقت نحوها العصا)
             ctx.strokeStyle = '#f43f5e';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
             ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 16, 0, Math.PI * 2);
             ctx.stroke();
 
-            // رسم نقطة رأس اللاعب الحالية
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
             ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 7, 0, Math.PI * 2);
             ctx.fill();
 
-            // تقييم التفادي فقط أثناء ذروة اقتراب العصا من الرأس (من 30% إلى 85% من زمن الضربة)
             if (stickState.active && !stickState.evaluated && stickState.progress >= 0.30 && stickState.progress <= 0.85) {
                 evaluatePlayerDefenseMove();
             }
@@ -673,30 +668,44 @@
     }
 
     function evaluatePlayerDefenseMove() {
-        // الإزاحة الفعلية من مكان رأس اللاعب لحظة انطلاق الضربة
+        // الكاميرا الأمامية معكوسة أفقياً:
+        // تحرك اللاعب الحقيقي لليمين => dx > 0
+        // تحرك اللاعب الحقيقي لليسار => dx < 0
+        // انخفاض اللاعب للأسفل (Duck/Roll) => dy > 0
         const dx = curNoseX - strikeStartX;
         const dy = curNoseY - strikeStartY;
         const spanShrink = strikeStartSpan - curShoulderSpan;
 
-        // عتبة حركة حقيقية واضحة (تمنع احتساب أي اهتزاز طفيف أو ثبات في المكان)
         const SLIP_THRESH = 0.095;
-        const DUCK_THRESH = 0.085;
+        const DUCK_THRESH = 0.080;
+        const ROLL_SIDE_THRESH = 0.055; // يشترط الخروج من الجانب المعاكس أثناء الرول
         const PULL_THRESH = 0.045;
 
         let dodged = false;
+        let wrongDirection = false;
         const t = stickState.type;
 
         if (t === 'THRUST_LEFT') {
-            // العصا تضرب جهة اليسار -> يجب أن يميل رأسك يميناً بوضوح
             if (dx > SLIP_THRESH) dodged = true;
         } else if (t === 'THRUST_RIGHT') {
-            // العصا تضرب جهة اليمين -> يجب أن يميل رأسك يساراً بوضوح
             if (dx < -SLIP_THRESH) dodged = true;
-        } else if (t === 'SWEEP_HIGH') {
-            // تلويحة أفقية على مستوى الرأس -> يجب أن تنخفض برأسك للأسفل
-            if (dy > DUCK_THRESH) dodged = true;
+        } else if (t === 'SWEEP_FROM_LEFT') {
+            // العصا تندفع من اليسار نحو اليمين:
+            // الرول الصحيح هو الغوص للأسفل (dy > DUCK_THRESH) + الخروج نحو اليسار (dx < -ROLL_SIDE_THRESH) عكس اتجاه العصا
+            if (dy > DUCK_THRESH && dx < -ROLL_SIDE_THRESH) {
+                dodged = true;
+            } else if (dx > ROLL_SIDE_THRESH) {
+                wrongDirection = true;
+            }
+        } else if (t === 'SWEEP_FROM_RIGHT') {
+            // العصا تندفع من اليمين نحو اليسار:
+            // الرول الصحيح هو الغوص للأسفل (dy > DUCK_THRESH) + الخروج نحو اليمين (dx > ROLL_SIDE_THRESH) عكس اتجاه العصا
+            if (dy > DUCK_THRESH && dx > ROLL_SIDE_THRESH) {
+                dodged = true;
+            } else if (dx < -ROLL_SIDE_THRESH) {
+                wrongDirection = true;
+            }
         } else if (t === 'THRUST_CENTER' || t === 'UPPER_SWING') {
-            // طعنة في المنتصف أو صاعدة -> يجب سحب الجذع للخلف أو الانحراف الجانبي الحاد
             if (spanShrink > PULL_THRESH || Math.abs(dx) > SLIP_THRESH * 1.1 || dy > DUCK_THRESH) dodged = true;
         } else if (t === 'DOUBLE_THRUST') {
             if (Math.abs(dx) > SLIP_THRESH) dodged = true;
@@ -707,11 +716,16 @@
             refSuccessCount++;
             refPoints += 10;
             updateRefereeScoreboard();
-            triggerRefereeFeedback(true);
+            triggerRefereeFeedback(true, '');
+        } else if (wrongDirection) {
+            stickState.evaluated = true;
+            refHitCount++;
+            updateRefereeScoreboard();
+            triggerRefereeFeedback(false, '✗ خطأ! تحركت في نفس اتجاه العصا، در عكسها!');
         }
     }
 
-    function triggerRefereeFeedback(isSuccess) {
+    function triggerRefereeFeedback(isSuccess, customFailMsg) {
         const pipBox = document.getElementById('cam-pip-box');
         const pipTag = document.getElementById('cam-pip-status');
 
@@ -719,24 +733,25 @@
             pipBox.classList.remove('hit-fail');
             pipBox.classList.add('hit-ok');
             pipTag.textContent = '✓ +10 DODGED!';
-            document.getElementById('stick-hint-label').textContent = '✓ تفادي ممتاز! أزحت رأسك عن المسار (+10)';
-            syncComboText('✓ تفادي ممتاز (+10)');
+            document.getElementById('stick-hint-label').textContent = '✓ تفادي مثالي في الاتجاه المعاكس (+10 نقاط)';
+            syncComboText('✓ تفادي مثالي (+10)');
         } else {
             pipBox.classList.remove('hit-ok');
             pipBox.classList.add('hit-fail');
             pipTag.textContent = '✗ HIT!';
-            document.getElementById('stick-hint-label').textContent = '✗ إصابة! بقيت في مسار العصا دون تفادي';
-            syncComboText('✗ إصابة! حرك رأسك');
+            const msg = customFailMsg || '✗ إصابة! لم تتفادَ العصا في الاتجاه الصحيح';
+            document.getElementById('stick-hint-label').textContent = msg;
+            syncComboText(msg);
             if (navigator.vibrate) navigator.vibrate(200);
         }
 
         setTimeout(() => {
             pipBox.classList.remove('hit-ok', 'hit-fail');
             pipTag.textContent = 'TRACKING';
-        }, 750);
+        }, 850);
     }
 
-    // --- بناء مجسم العصا الإسفنجية ثلاثية الأبعاد وتوجيهها لمركز الرأس ---
+    // --- بناء مجسم العصا الإسفنجية ثلاثية الأبعاد وحركاتها ---
     let stickGroup = null;
     let stickState = {
         active: false,
@@ -747,12 +762,13 @@
     };
 
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT',   name: 'JAB THRUST (طعنة يسارية نحو رأسك)',   dodge: '➔ SLIP RIGHT (أمل رأسك يميناً)',   say: 'Slip Right', hint: 'العصا تستهدف يسار رأسك مباشرة، أمل رأسك يميناً' },
-        { type: 'THRUST_RIGHT',  name: 'CROSS THRUST (طعنة يمينية نحو رأسك)',  dodge: '⬅ SLIP LEFT (أمل رأسك يساراً)',     say: 'Slip Left',  hint: 'العصا تستهدف يمين رأسك مباشرة، أمل رأسك يساراً' },
-        { type: 'SWEEP_HIGH',    name: 'HIGH HOOK SWEEP (تلويحة على الرأس)',   dodge: '⤵ ROLL / DUCK (انحنِ تحت العصا)',   say: 'Roll',       hint: 'العصا تمسح مستوى رأسك أفقياً، غص للأسفل' },
-        { type: 'THRUST_CENTER', name: 'CENTER JAB (اندفاع في المنتصف)',       dodge: '⬇ PULL BACK (اسحب جذعك للخلف)',    say: 'Pull Back',  hint: 'العصا تتجه مباشرة لأنفك، اسحب رأسك للخلف' },
-        { type: 'UPPER_SWING',   name: 'LOW UPPERCUT (ضربة سفلية للذقن)',      dodge: '⬇ STEP BACK (تراجع خطوة للخلف)',   say: 'Step Back',  hint: 'العصا تصعد نحو ذقنك، تراجع للخلف' },
-        { type: 'DOUBLE_THRUST', name: '1-2 STICK COMBO (طعنة مزدوجة)',        dodge: 'Slip Right ➔ Slip Left',             say: 'Slip Right, Slip Left', hint: 'طعنتان متتاليتان نحو وجهك: يميناً ثم يساراً' }
+        { type: 'THRUST_LEFT',      name: 'JAB THRUST (طعنة يسارية)',          dodge: '➔ SLIP RIGHT (أمل رأسك يميناً)',           say: 'Slip Right', hint: 'العصا تستهدف يسار رأسك، أمل رأسك يميناً' },
+        { type: 'THRUST_RIGHT',     name: 'CROSS THRUST (طعنة يمينية)',         dodge: '⬅ SLIP LEFT (أمل رأسك يساراً)',             say: 'Slip Left',  hint: 'العصا تستهدف يمين رأسك، أمل رأسك يساراً' },
+        { type: 'SWEEP_FROM_LEFT',  name: 'LEFT HOOK SWEEP (تلويحة من اليسار)', dodge: '⤵⬅ ROLL LEFT (انحنِ واخرج يساراً)',         say: 'Roll Left',  hint: 'العصا تندفع من اليسار لليمين: غص تحتها واخرج يساراً (عكسها)' },
+        { type: 'SWEEP_FROM_RIGHT', name: 'RIGHT HOOK SWEEP (تلويحة من اليمين)',dodge: '⤵➔ ROLL RIGHT (انحنِ واخرج يميناً)',       say: 'Roll Right', hint: 'العصا تندفع من اليمين لليسار: غص تحتها واخرج يميناً (عكسها)' },
+        { type: 'THRUST_CENTER',    name: 'CENTER JAB (اندفاع في المنتصف)',     dodge: '⬇ PULL BACK (اسحب جذعك للخلف)',            say: 'Pull Back',  hint: 'العصا تتجه مباشرة لأنفك، اسحب رأسك للخلف' },
+        { type: 'UPPER_SWING',      name: 'LOW UPPERCUT (ضربة سفلية للذقن)',    dodge: '⬇ STEP BACK (تراجع خطوة للخلف)',           say: 'Step Back',  hint: 'العصا تصعد نحو ذقنك، تراجع للخلف' },
+        { type: 'DOUBLE_THRUST',    name: '1-2 STICK COMBO (طعنة مزدوجة)',      dodge: 'Slip Right ➔ Slip Left',                     say: 'Slip Right, Slip Left', hint: 'طعنتان متتاليتان نحو وجهك: يميناً ثم يساراً' }
     ];
 
     let isStickRunning = false;
@@ -804,7 +820,7 @@
             if (isCamRefActive && hasPoseFrame && !stickState.evaluated) {
                 refHitCount++;
                 updateRefereeScoreboard();
-                triggerRefereeFeedback(false);
+                triggerRefereeFeedback(false, '');
             }
             stickState.active = false;
             document.getElementById('live-move-badge').textContent = 'READY';
@@ -814,23 +830,26 @@
         const strikeCurve = p < 0.48 ? Math.sin((p / 0.48) * (Math.PI / 2)) : Math.cos(((p - 0.48) / 0.52) * (Math.PI / 2));
 
         if (stickState.type === 'THRUST_LEFT') {
-            // تبدأ من اليسار (-0.32) وتتقارب نحو مركز وجهك (-0.04) عند الذروة
             const startX = -0.32, targetX = -0.04;
             stickGroup.position.set(startX + (targetX - startX) * strikeCurve, 1.34, 0.05 + 1.25 * strikeCurve);
             stickGroup.rotation.set(0.02, -0.22 * (1 - strikeCurve), 0);
         } else if (stickState.type === 'THRUST_RIGHT') {
-            // تبدأ من اليمين (+0.32) وتتقارب نحو مركز وجهك (+0.04) عند الذروة
             const startX = 0.32, targetX = 0.04;
             stickGroup.position.set(startX + (targetX - startX) * strikeCurve, 1.34, 0.05 + 1.25 * strikeCurve);
             stickGroup.rotation.set(0.02, 0.22 * (1 - strikeCurve), 0);
         } else if (stickState.type === 'THRUST_CENTER') {
             stickGroup.position.set(0, 1.35, 0.05 + 1.28 * strikeCurve);
             stickGroup.rotation.set(0.01, 0, 0);
-        } else if (stickState.type === 'SWEEP_HIGH') {
-            // تمر أفقياً مباشرة عبر مستوى الوجه (Z = 1.15)
+        } else if (stickState.type === 'SWEEP_FROM_LEFT') {
+            // تندفع من اليسار (-0.55) إلى اليمين (+0.55) -> المطلوب Roll Left (عكسها)
             const sweepAngle = (p - 0.5) * 2.2;
             stickGroup.position.set(Math.sin(sweepAngle) * 0.55, 1.35, 0.55 + Math.cos(sweepAngle) * 0.65);
             stickGroup.rotation.set(0.03, sweepAngle * 0.9, Math.PI / 2.2);
+        } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
+            // تندفع من اليمين (+0.55) إلى اليسار (-0.55) -> المطلوب Roll Right (عكسها)
+            const sweepAngle = (0.5 - p) * 2.2;
+            stickGroup.position.set(Math.sin(sweepAngle) * 0.55, 1.35, 0.55 + Math.cos(sweepAngle) * 0.65);
+            stickGroup.rotation.set(0.03, sweepAngle * 0.9, -Math.PI / 2.2);
         } else if (stickState.type === 'UPPER_SWING') {
             stickGroup.position.set(0, 0.90 + 0.46 * strikeCurve, 0.1 + 1.18 * strikeCurve);
             stickGroup.rotation.set(-0.40 * (1 - strikeCurve), 0, 0);
@@ -861,7 +880,6 @@
     function triggerStickStrike() {
         if (!isStickRunning || stickState.active) return;
 
-        // تثبيت موقع رأس اللاعب في لحظة انطلاق الضربة الجديدة
         if (hasPoseFrame) {
             strikeStartX = curNoseX;
             strikeStartY = curNoseY;
@@ -885,7 +903,7 @@
         stickState.type = pat.type;
         stickState.progress = 0;
         stickState.evaluated = false;
-        const baseDur = pat.type === 'DOUBLE_THRUST' ? 1.70 : 1.20;
+        const baseDur = pat.type === 'DOUBLE_THRUST' ? 1.70 : 1.25;
         stickState.duration = baseDur / speedMult;
         stickState.active = true;
     }
@@ -907,7 +925,7 @@
         tvBtn.classList.add('stop');
 
         const speedMult = parseFloat(document.getElementById('stick-speed').value);
-        const intervalMs = Math.max(1900, Math.round(3000 / speedMult));
+        const intervalMs = Math.max(1950, Math.round(3100 / speedMult));
 
         setTimeout(() => { if (isStickRunning) triggerStickStrike(); }, 600);
         stickLoopTimer = setInterval(triggerStickStrike, intervalMs);
