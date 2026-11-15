@@ -19,6 +19,7 @@
             --stick: #f43f5e;
             --counter: #a855f7;
             --mitt: #10b981;
+            --tactics: #ec4899;
             --danger: #ef4444;
             --success: #10b981;
             --text: #f9fafb;
@@ -29,12 +30,13 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 6px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 8px; }
         
-        .tabs { display: grid; grid-template-columns: repeat(9, 1fr); gap: 1px; background: var(--panel); padding: 3px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 0px; border-radius: 7px; font-size: 0.46rem; font-weight: 800; cursor: pointer; transition: 0.2s; text-align: center; }
+        .tabs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; background: var(--panel); padding: 3px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 0px; border-radius: 7px; font-size: 0.43rem; font-weight: 800; cursor: pointer; transition: 0.2s; text-align: center; }
         .tab-btn.active { background: var(--accent); color: #000; }
         .tab-btn.stick-tab.active { background: var(--stick); color: #fff; }
         .tab-btn.counter-tab.active { background: var(--counter); color: #fff; }
         .tab-btn.mitt-tab.active { background: var(--mitt); color: #000; }
+        .tab-btn.tactics-tab.active { background: var(--tactics); color: #fff; }
         .tab-btn.analytics-tab.active { background: var(--defense); color: #000; }
         .tab-btn.tv-tab { color: #38bdf8; }
 
@@ -135,9 +137,11 @@
         .stick-box { background: rgba(244, 63, 94, 0.08); border: 2px solid var(--stick); border-radius: 14px; padding: 9px; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
         .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
         .stick-box.mitt-theme { background: rgba(16, 185, 129, 0.09); border-color: var(--mitt); }
+        .stick-box.tactics-theme { background: rgba(236, 72, 153, 0.09); border-color: var(--tactics); }
         .stick-move-title { font-size: 1.02rem; color: #fda4af; font-weight: 900; direction: ltr; }
         .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
         .stick-box.mitt-theme .stick-move-title { color: #6ee7b7; }
+        .stick-box.tactics-theme .stick-move-title { color: #f472b6; }
         .stick-dodge-cue { font-size: 0.86rem; color: #fff; font-weight: 800; }
         .stick-sub-hint { font-size: 0.7rem; color: var(--muted); }
         
@@ -151,6 +155,7 @@
         .btn.stick-btn { background: var(--stick); color: #fff; }
         .btn.counter-btn { background: var(--counter); color: #fff; }
         .btn.mitt-btn { background: var(--mitt); color: #000; }
+        .btn.tactics-btn { background: var(--tactics); color: #fff; }
         .btn.cam-ref-btn { background: var(--defense); color: #000; }
         .btn.danger { background: var(--danger); color: #fff; }
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
@@ -204,6 +209,7 @@
         <button class="tab-btn mitt-tab" onclick="switchTab('mitts', this)">🧤 الكف</button>
         <button class="tab-btn stick-tab" onclick="switchTab('stick', this)">🥢 العصا</button>
         <button class="tab-btn counter-tab" onclick="switchTab('counter', this)">⚡ كاونتر</button>
+        <button class="tab-btn tactics-tab" onclick="switchTab('tactics', this)">🎯 تكتيك</button>
         <button class="tab-btn analytics-tab" onclick="switchTab('analytics', this)">📊 التحليلات</button>
         <button class="tab-btn tv-tab" onclick="enterTvFullscreen()">📺 TV</button>
         <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
@@ -297,7 +303,7 @@
 
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
                 <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (Kalman)</button>
-                <button class="btn secondary small" id="mitts-sync-rate-badge" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[8])">🔊 السرعة: 0.75x</button>
+                <button class="btn secondary small" id="mitts-sync-rate-badge" onclick="switchTab('settings', document.querySelectorAll('.tab-btn')[9])">🔊 السرعة: 0.75x</button>
             </div>
 
             <div class="stick-box mitt-theme">
@@ -467,7 +473,71 @@
         </div>
     </div>
 
-    <!-- التبويب 5: التحليلات وأداء اللاعب -->
+    <!-- التبويب 5: التدريبات التكتيكية الخمسة المتقدمة -->
+    <div id="tab-tactics" class="tab-content">
+        <div class="panel">
+            <div class="mini-timer-bar">
+                <span class="round-txt" id="tactics-round-label">الجولة 1 / 3</span>
+                <span class="clock-txt" id="tactics-timer-display">03:00</span>
+            </div>
+
+            <div class="setting-item" style="margin-bottom: 8px;">
+                <span class="setting-header"><span>اختر التدريب التكتيكي المتقدم:</span></span>
+                <select id="tactics-mode-select" onchange="onTacticsModeChange()">
+                    <option value="feint">1️⃣ الخداع البصري والقرار اللحظي (أخضر/أحمر/أصفر)</option>
+                    <option value="mirror">2️⃣ ملاكم الظل التفاعلي وملاحقة الزوايا (Angle Cut)</option>
+                    <option value="pyramid">3️⃣ تحدي الذاكرة الحركية المتراكمة (1 ➔ 8 حركات)</option>
+                    <option value="pocket">4️⃣ الضغط داخل المسافة القريبة (Pocket Survival)</option>
+                    <option value="archetype">5️⃣ القتال ضد أنماط الخصوم (Swarmer / Out-Boxer / Southpaw)</option>
+                </select>
+            </div>
+
+            <div id="archetype-selector-box" style="display: none; margin-bottom: 8px;">
+                <select id="opponent-archetype-type" onchange="onTacticsModeChange()">
+                    <option value="swarmer">🐂 المهاجم الضاغط (Swarmer - هجوم متواصل)</option>
+                    <option value="outboxer">🦒 طويل القامة (Out-Boxer - اختراق المسافة)</option>
+                    <option value="southpaw">🔄 الملاكم الأعسر (Southpaw - زوايا معكوسة)</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-4" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا التفاعلية</button>
+                <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة</button>
+            </div>
+
+            <div class="stick-box tactics-theme" id="tactics-display-box">
+                <div class="stick-move-title" id="tactics-title-label">🎯 FEINT & DECISION</div>
+                <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب | أحمر = تفادَ (خدعة) | أصفر = تراجع</div>
+                <div class="stick-sub-hint" id="tactics-hint-label">اضغط ابدأ لبدء التحدي التكتيكي التفاعلي</div>
+            </div>
+
+            <div class="score-grid">
+                <div class="score-card">
+                    <span>نقاط التكتيك</span>
+                    <strong id="tac-points" style="color: var(--tactics);">0</strong>
+                </div>
+                <div class="score-card">
+                    <span>المستوى / السلسلة</span>
+                    <strong id="tac-streak" style="color: var(--success);">0</strong>
+                </div>
+                <div class="score-card">
+                    <span>قرارات صحيحة</span>
+                    <strong id="tac-correct" style="color: var(--accent);">0</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 7px;">
+                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('tactics')">📺 عرض التكتيك على التلفزيون</button>
+            </div>
+        </div>
+
+        <div class="main-btns">
+            <button class="btn tactics-btn" id="tactics-start-btn" onclick="toggleTacticsSession()">🎯 ابدأ التدريب التكتيكي</button>
+            <button class="btn secondary" onclick="resetTacticsSession()">إعادة</button>
+        </div>
+    </div>
+
+    <!-- التبويب 6: التحليلات وأداء اللاعب -->
     <div id="tab-analytics" class="tab-content">
         <div class="panel">
             <div class="analytics-card">
@@ -499,7 +569,7 @@
         </div>
     </div>
 
-    <!-- التبويب 6: الإتقان -->
+    <!-- التبويب 7: الإتقان -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -534,7 +604,7 @@
         </div>
     </div>
 
-    <!-- التبويب 7: الكومبوهات -->
+    <!-- التبويب 8: الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
@@ -583,9 +653,8 @@
         </div>
     </div>
 
-    <!-- التبويب 8: الضبط -->
+    <!-- التبويب 9: الضبط -->
     <div id="tab-settings" class="tab-content">
-        <!-- الميزات الذكية والتدريبية المتقدمة -->
         <div class="panel" style="border: 1px solid var(--mitt); background: rgba(16, 185, 129, 0.05);">
             <div class="setting-header" style="margin-bottom: 6px; color: var(--mitt);"><span>🔥 أوضاع التدريب الاحترافية وتوفير الطاقة:</span></div>
             
@@ -720,7 +789,6 @@
     let lastAuditText = '';
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
 
-    // إعدادات الميزات الاحترافية
     let burnoutEnabled = true;
     let adaptiveDifficultyEnabled = true;
     let sfxEnabled = true;
@@ -750,7 +818,7 @@
     }
 
     // =========================================================================
-    // 🔊 محرك المؤثرات الصوتية الرقمية (Web Audio API - صفر ملفات خارجية)
+    // 🔊 محرك المؤثرات الصوتية الرقمية (Web Audio API)
     // =========================================================================
     let audioCtx = null;
     function initAudioEngine() {
@@ -846,11 +914,12 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker المطور: Kalman Filter + التنبؤ بالمسار (Trajectory Prediction)
+    // 🧵 Web Worker المطور: Predictive Kalman + تحليل زاوية الكتفين
     // =========================================================================
     let poseWorker = null;
     let predictedLeftWrist = null;
     let predictedRightWrist = null;
+    let curShoulderSlope = 0;
 
     function initPoseWorker() {
         const workerCode = `
@@ -887,7 +956,8 @@
 
                 const nX = kfNoseX.filter(arr[0]);
                 const nY = kfNoseY.filter(arr[1]);
-                const lShY = arr[3], rShY = arr[5];
+                const lShX = arr[2], lShY = arr[3];
+                const rShX = arr[4], rShY = arr[5];
                 const lWX = kfLWristX.filter(arr[6]);
                 const lWY = kfLWristY.filter(arr[7]);
                 const rWX = kfRWristX.filter(arr[8]);
@@ -896,10 +966,12 @@
                 const shoulderAvgY = (lShY + rShY) / 2;
                 const leftGuardOk = (lWY.pos < shoulderAvgY + 0.09);
                 const rightGuardOk = (rWY.pos < shoulderAvgY + 0.09);
+                const shoulderSlope = (lShX - rShX);
 
                 self.postMessage({
                     type: 'KALMAN_RESULT',
                     guardDown: (!leftGuardOk || !rightGuardOk),
+                    shoulderSlope: shoulderSlope,
                     nose: { x: nX.pos, y: nY.pos },
                     leftWrist: { x: lWX.pos, y: lWY.pos },
                     rightWrist: { x: rWX.pos, y: rWY.pos },
@@ -1040,7 +1112,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Predictive Kalman Worker + WebAudio SFX + Adaptive AI) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة (${mittsCamHitsCount} إصابة)، الكاونتر ${cntHitsCount} رد، أسرع رد ${cntBestMs || '--'} ms.`;
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Predictive Kalman + Tactics Modes) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1077,7 +1149,8 @@
         if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) stopStickSession();
         if (activeTabName === 'counter' && tabId !== 'counter' && isCounterRunning) stopCounterSession();
         if (activeTabName === 'mitts' && tabId !== 'mitts' && isMittsRunning) stopMittsSession();
-        if (activeTabName === 'train' && (tabId === 'stick' || tabId === 'counter' || tabId === 'mitts') && isRunning) stopSession();
+        if (activeTabName === 'tactics' && tabId !== 'tactics' && isTacticsRunning) stopTacticsSession();
+        if (activeTabName === 'train' && ['stick', 'counter', 'mitts', 'tactics'].includes(tabId) && isRunning) stopSession();
 
         activeTabName = tabId;
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -1092,16 +1165,32 @@
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const isMittsTab = (activeTabName === 'mitts');
+        const isTacticsTab = (activeTabName === 'tactics');
+        const tacMode = document.getElementById('tactics-mode-select') ? document.getElementById('tactics-mode-select').value : 'feint';
+
         const stageTag = document.getElementById('stage-mode-tag');
         const flipBtn = document.getElementById('flip-btn');
         const camBtn = document.getElementById('cam-btn');
 
-        if (modelRoot) modelRoot.visible = (!isStickOrCounter && !isMittsTab);
-        if (stickGroup) stickGroup.visible = isStickOrCounter;
-        if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
-        if (coachPadsGroup) coachPadsGroup.visible = isMittsTab;
+        // إدارة ظهور العناصر ثلاثية الأبعاد حسب التبويب والوضع التكتيكي
+        const showBoxer = (!isStickOrCounter && !isMittsTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
+        const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
+        const showPads = isMittsTab || (isTacticsTab && (tacMode === 'feint' || tacMode === 'pocket'));
 
-        if (activeTabName === 'mitts') {
+        if (modelRoot) {
+            modelRoot.visible = showBoxer;
+            if (!isTacticsTab) modelRoot.position.x = 0;
+        }
+        if (stickGroup) stickGroup.visible = showStick;
+        if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
+        if (coachPadsGroup) coachPadsGroup.visible = showPads;
+
+        if (isTacticsTab) {
+            stageTag.textContent = `🎯 TACTICS: ${tacMode.toUpperCase()}`;
+            stageTag.style.color = '#f472b6';
+            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
+            if (camera) { camera.position.set(0, 1.35, 2.45); camera.lookAt(0, 1.25, 0); }
+        } else if (isMittsTab) {
             stageTag.textContent = mittsSubMode === 'repeat' ? '🔁 MITTS REPEAT' : '🧤 FOCUS MITTS';
             stageTag.style.color = '#6ee7b7';
             flipBtn.style.display = 'none'; camBtn.style.display = 'none';
@@ -1148,7 +1237,8 @@
         const tvBtn = document.getElementById('tv-start-btn');
         const activeNow = (activeTabName === 'stick') ? isStickRunning :
                           (activeTabName === 'counter' ? isCounterRunning :
-                          (activeTabName === 'mitts' ? isMittsRunning : isRunning));
+                          (activeTabName === 'mitts' ? isMittsRunning :
+                          (activeTabName === 'tactics' ? isTacticsRunning : isRunning)));
         tvBtn.textContent = activeNow ? '⏹ إيقاف' : '▶ ابدأ';
         if (activeNow) tvBtn.classList.add('stop'); else tvBtn.classList.remove('stop');
 
@@ -1176,7 +1266,269 @@
         if (activeTabName === 'stick') toggleStickSession();
         else if (activeTabName === 'counter') toggleCounterSession();
         else if (activeTabName === 'mitts') toggleMittsSession();
+        else if (activeTabName === 'tactics') toggleTacticsSession();
         else { if (isRunning) stopSession(); else startSession(); }
+    }
+
+    // =========================================================================
+    // 🎯 محرك التدريبات التكتيكية الخمسة المتقدمة (Tactics Engine)
+    // =========================================================================
+    let isTacticsRunning = false;
+    let tacticsLoopTimer = null;
+    let tacPoints = 0;
+    let tacStreak = 0;
+    let tacCorrect = 0;
+
+    let tacticsChallengeState = {
+        active: false,
+        mode: 'feint',
+        signalColor: 'GREEN', // GREEN = HIT, RED = FEINT/DODGE, YELLOW = STEP_BACK
+        targetAngleX: 0,
+        pyramidSeq: ['JAB'],
+        resolved: false,
+        expiresAt: 0
+    };
+
+    function onTacticsModeChange() {
+        const mode = document.getElementById('tactics-mode-select').value;
+        const archBox = document.getElementById('archetype-selector-box');
+        const titleEl = document.getElementById('tactics-title-label');
+        const cueEl = document.getElementById('tactics-cue-label');
+        const hintEl = document.getElementById('tactics-hint-label');
+
+        archBox.style.display = (mode === 'archetype') ? 'block' : 'none';
+        updateStageEntityVisibility();
+
+        if (mode === 'feint') {
+            titleEl.textContent = '1️⃣ FEINT & SPLIT-SECOND DECISION';
+            cueEl.textContent = 'أخضر = اضرب الكف | أحمر = خدعة (تفادَ) | أصفر = تراجع';
+            hintEl.textContent = 'يختبر سرعة اتخاذ القرار ومنع الاندفاع العشوائي';
+        } else if (mode === 'mirror') {
+            titleEl.textContent = '2️⃣ MIRROR SHADOWBOXING & ANGLE CUT';
+            cueEl.textContent = 'يتحرك الخصم يميناً ويساراً.. در بكتفيك لمواجهته!';
+            hintEl.textContent = 'ارصد حركة الخصم 3D وعدّل زاوية وقفتك أمام الكاميرا';
+        } else if (mode === 'pyramid') {
+            titleEl.textContent = '3️⃣ PYRAMID MEMORY COMBO (1 ➔ 8)';
+            cueEl.textContent = 'تزداد السلسلة حركة إضافية بعد كل نجاح متتالي';
+            hintEl.textContent = 'يربط الذاكرة العضلية بالتركيز الذهني العالي';
+        } else if (mode === 'pocket') {
+            titleEl.textContent = '4️⃣ INSIDE FIGHTING & POCKET SURVIVAL';
+            cueEl.textContent = 'مسافة قريبة: أبركت وهوك قصير + تفادي رأسي مستمر';
+            hintEl.textContent = 'حافظ على يديك مرفوعتين (Guard Up) ولا تتراجع للخلف';
+        } else if (mode === 'archetype') {
+            const arch = document.getElementById('opponent-archetype-type').value;
+            titleEl.textContent = `5️⃣ ARCHETYPE: ${arch.toUpperCase()}`;
+            cueEl.textContent = arch === 'swarmer' ? 'خصم ضاغط: تفادَ الهجوم المتتالي ورد بأبركت!' :
+                               (arch === 'outboxer' ? 'خصم طويل: ادخل بخطوة (Step In) مع جاب مزدوج!' :
+                               'خصم أعسر (Southpaw): انتبه لليد اليسرى المعكوسة!');
+            hintEl.textContent = 'يتغير إيقاع وزوايا الهجوم لمحاكاة أسلوب الخصم المختار';
+        }
+    }
+
+    function updateTacticsScoreboard() {
+        document.getElementById('tac-points').textContent = tacPoints;
+        document.getElementById('tac-streak').textContent = tacStreak;
+        document.getElementById('tac-correct').textContent = tacCorrect;
+    }
+
+    function setPadColor(padMesh, hexColor) {
+        if (!padMesh || !padMesh.children[0]) return;
+        padMesh.children[0].material.color.setHex(hexColor);
+        padMesh.children[0].material.emissive.setHex(hexColor);
+    }
+
+    function triggerNextTacticsStep() {
+        if (!isTacticsRunning || isResting) return;
+        const mode = document.getElementById('tactics-mode-select').value;
+        tacticsChallengeState.mode = mode;
+        tacticsChallengeState.active = true;
+        tacticsChallengeState.resolved = false;
+        tacticsChallengeState.expiresAt = performance.now() + 2500;
+
+        if (mode === 'feint') {
+            const colors = [
+                { code: 'GREEN', hex: 0x10b981, label: '🟢 أخضر: اضرب الآن! (HIT)', say: 'Hit!' },
+                { code: 'RED', hex: 0xef4444, label: '🔴 أحمر: خدعة! تفادَ برأسك (SLIP)', say: 'Feint! Slip!' },
+                { code: 'YELLOW', hex: 0xf59e0b, label: '🟡 أصفر: تراجع للخلف (PULL BACK)', say: 'Pull back!' }
+            ];
+            const pick = colors[Math.floor(Math.random() * colors.length)];
+            tacticsChallengeState.signalColor = pick.code;
+            const isLeft = Math.random() < 0.5;
+            resetPadsToGuardPosition();
+            const targetPad = isLeft ? leftPadMesh : rightPadMesh;
+            setPadColor(targetPad, pick.hex);
+            targetPad.position.set(isLeft ? 0.25 : -0.25, 1.52, 0.88);
+            targetPad.scale.set(1.25, 1.25, 1.25);
+            padAnimState.camTargetX = isLeft ? 0.65 : 0.35;
+            padAnimState.camTargetY = 0.42;
+
+            document.getElementById('tactics-cue-label').textContent = pick.label;
+            syncComboText(pick.label);
+            speakText(pick.say);
+
+        } else if (mode === 'mirror') {
+            const dirs = [
+                { x: -0.55, label: '⬅ الخصم يتحرك لليسار.. دور لليسار (PIVOT L)', say: 'Angle Left' },
+                { x:  0.55, label: '➔ الخصم يتحرك لليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
+                { x:  0.00, label: '🎯 الخصم في المنتصف.. أطلق 1-2!', say: 'Center! One Two!' }
+            ];
+            const pick = dirs[Math.floor(Math.random() * dirs.length)];
+            tacticsChallengeState.targetAngleX = pick.x;
+            if (modelRoot) {
+                modelRoot.position.x = pick.x;
+                modelRoot.rotation.y = facingFlip + (pick.x * -0.4);
+            }
+            document.getElementById('tactics-cue-label').textContent = pick.label;
+            syncComboText(pick.label);
+            speakText(pick.say);
+            if (pick.x === 0) playComboSequence(['JAB', 'CROSS']);
+
+        } else if (mode === 'pyramid') {
+            const pool = ['JAB', 'CROSS', 'L_HOOK', 'R_HOOK', 'L_UPPER', 'SLIP_L', 'SLIP_R', 'STEP_BACK'];
+            if (tacticsChallengeState.pyramidSeq.length >= 8) {
+                tacticsChallengeState.pyramidSeq = ['JAB'];
+                tacStreak = 0;
+            }
+            const seq = tacticsChallengeState.pyramidSeq;
+            const comboStr = seq.map(k => MOVES[k].en).join(' ➔ ');
+            document.getElementById('tactics-title-label').textContent = `3️⃣ PYRAMID LEVEL ${seq.length} / 8`;
+            document.getElementById('tactics-cue-label').textContent = comboStr;
+            syncComboText(comboStr);
+            playComboSequence(seq);
+
+            // تجهيز المستوى التالي بإضافة حركة جديدة
+            const nextMove = pool[Math.floor(Math.random() * pool.length)];
+            tacticsChallengeState.pyramidSeq = [...seq, nextMove];
+            tacStreak = seq.length;
+            tacPoints += 15;
+            tacCorrect++;
+            updateTacticsScoreboard();
+
+        } else if (mode === 'pocket') {
+            const closeMoves = [
+                { punch: 'L_UPPER', stick: 'SWEEP_FROM_LEFT', label: '🔥 مسافة قريبة: انحنِ + 5 Lead Upper', say: 'Duck and Lead Upper' },
+                { punch: 'R_UPPER', stick: 'SWEEP_FROM_RIGHT', label: '🔥 مسافة قريبة: انحنِ + 6 Rear Upper', say: 'Duck and Rear Upper' },
+                { punch: 'L_HOOK', stick: 'THRUST_RIGHT', label: '🔥 مسافة قريبة: تفادَ + 3 Short Hook', say: 'Slip and Short Hook' }
+            ];
+            const pick = closeMoves[Math.floor(Math.random() * closeMoves.length)];
+            presentPadForPunch(pick.punch, false);
+            stickState.type = pick.stick; stickState.progress = 0; stickState.evaluated = false; stickState.duration = 0.95; stickState.active = true;
+            document.getElementById('tactics-cue-label').textContent = pick.label;
+            syncComboText(pick.label);
+            speakText(pick.say);
+
+        } else if (mode === 'archetype') {
+            const arch = document.getElementById('opponent-archetype-type').value;
+            if (arch === 'swarmer') {
+                stickState.type = 'THRUST_CENTER'; stickState.progress = 0; stickState.evaluated = false; stickState.duration = 0.75; stickState.active = true;
+                document.getElementById('tactics-cue-label').textContent = '🐂 هجوم ضاغط! تراجع للخلف ورد بأبركت (5-2)';
+                speakText('Swarmer attack! Uppercut Cross!');
+            } else if (arch === 'outboxer') {
+                document.getElementById('tactics-cue-label').textContent = '🦒 خصم بعيد: ادخل بخطوة سريعة (Step In ➔ 1-1-2)';
+                speakText('Close distance! Double Jab Cross!');
+            } else {
+                stickState.type = 'THRUST_RIGHT'; stickState.progress = 0; stickState.evaluated = false; stickState.duration = 0.90; stickState.active = true;
+                document.getElementById('tactics-cue-label').textContent = '🔄 خصم أعسر: تفادَ اليسرى القوية لليسار ورد بـ Cross!';
+                speakText('Southpaw left! Slip Left Cross!');
+            }
+            syncComboText(document.getElementById('tactics-cue-label').textContent);
+        }
+    }
+
+    function evaluateTacticsCameraInteraction() {
+        if (!isTacticsRunning || !tacticsChallengeState.active || tacticsChallengeState.resolved) return;
+        const mode = tacticsChallengeState.mode;
+
+        if (mode === 'feint') {
+            const tx = padAnimState.camTargetX;
+            const ty = padAnimState.camTargetY;
+            const punched = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
+            const didPunch = punched(curLeftWrist) || punched(curRightWrist) || punched(predictedLeftWrist) || punched(predictedRightWrist);
+            const dx = Math.abs(curNoseX - strikeStartX);
+            const dy = curNoseY - strikeStartY;
+
+            if (tacticsChallengeState.signalColor === 'GREEN' && didPunch) {
+                tacticsChallengeState.resolved = true;
+                tacPoints += 15; tacStreak++; tacCorrect++;
+                playBoxingSFX('PAD_HIT');
+                document.getElementById('tactics-cue-label').textContent = '✅ قرار صائب! ضربة خاطفة (+15)';
+                updateTacticsScoreboard();
+            } else if (tacticsChallengeState.signalColor === 'RED') {
+                if (didPunch) {
+                    tacticsChallengeState.resolved = true;
+                    tacStreak = 0;
+                    playBoxingSFX('GUARD_WARN');
+                    document.getElementById('tactics-cue-label').textContent = '❌ وقعت في الخدعة! (كف أحمر لا يُضرب)';
+                    updateTacticsScoreboard();
+                } else if (dx > 0.08) {
+                    tacticsChallengeState.resolved = true;
+                    tacPoints += 20; tacStreak++; tacCorrect++;
+                    document.getElementById('tactics-cue-label').textContent = '✅ تفادي ذكي للخدعة! (+20)';
+                    updateTacticsScoreboard();
+                }
+            } else if (tacticsChallengeState.signalColor === 'YELLOW' && dy < -0.04) {
+                tacticsChallengeState.resolved = true;
+                tacPoints += 15; tacStreak++; tacCorrect++;
+                document.getElementById('tactics-cue-label').textContent = '✅ تراجع موفق في الوقت المناسب! (+15)';
+                updateTacticsScoreboard();
+            }
+        } else if (mode === 'mirror') {
+            const targetX = tacticsChallengeState.targetAngleX;
+            const noseOffset = curNoseX - strikeStartX;
+            if ((targetX < -0.2 && noseOffset < -0.07) || (targetX > 0.2 && noseOffset > 0.07)) {
+                tacticsChallengeState.resolved = true;
+                tacPoints += 15; tacStreak++; tacCorrect++;
+                document.getElementById('tactics-cue-label').textContent = '✅ قطع زاوية ناجح ومواجهة الخصم! (+15)';
+                updateTacticsScoreboard();
+            }
+        }
+    }
+
+    function toggleTacticsSession() { if (isTacticsRunning) stopTacticsSession(); else startTacticsSession(); }
+    function startTacticsSession() {
+        isTacticsRunning = true; isResting = false;
+        tacticsChallengeState.pyramidSeq = ['JAB'];
+        onTacticsModeChange();
+        if (!isCamRefActive && document.getElementById('tactics-mode-select').value !== 'pyramid') {
+            startCameraReferee();
+        }
+        document.getElementById('tactics-start-btn').textContent = '⏹ إيقاف التكتيك';
+        document.getElementById('tactics-start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف';
+        document.getElementById('tv-start-btn').classList.add('stop');
+
+        playBoxingSFX('BELL');
+        speakText(`Round ${currentRound}. Tactical drill!`);
+        startSharedRoundClock('tactics');
+
+        setTimeout(triggerNextTacticsStep, 900);
+        tacticsLoopTimer = setInterval(() => {
+            if (isTacticsRunning && !isResting && !isComboBusy) triggerNextTacticsStep();
+        }, 3200);
+    }
+
+    function stopTacticsSession() {
+        isTacticsRunning = false;
+        tacticsChallengeState.active = false;
+        stickState.active = false;
+        stopSharedRoundClock();
+        clearInterval(tacticsLoopTimer);
+        if (leftPadMesh) setPadColor(leftPadMesh, 0x10b981);
+        if (rightPadMesh) setPadColor(rightPadMesh, 0x0ea5e9);
+        resetPadsToGuardPosition();
+        if (modelRoot) { modelRoot.position.x = 0; modelRoot.rotation.y = facingFlip; }
+        document.getElementById('tactics-start-btn').textContent = '🎯 ابدأ التدريب التكتيكي';
+        document.getElementById('tactics-start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ';
+        document.getElementById('tv-start-btn').classList.remove('stop');
+    }
+
+    function resetTacticsSession() {
+        stopTacticsSession();
+        resetSharedRoundState();
+        tacPoints = 0; tacStreak = 0; tacCorrect = 0;
+        tacticsChallengeState.pyramidSeq = ['JAB'];
+        updateTacticsScoreboard();
     }
 
     // =========================================================================
@@ -1426,7 +1778,7 @@
     }
 
     function updateCamToggleButtonsUI(active) {
-        const ids = ['cam-ref-toggle-btn', 'cam-ref-toggle-btn-2', 'cam-ref-toggle-btn-3'];
+        const ids = ['cam-ref-toggle-btn', 'cam-ref-toggle-btn-2', 'cam-ref-toggle-btn-3', 'cam-ref-toggle-btn-4'];
         ids.forEach(id => {
             const btn = document.getElementById(id);
             if (!btn) return;
@@ -1521,7 +1873,6 @@
             ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2); ctx.stroke();
             ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
 
-            // فحص الإصابة باستخدام الموضع الفعلي أو المتوقع (Trajectory Prediction)
             if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
                 const tx = padAnimState.camTargetX; const ty = padAnimState.camTargetY;
                 ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2); ctx.stroke();
@@ -1537,6 +1888,7 @@
                 }
             }
 
+            if (activeTabName === 'tactics') evaluateTacticsCameraInteraction();
             if (counterWindow.active) evaluateCounterPunch(counterWindow.targetSide === 'LEFT' ? 0.32 : 0.68, 0.45);
             if (stickState.active && !stickState.evaluated && stickState.progress >= 0.15 && stickState.progress <= 0.95) evaluatePlayerDefenseMove();
 
@@ -1547,6 +1899,7 @@
 
     function handleKalmanWorkerResult(data) {
         curNoseX = data.nose.x; curNoseY = data.nose.y;
+        curShoulderSlope = data.shoulderSlope || 0;
         if (data.leftWrist) curLeftWrist = data.leftWrist;
         if (data.rightWrist) curRightWrist = data.rightWrist;
         if (data.predLeftWrist) predictedLeftWrist = data.predLeftWrist;
@@ -1588,6 +1941,10 @@
                 cntPoints += 10;
                 updateCounterScoreboard();
                 activateCounterFocusMitt();
+            } else if (activeTabName === 'tactics') {
+                tacPoints += 15; tacStreak++; tacCorrect++;
+                updateTacticsScoreboard();
+                document.getElementById('tactics-cue-label').textContent = '✅ تفادي ناجح في المسافة القريبة! (+15)';
             } else {
                 refSuccessCount++;
                 refPoints += 10;
@@ -1681,7 +2038,6 @@
         const speedEl = document.getElementById(activeTabName === 'counter' ? 'counter-speed' : 'stick-speed');
         let speedMult = speedEl ? parseFloat(speedEl.value) : 1.0;
 
-        // التكييف الذكي: تسريع العصا تدريجياً إذا كان رد فعل اللاعب سريعاً (< 400ms)
         if (adaptiveDifficultyEnabled && activeTabName === 'counter' && cntBestMs && cntBestMs < 400) {
             speedMult *= 1.15;
         }
@@ -1965,10 +2321,15 @@
 
     function animate3D() {
         requestAnimationFrame(animate3D);
-        if (isAudioOnlyMode) return; // توفير كامل للـ GPU والبطارية في وضع الصوت فقط
+        if (isAudioOnlyMode) return;
         const delta = clock.getDelta();
         if (activeTabName === 'stick' || activeTabName === 'counter') updateStickAnimation(delta);
         else if (activeTabName === 'mitts') updateCoachPadsAnimation(delta);
+        else if (activeTabName === 'tactics') {
+            updateStickAnimation(delta);
+            updateCoachPadsAnimation(delta);
+            if (mixer) mixer.update(delta);
+        }
         else if (mixer) mixer.update(delta);
         if (renderer && scene && camera) renderer.render(scene, camera);
     }
@@ -1986,7 +2347,7 @@
     function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels(); }
 
     function updateBurnoutVisuals(active) {
-        ['timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display'].forEach(id => {
+        ['timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.toggle('burnout', active);
         });
@@ -2054,13 +2415,11 @@
             timeLeft--;
             updateTimerDisplay();
 
-            // تفعيل تحدي آخر 30 ثانية (Burnout Finisher)
             if (!isResting && burnoutEnabled && timeLeft === 30) {
                 isBurnoutActiveNow = true;
                 updateBurnoutVisuals(true);
                 speakText("Last 30 seconds! Non-stop speed!");
             }
-            // صوت طرق الخشب عند آخر 10 ثوانٍ
             if (!isResting && timeLeft === 10) {
                 playBoxingSFX('CLAPPER');
             }
@@ -2074,13 +2433,14 @@
                     if (activeClockOwner === 'mitts') stopMittsSession();
                     else if (activeClockOwner === 'stick') stopStickSession();
                     else if (activeClockOwner === 'counter') stopCounterSession();
+                    else if (activeClockOwner === 'tactics') stopTacticsSession();
                     else stopSession();
                     saveSessionRecord(activeClockOwner, { summary: 'جولات مكتملة', bestMs: cntBestMs });
                     resetSharedRoundState(); speakText("Workout complete!"); return;
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}, Guard drops: ${sessionGuardViolations}`);
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}, Tactics: ${tacPoints}`);
                     speakText(advice);
                 } else speakText("Rest time.");
             } else {
@@ -2091,7 +2451,7 @@
     }
 
     function updateRoundLabels() {
-        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label'].forEach(id => {
+        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label', 'tactics-round-label'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = `الجولة ${currentRound} / ${totalRounds}`;
         });
@@ -2100,7 +2460,7 @@
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display'].forEach(id => {
+        ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
             const el = document.getElementById(id); if (el) el.textContent = `${m}:${s}`;
         });
     }
@@ -2141,7 +2501,6 @@
         if (isBurnoutActiveNow) {
             pool = BURNOUT_TRAIN_COMBOS;
         } else if (adaptiveDifficultyEnabled && sessionGuardViolations >= 2) {
-            // التكييف الذكي: إدراج كومبوهات دفاعية لتعويد الملاكم على رفع اليدين بعد اللكم
             pool = DEFENSIVE_CORRECTION_COMBOS;
         } else {
             const source = document.getElementById('combo-source').value;
@@ -2245,7 +2604,7 @@
 
     function updateTimeSetting() {
         roundDuration = parseInt(document.getElementById('time-select').value);
-        if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning) {
+        if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning && !isTacticsRunning) {
             timeLeft = roundDuration;
             updateTimerDisplay();
         }
