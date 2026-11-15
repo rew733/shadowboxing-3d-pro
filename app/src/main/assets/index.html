@@ -17,6 +17,7 @@
             --accent: #f59e0b;
             --defense: #38bdf8;
             --stick: #f43f5e;
+            --counter: #a855f7;
             --danger: #ef4444;
             --success: #10b981;
             --text: #f9fafb;
@@ -27,10 +28,11 @@
         body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 8px; }
         .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 9px; }
         
-        .tabs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 10px; font-size: 0.64rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
+        .tabs { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: var(--panel); padding: 4px; border-radius: 14px; border: 1px solid var(--border); }
+        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 8px 1px; border-radius: 9px; font-size: 0.58rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
         .tab-btn.active { background: var(--accent); color: #000; }
         .tab-btn.stick-tab.active { background: var(--stick); color: #fff; }
+        .tab-btn.counter-tab.active { background: var(--counter); color: #fff; }
         .tab-btn.tv-tab { color: #38bdf8; }
 
         .tab-content { display: none; flex-direction: column; gap: 9px; }
@@ -52,6 +54,7 @@
             box-shadow: 0 4px 14px rgba(0,0,0,0.75); transition: border-color 0.2s, box-shadow 0.2s;
         }
         .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 16px rgba(16, 185, 129, 0.9); }
+        .cam-pip-box.hit-counter { border-color: var(--counter); box-shadow: 0 0 18px rgba(168, 85, 247, 0.95); }
         .cam-pip-box.hit-fail { border-color: var(--danger); box-shadow: 0 0 16px rgba(239, 68, 68, 0.9); }
         #pose-video { display: none; }
         #pose-canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
@@ -119,17 +122,21 @@
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
         .stick-box { background: rgba(244, 63, 94, 0.08); border: 2px solid var(--stick); border-radius: 14px; padding: 10px; text-align: center; min-height: 86px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
-        .stick-move-title { font-size: 1.15rem; color: #fda4af; font-weight: 900; direction: ltr; }
+        .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
+        .stick-move-title { font-size: 1.12rem; color: #fda4af; font-weight: 900; direction: ltr; }
+        .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
         .stick-dodge-cue { font-size: 0.92rem; color: #fff; font-weight: 800; }
         .stick-sub-hint { font-size: 0.72rem; color: var(--muted); }
+        
         .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
         .score-card { background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px; padding: 6px; text-align: center; }
         .score-card span { display: block; font-size: 0.65rem; color: var(--muted); }
-        .score-card strong { font-size: 1.05rem; font-weight: 900; }
+        .score-card strong { font-size: 1.02rem; font-weight: 900; }
 
         .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 9px; }
         .btn { background: var(--accent); color: #000; border: none; padding: 12px; border-radius: 12px; font-size: 0.92rem; font-weight: 800; cursor: pointer; }
         .btn.stick-btn { background: var(--stick); color: #fff; }
+        .btn.counter-btn { background: var(--counter); color: #fff; }
         .btn.cam-ref-btn { background: var(--defense); color: #000; }
         .btn.danger { background: var(--danger); color: #fff; }
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
@@ -160,6 +167,7 @@
     <div class="tabs">
         <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
         <button class="tab-btn stick-tab" onclick="switchTab('stick', this)">🥢 العصا</button>
+        <button class="tab-btn counter-tab" onclick="switchTab('counter', this)">⚡ كاونتر</button>
         <button class="tab-btn tv-tab" onclick="enterTvFullscreen()">📺 TV</button>
         <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
         <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبو</button>
@@ -195,6 +203,7 @@
         </div>
     </div>
 
+    <!-- التبويب 1: التدريب -->
     <div id="tab-train" class="tab-content active">
         <div class="panel">
             <div class="status-row">
@@ -204,7 +213,7 @@
             <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ للتدريب العادي أو اختر تبويب 🥢 العصا</span>
+                <span id="combo-sub">اضغط ابدأ للتدريب العادي أو اختر 🥢 العصا أو ⚡ كاونتر</span>
             </div>
         </div>
 
@@ -214,6 +223,7 @@
         </div>
     </div>
 
+    <!-- التبويب 2: العصا (دفاع صرف كما هو تماماً) -->
     <div id="tab-stick" class="tab-content">
         <div class="panel">
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
@@ -240,7 +250,7 @@
             </div>
 
             <div class="stick-box">
-                <div class="stick-move-title" id="stick-attack-label">🥢 SPARRING STICK + CAM</div>
+                <div class="stick-move-title" id="stick-attack-label">🥢 SPARRING STICK (DEFENSE ONLY)</div>
                 <div class="stick-dodge-cue" id="stick-dodge-label">فعّل الكاميرا أو ابدأ اشتباك العصا</div>
                 <div class="stick-sub-hint" id="stick-hint-label">في الرول: انحنِ للأسفل واخرج في عكس اتجاه قدوم العصا</div>
             </div>
@@ -261,7 +271,7 @@
             </div>
 
             <div style="text-align: center; margin-top: 7px;">
-                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForStick()">📺 عرض العصا والكاميرا على التلفزيون</button>
+                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('stick')">📺 عرض العصا على التلفزيون</button>
             </div>
         </div>
 
@@ -271,6 +281,65 @@
         </div>
     </div>
 
+    <!-- التبويب 3: الرد الهجومي بعد التفادي (Dodge & Counter Vision) -->
+    <div id="tab-counter" class="tab-content">
+        <div class="panel">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-2" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
+                <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة الوقفة</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div class="setting-item" style="margin-bottom: 0;">
+                    <span class="setting-header"><span>سرعة الاشتباك:</span></span>
+                    <select id="counter-speed">
+                        <option value="0.70">بطيئة (تعلم الكاونتر)</option>
+                        <option value="1.0" selected>متوسطة (واقعية)</option>
+                        <option value="1.35">سريعة (اشتباك حاد)</option>
+                    </select>
+                </div>
+                <div class="setting-item" style="margin-bottom: 0;">
+                    <span class="setting-header"><span>توجيه الصوت:</span></span>
+                    <select id="counter-voice-mode">
+                        <option value="voiced" selected>نطق الكاونتر عند ظهور الكف</option>
+                        <option value="silent">صامت (بصري فقط)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="stick-box counter-theme">
+                <div class="stick-move-title" id="counter-phase-label">⚡ DODGE & COUNTER VISION</div>
+                <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ثم اضرب كف المدرب المضيء!</div>
+                <div class="stick-sub-hint" id="counter-hint-label">تراقب الكاميرا حركة رأسك للتفادي ثم حركة يدك لإصابة الهدف (+20)</div>
+            </div>
+
+            <div class="score-grid">
+                <div class="score-card">
+                    <span>نقاط الكاونتر</span>
+                    <strong id="cnt-points" style="color: var(--counter);">0</strong>
+                </div>
+                <div class="score-card">
+                    <span>أسرع رد فعل</span>
+                    <strong id="cnt-best-ms" style="color: var(--success);">-- ms</strong>
+                </div>
+                <div class="score-card">
+                    <span>كاونتر ناجح</span>
+                    <strong id="cnt-hits" style="color: var(--accent);">0</strong>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 7px;">
+                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('counter')">📺 عرض الكاونتر على التلفزيون</button>
+            </div>
+        </div>
+
+        <div class="main-btns">
+            <button class="btn counter-btn" id="counter-start-btn" onclick="toggleCounterSession()">⚡ ابدأ تدريب الكاونتر</button>
+            <button class="btn secondary" onclick="resetCounterSession()">تصفير</button>
+        </div>
+    </div>
+
+    <!-- التبويب 4: الإتقان -->
     <div id="tab-drill" class="tab-content">
         <div class="panel">
             <div class="setting-item">
@@ -305,6 +374,7 @@
         </div>
     </div>
 
+    <!-- التبويب 5: الكومبوهات -->
     <div id="tab-combos" class="tab-content">
         <div class="panel">
             <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
@@ -353,6 +423,7 @@
         </div>
     </div>
 
+    <!-- التبويب 6: الضبط -->
     <div id="tab-settings" class="tab-content">
         <div class="panel">
             <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
@@ -408,12 +479,9 @@
     let activeTabName = 'train';
 
     function switchTab(tabId, btn) {
-        if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) {
-            stopStickSession();
-        }
-        if (activeTabName === 'train' && tabId === 'stick' && isRunning) {
-            stopSession();
-        }
+        if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) stopStickSession();
+        if (activeTabName === 'counter' && tabId !== 'counter' && isCounterRunning) stopCounterSession();
+        if (activeTabName === 'train' && (tabId === 'stick' || tabId === 'counter') && isRunning) stopSession();
 
         activeTabName = tabId;
         document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -426,36 +494,35 @@
     }
 
     function updateStageEntityVisibility() {
-        const isStickTab = (activeTabName === 'stick');
+        const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const stageTag = document.getElementById('stage-mode-tag');
         const flipBtn = document.getElementById('flip-btn');
         const camBtn = document.getElementById('cam-btn');
 
-        if (modelRoot) modelRoot.visible = !isStickTab;
-        if (stickGroup) stickGroup.visible = isStickTab;
+        if (modelRoot) modelRoot.visible = !isStickOrCounter;
+        if (stickGroup) stickGroup.visible = isStickOrCounter;
+        if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
 
-        if (isStickTab) {
-            stageTag.textContent = isCamRefActive ? 'AR CAM REFEREE' : '3D SPARRING STICK';
+        if (activeTabName === 'stick') {
+            stageTag.textContent = isCamRefActive ? 'AR STICK DEFENSE' : '3D SPARRING STICK';
             stageTag.style.color = '#fda4af';
             flipBtn.style.display = 'none';
             camBtn.style.display = 'none';
-            if (camera) {
-                camera.position.set(0, 1.35, 2.35);
-                camera.lookAt(0, 1.25, 0);
-            }
+            if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
+        } else if (activeTabName === 'counter') {
+            stageTag.textContent = '⚡ DODGE & COUNTER';
+            stageTag.style.color = '#d8b4fe';
+            flipBtn.style.display = 'none';
+            camBtn.style.display = 'none';
+            if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
             stageTag.textContent = '70 PRO COMBOS';
             stageTag.style.color = '#f59e0b';
             flipBtn.style.display = 'block';
             camBtn.style.display = 'block';
             if (camera) {
-                if (isFPV) {
-                    camera.position.set(0, 1.30, 2.45);
-                    camera.lookAt(0, 0.85, 0);
-                } else {
-                    camera.position.set(0.15, 1.25, 3.05);
-                    camera.lookAt(0, 0.92, 0);
-                }
+                if (isFPV) { camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0); }
+                else { camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0); }
             }
         }
     }
@@ -476,10 +543,10 @@
     function enterTvFullscreen() {
         document.body.classList.add('tv-fullscreen');
         document.getElementById('tv-actions-bar').style.display = 'flex';
-        if (activeTabName !== 'stick' && !isFPV) toggleCameraView();
+        if (activeTabName !== 'stick' && activeTabName !== 'counter' && !isFPV) toggleCameraView();
 
         const tvBtn = document.getElementById('tv-start-btn');
-        const activeNow = (activeTabName === 'stick') ? isStickRunning : isRunning;
+        const activeNow = (activeTabName === 'stick') ? isStickRunning : (activeTabName === 'counter' ? isCounterRunning : isRunning);
         tvBtn.textContent = activeNow ? '⏹ إيقاف' : '▶ ابدأ';
         if (activeNow) tvBtn.classList.add('stop'); else tvBtn.classList.remove('stop');
 
@@ -489,8 +556,8 @@
         resize3DRenderer();
     }
 
-    function enterTvFullscreenForStick() {
-        activeTabName = 'stick';
+    function enterTvFullscreenForMode(modeName) {
+        activeTabName = modeName;
         updateStageEntityVisibility();
         enterTvFullscreen();
     }
@@ -504,15 +571,13 @@
     }
 
     function toggleSessionFromTV() {
-        if (activeTabName === 'stick') {
-            toggleStickSession();
-        } else {
-            if (isRunning) stopSession(); else startSession();
-        }
+        if (activeTabName === 'stick') toggleStickSession();
+        else if (activeTabName === 'counter') toggleCounterSession();
+        else { if (isRunning) stopSession(); else startSession(); }
     }
 
     // =========================================================================
-    // نظام المراقبة بالكاميرا الأمامية وتحكيم الدفاع (Computer Vision AR Referee)
+    // نظام المراقبة بالكاميرا الأمامية (تتبع الرأس + تتبع اللكمات المضادة)
     // =========================================================================
     let isCamRefActive = false;
     let camStream = null;
@@ -521,11 +586,26 @@
 
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
     let curNoseX = 0.5, curNoseY = 0.45, curShoulderSpan = 0.25;
+    let curLeftWrist = null, curRightWrist = null;
+    let prevLeftWrist = null, prevRightWrist = null;
     let hasPoseFrame = false;
 
-    let refPoints = 0;
-    let refSuccessCount = 0;
-    let refHitCount = 0;
+    // إحصائيات تبويب العصا (دفاع فقط)
+    let refPoints = 0, refSuccessCount = 0, refHitCount = 0;
+
+    // إحصائيات وحالة تبويب الكاونتر (دفاع + هجوم مضاد)
+    let isCounterRunning = false;
+    let counterLoopTimer = null;
+    let counterBag = [];
+    let cntPoints = 0, cntHitsCount = 0, cntBestMs = null;
+
+    let counterWindow = {
+        active: false,
+        startTime: 0,
+        expiresAt: 0,
+        targetSide: 'LEFT', // 'LEFT' or 'RIGHT' on screen
+        punchName: 'CROSS'
+    };
 
     function updateRefereeScoreboard() {
         document.getElementById('ref-points').textContent = refPoints;
@@ -535,11 +615,14 @@
         document.getElementById('ref-ratio').textContent = `${refSuccessCount} / ${refHitCount}`;
     }
 
+    function updateCounterScoreboard() {
+        document.getElementById('cnt-points').textContent = cntPoints;
+        document.getElementById('cnt-hits').textContent = cntHitsCount;
+        document.getElementById('cnt-best-ms').textContent = cntBestMs ? `${cntBestMs} ms` : '-- ms';
+    }
+
     function calibrateStance() {
-        if (!hasPoseFrame) {
-            document.getElementById('stick-hint-label').textContent = 'قف أمام الكاميرا أولاً ليتم التقاط رأسك وكتفيك';
-            return;
-        }
+        if (!hasPoseFrame) return;
         strikeStartX = curNoseX;
         strikeStartY = curNoseY;
         strikeStartSpan = curShoulderSpan;
@@ -553,20 +636,32 @@
     }
 
     async function toggleCameraReferee() {
-        if (isCamRefActive) {
-            stopCameraReferee();
-        } else {
-            await startCameraReferee();
-        }
+        if (isCamRefActive) stopCameraReferee();
+        else await startCameraReferee();
+    }
+
+    function syncCamButtonsUI(isActive, textOverride) {
+        const b1 = document.getElementById('cam-ref-toggle-btn');
+        const b2 = document.getElementById('cam-ref-toggle-btn-2');
+        [b1, b2].forEach(b => {
+            if (!b) return;
+            if (textOverride) { b.textContent = textOverride; return; }
+            if (isActive) {
+                b.textContent = '⏹ إيقاف مراقبة الكاميرا';
+                b.classList.add('danger');
+            } else {
+                b.textContent = '📷 تفعيل مراقبة الكاميرا';
+                b.classList.remove('danger');
+            }
+        });
     }
 
     async function startCameraReferee() {
-        const btn = document.getElementById('cam-ref-toggle-btn');
         const pipBox = document.getElementById('cam-pip-box');
         const videoEl = document.getElementById('pose-video');
 
         try {
-            btn.textContent = '⏳ جاري فتح الكاميرا...';
+            syncCamButtonsUI(false, '⏳ جاري فتح الكاميرا...');
             camStream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'user', width: { ideal: 320 }, height: { ideal: 240 } },
                 audio: false
@@ -576,9 +671,8 @@
 
             isCamRefActive = true;
             pipBox.style.display = 'block';
-            btn.textContent = '⏹ إيقاف مراقبة الكاميرا';
-            btn.classList.add('danger');
-            document.getElementById('stage-mode-tag').textContent = 'AR CAM REFEREE';
+            syncCamButtonsUI(true);
+            updateStageEntityVisibility();
 
             if (!poseDetector && typeof Pose !== 'undefined') {
                 poseDetector = new Pose({
@@ -603,8 +697,7 @@
             processVideoFrame();
 
         } catch (err) {
-            btn.textContent = '📷 تفعيل مراقبة الكاميرا';
-            document.getElementById('stick-hint-label').textContent = 'تعذر فتح الكاميرا، تأكد من منح الإذن للتطبيق';
+            syncCamButtonsUI(false);
         }
     }
 
@@ -616,12 +709,8 @@
             camStream = null;
         }
         document.getElementById('cam-pip-box').style.display = 'none';
-        const btn = document.getElementById('cam-ref-toggle-btn');
-        btn.textContent = '📷 تفعيل مراقبة الكاميرا';
-        btn.classList.remove('danger');
-        if (activeTabName === 'stick') {
-            document.getElementById('stage-mode-tag').textContent = '3D SPARRING STICK';
-        }
+        syncCamButtonsUI(false);
+        updateStageEntityVisibility();
     }
 
     function onPoseResults(results) {
@@ -637,6 +726,8 @@
         const nose = lm[0];
         const lShoulder = lm[11];
         const rShoulder = lm[12];
+        const lWrist = lm[15];
+        const rWrist = lm[16];
 
         if (nose && lShoulder && rShoulder) {
             hasPoseFrame = true;
@@ -644,41 +735,69 @@
             curNoseY = nose.y;
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
 
+            if (lWrist && lWrist.visibility > 0.4) curLeftWrist = { x: lWrist.x, y: lWrist.y };
+            if (rWrist && rWrist.visibility > 0.4) curRightWrist = { x: rWrist.x, y: rWrist.y };
+
             if (!stickState.active) {
                 strikeStartX = curNoseX;
                 strikeStartY = curNoseY;
                 strikeStartSpan = curShoulderSpan;
             }
 
+            // رسم دائرة المرجع للرأس
             ctx.strokeStyle = '#f43f5e';
             ctx.lineWidth = 2.5;
             ctx.beginPath();
-            ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 16, 0, Math.PI * 2);
+            ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 15, 0, Math.PI * 2);
             ctx.stroke();
 
+            // رسم نقطة الرأس الحالية
             ctx.fillStyle = '#38bdf8';
             ctx.beginPath();
             ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 7, 0, Math.PI * 2);
             ctx.fill();
 
+            // رسم المعصمين
+            [curLeftWrist, curRightWrist].forEach(w => {
+                if (w) {
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.arc(w.x * canvasEl.width, w.y * canvasEl.height, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // إذا كانت نافذة الكاونتر نشطة، ارسم دائرة الهدف البنفسجية على شاشة الكاميرا وافحص اللكمة
+            if (counterWindow.active) {
+                const targetX = counterWindow.targetSide === 'LEFT' ? 0.30 : 0.70;
+                const targetY = 0.45;
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(targetX * canvasEl.width, targetY * canvasEl.height, 24, 0, Math.PI * 2);
+                ctx.stroke();
+
+                evaluateCounterPunch(targetX, targetY);
+            }
+
+            // تقييم التفادي أثناء اندفاع العصا
             if (stickState.active && !stickState.evaluated && stickState.progress >= 0.30 && stickState.progress <= 0.85) {
                 evaluatePlayerDefenseMove();
             }
+
+            prevLeftWrist = curLeftWrist ? { ...curLeftWrist } : null;
+            prevRightWrist = curRightWrist ? { ...curRightWrist } : null;
         }
     }
 
     function evaluatePlayerDefenseMove() {
-        // الكاميرا الأمامية معكوسة أفقياً:
-        // تحرك اللاعب الحقيقي لليمين => dx > 0
-        // تحرك اللاعب الحقيقي لليسار => dx < 0
-        // انخفاض اللاعب للأسفل (Duck/Roll) => dy > 0
         const dx = curNoseX - strikeStartX;
         const dy = curNoseY - strikeStartY;
         const spanShrink = strikeStartSpan - curShoulderSpan;
 
         const SLIP_THRESH = 0.095;
         const DUCK_THRESH = 0.080;
-        const ROLL_SIDE_THRESH = 0.055; // يشترط الخروج من الجانب المعاكس أثناء الرول
+        const ROLL_SIDE_THRESH = 0.055;
         const PULL_THRESH = 0.045;
 
         let dodged = false;
@@ -690,21 +809,11 @@
         } else if (t === 'THRUST_RIGHT') {
             if (dx < -SLIP_THRESH) dodged = true;
         } else if (t === 'SWEEP_FROM_LEFT') {
-            // العصا تندفع من اليسار نحو اليمين:
-            // الرول الصحيح هو الغوص للأسفل (dy > DUCK_THRESH) + الخروج نحو اليسار (dx < -ROLL_SIDE_THRESH) عكس اتجاه العصا
-            if (dy > DUCK_THRESH && dx < -ROLL_SIDE_THRESH) {
-                dodged = true;
-            } else if (dx > ROLL_SIDE_THRESH) {
-                wrongDirection = true;
-            }
+            if (dy > DUCK_THRESH && dx < -ROLL_SIDE_THRESH) dodged = true;
+            else if (dx > ROLL_SIDE_THRESH) wrongDirection = true;
         } else if (t === 'SWEEP_FROM_RIGHT') {
-            // العصا تندفع من اليمين نحو اليسار:
-            // الرول الصحيح هو الغوص للأسفل (dy > DUCK_THRESH) + الخروج نحو اليمين (dx > ROLL_SIDE_THRESH) عكس اتجاه العصا
-            if (dy > DUCK_THRESH && dx > ROLL_SIDE_THRESH) {
-                dodged = true;
-            } else if (dx < -ROLL_SIDE_THRESH) {
-                wrongDirection = true;
-            }
+            if (dy > DUCK_THRESH && dx > ROLL_SIDE_THRESH) dodged = true;
+            else if (dx < -ROLL_SIDE_THRESH) wrongDirection = true;
         } else if (t === 'THRUST_CENTER' || t === 'UPPER_SWING') {
             if (spanShrink > PULL_THRESH || Math.abs(dx) > SLIP_THRESH * 1.1 || dy > DUCK_THRESH) dodged = true;
         } else if (t === 'DOUBLE_THRUST') {
@@ -713,15 +822,26 @@
 
         if (dodged) {
             stickState.evaluated = true;
-            refSuccessCount++;
-            refPoints += 10;
-            updateRefereeScoreboard();
-            triggerRefereeFeedback(true, '');
+            if (activeTabName === 'counter') {
+                // نجاح التفادي في وضع الكاونتر -> تفعيل كف المدرب للهجوم المضاد فوراً!
+                cntPoints += 10;
+                updateCounterScoreboard();
+                activateCounterFocusMitt();
+            } else {
+                refSuccessCount++;
+                refPoints += 10;
+                updateRefereeScoreboard();
+                triggerRefereeFeedback(true, '');
+            }
         } else if (wrongDirection) {
             stickState.evaluated = true;
-            refHitCount++;
-            updateRefereeScoreboard();
-            triggerRefereeFeedback(false, '✗ خطأ! تحركت في نفس اتجاه العصا، در عكسها!');
+            if (activeTabName === 'counter') {
+                triggerCounterFailFeedback('✗ خطأ! در في عكس اتجاه العصا لفتح زاوية الكاونتر');
+            } else {
+                refHitCount++;
+                updateRefereeScoreboard();
+                triggerRefereeFeedback(false, '✗ خطأ! تحركت في نفس اتجاه العصا، در عكسها!');
+            }
         }
     }
 
@@ -730,13 +850,13 @@
         const pipTag = document.getElementById('cam-pip-status');
 
         if (isSuccess) {
-            pipBox.classList.remove('hit-fail');
+            pipBox.classList.remove('hit-fail', 'hit-counter');
             pipBox.classList.add('hit-ok');
             pipTag.textContent = '✓ +10 DODGED!';
             document.getElementById('stick-hint-label').textContent = '✓ تفادي مثالي في الاتجاه المعاكس (+10 نقاط)';
-            syncComboText('✓ تفادي مثالي (+10)');
+            syncComboText('✓ تفادي ممتاز (+10)');
         } else {
-            pipBox.classList.remove('hit-ok');
+            pipBox.classList.remove('hit-ok', 'hit-counter');
             pipBox.classList.add('hit-fail');
             pipTag.textContent = '✗ HIT!';
             const msg = customFailMsg || '✗ إصابة! لم تتفادَ العصا في الاتجاه الصحيح';
@@ -746,29 +866,217 @@
         }
 
         setTimeout(() => {
-            pipBox.classList.remove('hit-ok', 'hit-fail');
+            pipBox.classList.remove('hit-ok', 'hit-fail', 'hit-counter');
             pipTag.textContent = 'TRACKING';
         }, 850);
     }
 
-    // --- بناء مجسم العصا الإسفنجية ثلاثية الأبعاد وحركاتها ---
+    // =========================================================================
+    // محرك كف المدرب ثلاثي الأبعاد والرد الهجومي (Focus Mitt Counter Engine)
+    // =========================================================================
+    let mittGroup = null;
+
+    function build3DFocusMitt() {
+        mittGroup = new THREE.Group();
+
+        // وسادة كف المدرب الدائرية المضيئة
+        const padGeo = new THREE.CylinderGeometry(0.24, 0.24, 0.08, 32);
+        const padMat = new THREE.MeshStandardMaterial({
+            color: 0xa855f7,
+            emissive: 0x6b21a8,
+            emissiveIntensity: 0.65,
+            roughness: 0.3
+        });
+        const padMesh = new THREE.Mesh(padGeo, padMat);
+        padMesh.rotation.x = Math.PI / 2;
+        mittGroup.add(padMesh);
+
+        // مركز الهدف الذهبي داخل الكف
+        const bullseyeGeo = new THREE.CylinderGeometry(0.09, 0.09, 0.09, 24);
+        const bullseyeMat = new THREE.MeshStandardMaterial({
+            color: 0xf59e0b,
+            emissive: 0xd97706,
+            emissiveIntensity: 0.8
+        });
+        const bullseyeMesh = new THREE.Mesh(bullseyeGeo, bullseyeMat);
+        bullseyeMesh.rotation.x = Math.PI / 2;
+        mittGroup.add(bullseyeMesh);
+
+        mittGroup.position.set(0, 1.32, 0.95);
+        mittGroup.visible = false;
+        scene.add(mittGroup);
+    }
+
+    function activateCounterFocusMitt() {
+        const sc = stickState.currentScenario;
+        if (!sc || !mittGroup) return;
+
+        counterWindow.active = true;
+        counterWindow.startTime = performance.now();
+        counterWindow.expiresAt = counterWindow.startTime + 1900;
+        counterWindow.targetSide = sc.mittSide;
+        counterWindow.punchName = sc.counterPunch;
+
+        // وضع كف المدرب 3D في جهة الهدف (يمين أو يسار الشاشة)
+        const mittX = sc.mittSide === 'LEFT' ? -0.34 : 0.34;
+        mittGroup.position.set(mittX, 1.32, 1.05);
+        mittGroup.visible = true;
+
+        const pipBox = document.getElementById('cam-pip-box');
+        pipBox.classList.remove('hit-fail', 'hit-ok');
+        pipBox.classList.add('hit-counter');
+        document.getElementById('cam-pip-status').textContent = '⚡ HIT TARGET!';
+
+        document.getElementById('counter-phase-label').textContent = `🎯 TARGET OPEN: ${sc.counterPunch}!`;
+        document.getElementById('counter-cue-label').textContent = sc.counterCueAr;
+        document.getElementById('counter-hint-label').textContent = 'سدد لكمة سريعة بيدك نحو الهدف البنفسجي الآن!';
+        syncComboText(`⚡ COUNTER: ${sc.counterPunch}`);
+
+        if (document.getElementById('counter-voice-mode').value === 'voiced') {
+            speakText(sc.counterSay);
+        }
+    }
+
+    function evaluateCounterPunch(targetX, targetY) {
+        if (!counterWindow.active) return;
+
+        const now = performance.now();
+        if (now > counterWindow.expiresAt) {
+            counterWindow.active = false;
+            if (mittGroup) mittGroup.visible = false;
+            triggerCounterFailFeedback('⌛ انتهى وقت الكاونتر! كن أسرع في الرد الهجومي');
+            return;
+        }
+
+        // فحص اندفاع أي من اليدين نحو منطقة الهدف على الشاشة
+        const checkHit = (curW, prevW) => {
+            if (!curW) return false;
+            const dist = Math.hypot(curW.x - targetX, curW.y - targetY);
+            const speed = prevW ? Math.hypot(curW.x - prevW.x, curW.y - prevW.y) : 0.05;
+            return dist < 0.24 && speed > 0.015;
+        };
+
+        if (checkHit(curLeftWrist, prevLeftWrist) || checkHit(curRightWrist, prevRightWrist)) {
+            const reactionMs = Math.max(120, Math.round(now - counterWindow.startTime));
+            counterWindow.active = false;
+            if (mittGroup) mittGroup.visible = false;
+
+            cntPoints += 20;
+            cntHitsCount++;
+            if (!cntBestMs || reactionMs < cntBestMs) cntBestMs = reactionMs;
+            updateCounterScoreboard();
+
+            const pipBox = document.getElementById('cam-pip-box');
+            pipBox.classList.remove('hit-counter', 'hit-fail');
+            pipBox.classList.add('hit-ok');
+            document.getElementById('cam-pip-status').textContent = `+20 (${reactionMs}ms)`;
+
+            document.getElementById('counter-phase-label').textContent = `💥 COUNTER HIT! (${reactionMs} ms)`;
+            document.getElementById('counter-cue-label').textContent = `✓ أصبت الهدف! +20 نقطة إضافية`;
+            document.getElementById('counter-hint-label').textContent = `سرعة رد فعلك الهجومي: ${reactionMs} ملي ثانية`;
+            syncComboText(`💥 +20 BONUS (${reactionMs}ms)`);
+
+            if (navigator.vibrate) navigator.vibrate([60, 40, 80]);
+
+            setTimeout(() => {
+                pipBox.classList.remove('hit-ok');
+                document.getElementById('cam-pip-status').textContent = 'TRACKING';
+            }, 900);
+        }
+    }
+
+    function triggerCounterFailFeedback(msg) {
+        const pipBox = document.getElementById('cam-pip-box');
+        pipBox.classList.remove('hit-ok', 'hit-counter');
+        pipBox.classList.add('hit-fail');
+        document.getElementById('cam-pip-status').textContent = '✗ MISSED';
+        document.getElementById('counter-cue-label').textContent = msg;
+        syncComboText(msg);
+        if (navigator.vibrate) navigator.vibrate(180);
+        setTimeout(() => {
+            pipBox.classList.remove('hit-fail');
+            document.getElementById('cam-pip-status').textContent = 'TRACKING';
+        }, 850);
+    }
+
+    // --- بناء مجسم العصا الإسفنجية وحركاتها (مشتركة بين العصا والكاونتر) ---
     let stickGroup = null;
     let stickState = {
         active: false,
         evaluated: false,
         type: 'IDLE',
         progress: 0,
-        duration: 1.0
+        duration: 1.0,
+        currentScenario: null
     };
 
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT',      name: 'JAB THRUST (طعنة يسارية)',          dodge: '➔ SLIP RIGHT (أمل رأسك يميناً)',           say: 'Slip Right', hint: 'العصا تستهدف يسار رأسك، أمل رأسك يميناً' },
-        { type: 'THRUST_RIGHT',     name: 'CROSS THRUST (طعنة يمينية)',         dodge: '⬅ SLIP LEFT (أمل رأسك يساراً)',             say: 'Slip Left',  hint: 'العصا تستهدف يمين رأسك، أمل رأسك يساراً' },
-        { type: 'SWEEP_FROM_LEFT',  name: 'LEFT HOOK SWEEP (تلويحة من اليسار)', dodge: '⤵⬅ ROLL LEFT (انحنِ واخرج يساراً)',         say: 'Roll Left',  hint: 'العصا تندفع من اليسار لليمين: غص تحتها واخرج يساراً (عكسها)' },
-        { type: 'SWEEP_FROM_RIGHT', name: 'RIGHT HOOK SWEEP (تلويحة من اليمين)',dodge: '⤵➔ ROLL RIGHT (انحنِ واخرج يميناً)',       say: 'Roll Right', hint: 'العصا تندفع من اليمين لليسار: غص تحتها واخرج يميناً (عكسها)' },
-        { type: 'THRUST_CENTER',    name: 'CENTER JAB (اندفاع في المنتصف)',     dodge: '⬇ PULL BACK (اسحب جذعك للخلف)',            say: 'Pull Back',  hint: 'العصا تتجه مباشرة لأنفك، اسحب رأسك للخلف' },
-        { type: 'UPPER_SWING',      name: 'LOW UPPERCUT (ضربة سفلية للذقن)',    dodge: '⬇ STEP BACK (تراجع خطوة للخلف)',           say: 'Step Back',  hint: 'العصا تصعد نحو ذقنك، تراجع للخلف' },
-        { type: 'DOUBLE_THRUST',    name: '1-2 STICK COMBO (طعنة مزدوجة)',      dodge: 'Slip Right ➔ Slip Left',                     say: 'Slip Right, Slip Left', hint: 'طعنتان متتاليتان نحو وجهك: يميناً ثم يساراً' }
+        {
+            type: 'THRUST_LEFT',
+            name: 'JAB THRUST (طعنة يسارية)',
+            dodge: '➔ SLIP RIGHT (أمل رأسك يميناً)',
+            say: 'Slip Right',
+            hint: 'العصا تستهدف يسار رأسك، أمل رأسك يميناً',
+            mittSide: 'RIGHT',
+            counterPunch: '2 CROSS (لكمة خلفية)',
+            counterCueAr: '⚡ اضرب الهدف بكروس يميني سريع!',
+            counterSay: 'Cross!'
+        },
+        {
+            type: 'THRUST_RIGHT',
+            name: 'CROSS THRUST (طعنة يمينية)',
+            dodge: '⬅ SLIP LEFT (أمل رأسك يساراً)',
+            say: 'Slip Left',
+            hint: 'العصا تستهدف يمين رأسك، أمل رأسك يساراً',
+            mittSide: 'LEFT',
+            counterPunch: '3 LEAD HOOK (خطاف أمامي)',
+            counterCueAr: '⚡ اضرب الهدف بخطاف أيسر سريع!',
+            counterSay: 'Lead Hook!'
+        },
+        {
+            type: 'SWEEP_FROM_LEFT',
+            name: 'LEFT HOOK SWEEP (تلويحة من اليسار)',
+            dodge: '⤵⬅ ROLL LEFT (انحنِ واخرج يساراً)',
+            say: 'Roll Left',
+            hint: 'العصا تندفع من اليسار لليمين: غص تحتها واخرج يساراً (عكسها)',
+            mittSide: 'LEFT',
+            counterPunch: '3 LEAD HOOK (خطاف صاعد)',
+            counterCueAr: '⚡ اضرب الهدف بخطاف أيسر فور النهوض!',
+            counterSay: 'Hook!'
+        },
+        {
+            type: 'SWEEP_FROM_RIGHT',
+            name: 'RIGHT HOOK SWEEP (تلويحة من اليمين)',
+            dodge: '⤵➔ ROLL RIGHT (انحنِ واخرج يميناً)',
+            say: 'Roll Right',
+            hint: 'العصا تندفع من اليمين لليسار: غص تحتها واخرج يميناً (عكسها)',
+            mittSide: 'RIGHT',
+            counterPunch: '2 CROSS (كروس مستقيم)',
+            counterCueAr: '⚡ اضرب الهدف بكروس يميني فور النهوض!',
+            counterSay: 'Cross!'
+        },
+        {
+            type: 'THRUST_CENTER',
+            name: 'CENTER JAB (اندفاع في المنتصف)',
+            dodge: '⬇ PULL BACK (اسحب جذعك للخلف)',
+            say: 'Pull Back',
+            hint: 'العصا تتجه مباشرة لأنفك، اسحب رأسك للخلف',
+            mittSide: 'RIGHT',
+            counterPunch: '2 CROSS (رد مستقيم)',
+            counterCueAr: '⚡ اندفع للأمام واضرب الهدف بكروس!',
+            counterSay: 'Cross!'
+        },
+        {
+            type: 'UPPER_SWING',
+            name: 'LOW UPPERCUT (ضربة سفلية للذقن)',
+            dodge: '⬇ STEP BACK (تراجع خطوة للخلف)',
+            say: 'Step Back',
+            hint: 'العصا تصعد نحو ذقنك، تراجع للخلف',
+            mittSide: 'LEFT',
+            counterPunch: '1-2 JAB CROSS',
+            counterCueAr: '⚡ اضرب الهدف بلكمة سريعة!',
+            counterSay: 'Jab Cross!'
+        }
     ];
 
     let isStickRunning = false;
@@ -806,6 +1114,17 @@
     function updateStickAnimation(delta) {
         if (!stickGroup || !stickGroup.visible) return;
 
+        // نبض بصري خفيف لكف المدرب عند ظهوره
+        if (mittGroup && mittGroup.visible) {
+            const pulse = 1 + Math.sin(performance.now() * 0.015) * 0.08;
+            mittGroup.scale.set(pulse, pulse, 1);
+            if (counterWindow.active && performance.now() > counterWindow.expiresAt) {
+                counterWindow.active = false;
+                mittGroup.visible = false;
+                triggerCounterFailFeedback('⌛ انتهى وقت الكاونتر! كن أسرع في الرد');
+            }
+        }
+
         if (!stickState.active) {
             const t = performance.now() * 0.003;
             stickGroup.position.set(Math.sin(t) * 0.04, 1.32 + Math.cos(t * 1.3) * 0.02, 0.05);
@@ -818,9 +1137,13 @@
 
         if (p >= 1) {
             if (isCamRefActive && hasPoseFrame && !stickState.evaluated) {
-                refHitCount++;
-                updateRefereeScoreboard();
-                triggerRefereeFeedback(false, '');
+                if (activeTabName === 'counter') {
+                    triggerCounterFailFeedback('✗ لم تتفادَ العصا! تفادَ أولاً ليظهر الهدف');
+                } else {
+                    refHitCount++;
+                    updateRefereeScoreboard();
+                    triggerRefereeFeedback(false, '');
+                }
             }
             stickState.active = false;
             document.getElementById('live-move-badge').textContent = 'READY';
@@ -841,42 +1164,31 @@
             stickGroup.position.set(0, 1.35, 0.05 + 1.28 * strikeCurve);
             stickGroup.rotation.set(0.01, 0, 0);
         } else if (stickState.type === 'SWEEP_FROM_LEFT') {
-            // تندفع من اليسار (-0.55) إلى اليمين (+0.55) -> المطلوب Roll Left (عكسها)
             const sweepAngle = (p - 0.5) * 2.2;
             stickGroup.position.set(Math.sin(sweepAngle) * 0.55, 1.35, 0.55 + Math.cos(sweepAngle) * 0.65);
             stickGroup.rotation.set(0.03, sweepAngle * 0.9, Math.PI / 2.2);
         } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
-            // تندفع من اليمين (+0.55) إلى اليسار (-0.55) -> المطلوب Roll Right (عكسها)
             const sweepAngle = (0.5 - p) * 2.2;
             stickGroup.position.set(Math.sin(sweepAngle) * 0.55, 1.35, 0.55 + Math.cos(sweepAngle) * 0.65);
             stickGroup.rotation.set(0.03, sweepAngle * 0.9, -Math.PI / 2.2);
         } else if (stickState.type === 'UPPER_SWING') {
             stickGroup.position.set(0, 0.90 + 0.46 * strikeCurve, 0.1 + 1.18 * strikeCurve);
             stickGroup.rotation.set(-0.40 * (1 - strikeCurve), 0, 0);
-        } else if (stickState.type === 'DOUBLE_THRUST') {
-            if (p < 0.5) {
-                const sub = Math.sin((p / 0.5) * Math.PI);
-                stickGroup.position.set(-0.28 + 0.24 * sub, 1.34, 0.05 + 1.22 * sub);
-                stickGroup.rotation.set(0.02, -0.18 * (1 - sub), 0);
-            } else {
-                const sub = Math.sin(((p - 0.5) / 0.5) * Math.PI);
-                stickGroup.position.set(0.28 - 0.24 * sub, 1.34, 0.05 + 1.22 * sub);
-                stickGroup.rotation.set(0.02, 0.18 * (1 - sub), 0);
-            }
         }
     }
 
-    function getNextStickPattern() {
-        if (stickBag.length === 0) {
-            stickBag = [...STICK_PATTERNS];
-            for (let i = stickBag.length - 1; i > 0; i--) {
+    function getNextPatternFromBag(bagRef) {
+        if (bagRef.length === 0) {
+            bagRef.push(...STICK_PATTERNS);
+            for (let i = bagRef.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
-                [stickBag[i], stickBag[j]] = [stickBag[j], stickBag[i]];
+                [bagRef[i], bagRef[j]] = [bagRef[j], bagRef[i]];
             }
         }
-        return stickBag.shift();
+        return bagRef.shift();
     }
 
+    // --- دوال تبويب العصا (دفاع فقط) ---
     function triggerStickStrike() {
         if (!isStickRunning || stickState.active) return;
 
@@ -886,7 +1198,7 @@
             strikeStartSpan = curShoulderSpan;
         }
 
-        const pat = getNextStickPattern();
+        const pat = getNextPatternFromBag(stickBag);
         const speedMult = parseFloat(document.getElementById('stick-speed').value);
         const voiceMode = document.getElementById('stick-voice-mode').value;
 
@@ -896,15 +1208,13 @@
         document.getElementById('live-move-badge').textContent = pat.type;
         syncComboText(pat.dodge);
 
-        if (voiceMode === 'voiced') {
-            speakText(pat.say);
-        }
+        if (voiceMode === 'voiced') speakText(pat.say);
 
         stickState.type = pat.type;
+        stickState.currentScenario = pat;
         stickState.progress = 0;
         stickState.evaluated = false;
-        const baseDur = pat.type === 'DOUBLE_THRUST' ? 1.70 : 1.25;
-        stickState.duration = baseDur / speedMult;
+        stickState.duration = 1.25 / speedMult;
         stickState.active = true;
     }
 
@@ -950,12 +1260,91 @@
     function resetStickSession() {
         stopStickSession();
         stickBag = [];
-        refPoints = 0;
-        refSuccessCount = 0;
-        refHitCount = 0;
+        refPoints = 0; refSuccessCount = 0; refHitCount = 0;
         updateRefereeScoreboard();
-        document.getElementById('stick-attack-label').textContent = '🥢 SPARRING STICK + CAM';
+        document.getElementById('stick-attack-label').textContent = '🥢 SPARRING STICK (DEFENSE ONLY)';
         document.getElementById('stick-dodge-label').textContent = 'تم تصفير النقاط والعداد';
+    }
+
+    // --- دوال تبويب الكاونتر (دفاع + هجوم مضاد) ---
+    function triggerCounterStrike() {
+        if (!isCounterRunning || stickState.active || counterWindow.active) return;
+
+        if (!isCamRefActive) {
+            startCameraReferee();
+        }
+
+        if (hasPoseFrame) {
+            strikeStartX = curNoseX;
+            strikeStartY = curNoseY;
+            strikeStartSpan = curShoulderSpan;
+        }
+
+        const pat = getNextPatternFromBag(counterBag);
+        const speedMult = parseFloat(document.getElementById('counter-speed').value);
+
+        document.getElementById('counter-phase-label').textContent = `1️⃣ تفادَ: ${pat.name}`;
+        document.getElementById('counter-cue-label').textContent = pat.dodge;
+        document.getElementById('counter-hint-label').textContent = 'تفادَ العصا أولاً ليظهر كف المدرب للهجوم المضاد!';
+        document.getElementById('live-move-badge').textContent = 'DODGE FIRST';
+        syncComboText(pat.dodge);
+
+        stickState.type = pat.type;
+        stickState.currentScenario = pat;
+        stickState.progress = 0;
+        stickState.evaluated = false;
+        stickState.duration = 1.30 / speedMult;
+        stickState.active = true;
+    }
+
+    function toggleCounterSession() {
+        if (isCounterRunning) stopCounterSession(); else startCounterSession();
+    }
+
+    function startCounterSession() {
+        isCounterRunning = true;
+        updateStageEntityVisibility();
+
+        const btn = document.getElementById('counter-start-btn');
+        btn.textContent = '⏹ إيقاف الكاونتر';
+        btn.classList.add('danger');
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '⏹ إيقاف';
+        tvBtn.classList.add('stop');
+
+        const speedMult = parseFloat(document.getElementById('counter-speed').value);
+        const intervalMs = Math.max(3200, Math.round(4400 / speedMult));
+
+        setTimeout(() => { if (isCounterRunning) triggerCounterStrike(); }, 700);
+        counterLoopTimer = setInterval(triggerCounterStrike, intervalMs);
+    }
+
+    function stopCounterSession() {
+        isCounterRunning = false;
+        stickState.active = false;
+        counterWindow.active = false;
+        if (mittGroup) mittGroup.visible = false;
+        clearInterval(counterLoopTimer);
+
+        const btn = document.getElementById('counter-start-btn');
+        btn.textContent = '⚡ ابدأ تدريب الكاونتر';
+        btn.classList.remove('danger');
+
+        const tvBtn = document.getElementById('tv-start-btn');
+        tvBtn.textContent = '▶ ابدأ';
+        tvBtn.classList.remove('stop');
+
+        document.getElementById('counter-cue-label').textContent = 'تم إيقاف تدريب الكاونتر';
+    }
+
+    function resetCounterSession() {
+        stopCounterSession();
+        counterBag = [];
+        cntPoints = 0; cntHitsCount = 0; cntBestMs = null;
+        updateCounterScoreboard();
+        document.getElementById('counter-phase-label').textContent = '⚡ DODGE & COUNTER VISION';
+        document.getElementById('counter-cue-label').textContent = 'تم تصفير نقاط الكاونتر';
     }
 
     // =========================================================================
@@ -1147,6 +1536,7 @@
         scene.add(floor);
 
         build3DSparringStick();
+        build3DFocusMitt();
         loadBoxerAndAnimations();
         animate3D();
     }
@@ -1182,7 +1572,7 @@
             const center = scaledBox.getCenter(new THREE.Vector3());
             modelRoot.position.set(-center.x, -scaledBox.min.y, -center.z);
             modelRoot.rotation.y = facingFlip;
-            modelRoot.visible = (activeTabName !== 'stick');
+            modelRoot.visible = (activeTabName !== 'stick' && activeTabName !== 'counter');
 
             scene.add(modelRoot);
 
@@ -1290,7 +1680,7 @@
     function animate3D() {
         requestAnimationFrame(animate3D);
         const delta = clock.getDelta();
-        if (activeTabName === 'stick') {
+        if (activeTabName === 'stick' || activeTabName === 'counter') {
             updateStickAnimation(delta);
         } else if (mixer) {
             mixer.update(delta);
@@ -1349,7 +1739,7 @@
         document.getElementById('drill-enabled').value = 'on';
         resetDrillCounter();
         updateModeBadge();
-        switchTab('drill', document.querySelectorAll('.tab-btn')[3]);
+        switchTab('drill', document.querySelectorAll('.tab-btn')[4]);
     }
 
     function renderSavedCombos() {
@@ -1478,6 +1868,7 @@
 
     function startSession() {
         if (isStickRunning) stopStickSession();
+        if (isCounterRunning) stopCounterSession();
         isRunning = true;
         isComboBusy = false;
         shuffleBag = [];
