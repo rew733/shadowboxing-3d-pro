@@ -208,7 +208,6 @@
         <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
     </div>
 
-    <!-- مسرح العرض ثلاثي الأبعاد -->
     <div class="stage-box" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
@@ -549,7 +548,7 @@
         </div>
     </div>
 
-    <!-- التبويب 7: الضبط + حرية اختيار النموذج وفاحص التطبيق الذكي -->
+    <!-- التبويب 7: الضبط -->
     <div id="tab-settings" class="tab-content">
         <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
             <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman & Auditor):</span></div>
@@ -562,21 +561,20 @@
                 </select>
             </div>
 
-            <!-- اختيار النموذج بحرية -->
             <div class="setting-item">
                 <span class="setting-header"><span>اختيار نموذج الذكاء الاصطناعي (Model):</span></span>
                 <select id="ai-model-select" onchange="onAiModelSelectChange()">
-                    <option value="gemini-3.8-flash" selected>gemini-3.8-flash (الأحدث والموصى به)</option>
-                    <option value="gemini-2.5-flash">gemini-2.5-flash (للحسابات القديمة)</option>
+                    <option value="gemini-2.0-flash" selected>gemini-2.0-flash (سريع ومستقر)</option>
+                    <option value="gemini-3.8-flash">gemini-3.8-flash (الأحدث)</option>
                     <option value="gemini-2.5-pro">gemini-2.5-pro (تحليل عميق)</option>
-                    <option value="gemini-2.0-flash">gemini-2.0-flash (سريع وخفيف)</option>
+                    <option value="gemini-2.5-flash">gemini-2.5-flash</option>
                     <option value="custom">✏️ كتابة اسم نموذج مخصص يدوياً...</option>
                 </select>
-                <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اكتب اسم النموذج هنا مثلاً: gemini-3.8-flash" oninput="updateAiSettings()" style="display: none; margin-top: 5px; direction: ltr;">
+                <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اكتب اسم النموذج هنا" oninput="updateAiSettings()" style="display: none; margin-top: 5px; direction: ltr;">
             </div>
 
             <div class="setting-item" style="margin-top: 4px;">
-                <span class="setting-header"><span>مفتاح Google AI Studio API Key:</span></span>
+                <span class="setting-header"><span>مفتاح API Key (AI Studio أو AQ.):</span></span>
                 <input type="password" id="gemini-api-key" class="text-input" placeholder="AIzaSy... أو AQ...." oninput="updateAiSettings()" style="direction: ltr;">
             </div>
 
@@ -643,15 +641,39 @@
 
     let aiEnabled = localStorage.getItem('boxing_ai_enabled') === 'on';
     let geminiApiKey = localStorage.getItem('boxing_gemini_key') || '';
-    let selectedAiModel = localStorage.getItem('boxing_ai_model') || 'gemini-3.8-flash';
+    let selectedAiModel = localStorage.getItem('boxing_ai_model') || 'gemini-2.0-flash';
     let customAiModelName = localStorage.getItem('boxing_ai_custom_model') || '';
     let lastAuditText = '';
 
     function getActiveAiModelName() {
         if (selectedAiModel === 'custom') {
-            return customAiModelName || 'gemini-3.8-flash';
+            return customAiModelName || 'gemini-2.0-flash';
         }
-        return selectedAiModel || 'gemini-3.8-flash';
+        return selectedAiModel || 'gemini-2.0-flash';
+    }
+
+    // بناء الرابط الصحيح تلقائياً سواء كان المفتاح يبدأ بـ AQ. (Vertex AI Express) أو AIzaSy (AI Studio)
+    function buildGeminiEndpointUrl(modelName, apiKey) {
+        const cleanModel = encodeURIComponent(modelName.trim());
+        const cleanKey = encodeURIComponent(apiKey.trim());
+        if (apiKey.trim().startsWith('AQ.')) {
+            return `https://aiplatform.googleapis.com/v1/publishers/google/models/${cleanModel}:generateContent?key=${cleanKey}`;
+        }
+        return `https://generativelanguage.googleapis.com/v1beta/models/${cleanModel}:generateContent?key=${cleanKey}`;
+    }
+
+    // دالة fetch مع مهلة زمنية صارمة (15 ثانية) لمنع التعليق اللانهائي في WebView
+    async function fetchWithTimeout(url, options, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timer);
+            return response;
+        } catch (err) {
+            clearTimeout(timer);
+            throw err;
+        }
     }
 
     function onAiModelSelectChange() {
@@ -695,14 +717,14 @@
         }
         const modelName = getActiveAiModelName();
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${geminiApiKey}`;
-            const response = await fetch(url, {
+            const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: "أنت مدرب ملاكمة محترف. أعطِ نصيحة تكتيكية تحفيزية مباشرة وموجزة جداً (باللغة العربية) بناءً على إحصائيات هذه الجولة: " + statsText }] }]
+                    contents: [{ role: 'user', parts: [{ text: "أنت مدرب ملاكمة محترف. أعطِ نصيحة تكتيكية تحفيزية مباشرة وموجزة جداً (باللغة العربية) بناءً على إحصائيات هذه الجولة: " + statsText }] }]
                 })
-            });
+            }, 12000);
             const data = await response.json();
             if (data.candidates && data.candidates[0].content.parts[0].text) {
                 return data.candidates[0].content.parts[0].text;
@@ -726,58 +748,63 @@
         }
         if (!navigator.onLine) {
             reportBox.style.display = 'block';
-            reportBox.textContent = '⚠️ الهاتف غير متصل بالإنترنت حالياً. الفحص الذكي يتطلب اتصالاً بالإنترنت.';
+            reportBox.textContent = '⚠️ الهاتف غير متصل بالإنترنت حالياً.';
             return;
         }
 
-        btn.textContent = `⏳ جاري الفحص عبر (${modelName})...`;
+        btn.textContent = `⏳ جاري الفحص (بحد أقصى 15 ثانية)...`;
         btn.disabled = true;
         reportBox.style.display = 'block';
-        reportBox.textContent = `يقوم المدرب الذكي (${modelName}) بتحليل مكونات التطبيق الـ 3D، نظام الكاميرا، وأرقام أدائك...`;
+        reportBox.textContent = `جاري الاتصال بنموذج (${modelName})...`;
 
         const appArchitectureSummary = `
-        اسم التطبيق: Boxing Coach Pro (تطبيق أندرويد هجين WebView + Three.js + MediaPipe Pose).
-        النموذج المستخدم: ${modelName}
-        الميزات الموجودة حالياً:
-        1. تبويب التدريب (70 كومبو جاهز مع مجسم 3D محمل بـ ${loadedClipsCount} حركة FBX مستقلة، ومنظور الخصم FPV، ووضع ملء الشاشة للتلفزيون TV).
-        2. تبويب كف المدرب (Focus Mitts): كفوف 3D تتحرك حسب اللكمة (Jab, Cross, Hooks, Uppercuts) متزامنة مع سرعة النطق voiceRate (${voiceRate}x)، مع تبويب داخلي لتكرار كومبو محدد ومؤقت جولات.
-        3. تبويب العصا (Sparring Stick): محاكاة عصا إسفنجية لتدريب التفادي (Slip Right/Left, Roll Left/Right, Pull Back) مع كاميرا أمامية MediaPipe تحسب نقاط الالتزام.
-        4. تبويب كاونتر (Dodge & Counter Vision): تفادي العصا بالكاميرا ثم ظهور كف مدرب مضيء لقياس سرعة اللكمة المضادة بالملي ثانية.
-        5. تبويب الإتقان والكومبو المخصص: بناء وحفظ كومبوهات مخصصة (لدى المستخدم حالياً ${customCombos.length} كومبو محفوظ).
-        6. إعدادات الجولات الحالية: ${totalRounds} جولات × ${roundDuration / 60} دقيقة.
-        إحصائيات اللاعب الحالية في الجلسة:
+        اسم التطبيق: Boxing Coach Pro (WebView + Three.js + MediaPipe Pose).
+        الميزات الحالية:
+        1. التدريب العادي: 70 كومبو جاهز مع مجسم 3D محمل بـ ${loadedClipsCount} حركة FBX مستقلة، ومنظور الخصم FPV، ووضع TV.
+        2. كف المدرب (Focus Mitts): كفوف 3D تتحرك حسب اللكمة متزامنة مع voiceRate (${voiceRate}x)، وتبويب تكرار الكومبو، ومؤقت جولات.
+        3. العصا (Sparring Stick): محاكاة عصا لتدريب التفادي مع كاميرا MediaPipe تحسب نقاط الالتزام.
+        4. كاونتر (Dodge & Counter Vision): تفادي العصا ثم ظهور كف مدرب لقياس سرعة الرد بالملي ثانية.
+        5. الإتقان والكومبو المخصص: ${customCombos.length} كومبو محفوظ.
+        إحصائيات اللاعب الحالية:
         - كف المدرب: ${mittsPunchesCount} لكمة، ${mittsCamHitsCount} إصابة بالكاميرا.
         - العصا الدفاعية: ${refSuccessCount} تفادي ناجح، ${refHitCount} إصابة.
-        - الكاونتر: ${cntHitsCount} رد هجومي ناجح، أسرع رد فعل: ${cntBestMs ? cntBestMs + ' ms' : 'لم يُسجل بعد'}.
+        - الكاونتر: ${cntHitsCount} رد ناجح، أسرع زمن: ${cntBestMs ? cntBestMs + ' ms' : 'لا يوجد'}.
         `;
 
-        const promptText = `أنت خبير هندسة تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق التالي بعناية، وأجب باللغة العربية في نقاط واضحة ومنظمة ومختصرة:
-1. 🔍 تقييم التطبيق الحالي (ما الذي يميزه تقنياً وتدريبياً؟).
-2. 🛠️ ماذا يحتاج التطبيق؟ (اقترح 4 ميزات برمجية أو تدريبية عملية ومحددة تنقص التطبيق لجعله متكاملاً واحترافياً أكثر).
+        const promptText = `أنت خبير هندسة تطبيقات رياضية ومدرب ملاكمة عالمي. افحص ملخص التطبيق التالي وأجب باللغة العربية في نقاط واضحة ومختصرة:
+1. 🔍 تقييم التطبيق الحالي.
+2. 🛠️ ماذا يحتاج التطبيق؟ (اقترح 4 ميزات برمجية وتدريبية عملية تنقص التطبيق).
 3. 🥊 تحليل مستوى اللاعب واقتراحات التطوير الرياضي بناءً على أرقامه.
 
-بيانات التطبيق:
+البيانات:
 ${appArchitectureSummary}`;
 
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName)}:generateContent?key=${geminiApiKey}`;
-            const response = await fetch(url, {
+            const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
+            const response = await fetchWithTimeout(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }]
+                    contents: [{ role: 'user', parts: [{ text: promptText }] }]
                 })
-            });
+            }, 15000);
+
             const data = await response.json();
-            if (data.candidates && data.candidates[0].content.parts[0].text) {
+            if (data.candidates && data.candidates[0] && data.candidates[0].content) {
                 lastAuditText = data.candidates[0].content.parts[0].text.replace(/\*\*/g, '');
                 reportBox.textContent = lastAuditText;
                 actionsBox.style.display = 'grid';
             } else if (data.error) {
-                reportBox.textContent = `❌ خطأ من النموذج (${modelName}): ${data.error.message}\n\n💡 جرب اختيار نموذج آخر من القائمة أعلاه (مثل gemini-2.0-flash أو كتابة اسم النموذج يدوياً).`;
+                reportBox.textContent = `❌ خطأ من الخادم (${data.error.code || ''}):\n${data.error.message}\n\n💡 جرب تبديل النموذج إلى gemini-2.0-flash أو تأكد من صلاحية المفتاح.`;
+            } else {
+                reportBox.textContent = `❌ استجابة غير متوقعة:\n${JSON.stringify(data).slice(0, 250)}`;
             }
         } catch (err) {
-            reportBox.textContent = '❌ تعذر الاتصال بخادم الذكاء الاصطناعي. تأكد من الإنترنت وصحة المفتاح.';
+            if (err.name === 'AbortError') {
+                reportBox.textContent = '⏱️ انتهت مهلة الاتصال (15 ثانية) دون رد من الخادم.\nتأكد من قوة الإنترنت أو جرب تشغيل VPN / تغيير النموذج إلى gemini-2.0-flash.';
+            } else {
+                reportBox.textContent = `❌ تعذر الاتصال بالخادم: ${err.message}`;
+            }
         } finally {
             btn.textContent = '🔍 فحص التطبيق واقتراح التحسينات';
             btn.disabled = false;
