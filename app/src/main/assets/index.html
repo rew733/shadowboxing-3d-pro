@@ -228,7 +228,7 @@
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" autoplay muted playsinline></video>
             <canvas id="pose-canvas" width="172" height="192"></canvas>
-            <div class="cam-pip-tag" id="cam-pip-status">PRED-KALMAN</div>
+            <div class="cam-pip-tag" id="cam-pip-status">PHYS-KALMAN</div>
         </div>
 
         <div class="tv-hud">
@@ -309,7 +309,7 @@
             <div class="stick-box mitt-theme">
                 <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS COMBOS</div>
                 <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة على كفوف المدرب</div>
-                <div class="stick-sub-hint" id="mitts-hint-label">تتوقف الجولة تلقائياً عند انتهاء الوقت وتبدأ الراحة</div>
+                <div class="stick-sub-hint" id="mitts-hint-label">يتم احتساب الإصابة فقط عند مد الذراع وتسديد لكمة فعلية</div>
             </div>
 
             <div class="move-chips" style="margin-top: 8px; justify-content: center;">
@@ -323,7 +323,7 @@
 
             <div class="score-grid">
                 <div class="score-card">
-                    <span>اللكمات المسددة</span>
+                    <span>اللكمات المطلوبة</span>
                     <strong id="mitts-punches-count" style="color: var(--mitt);">0</strong>
                 </div>
                 <div class="score-card">
@@ -444,7 +444,7 @@
             <div class="stick-box counter-theme">
                 <div class="stick-move-title" id="counter-phase-label">⚡ DODGE & COUNTER VISION</div>
                 <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ليظهر كف المدرب البنفسجي!</div>
-                <div class="stick-sub-hint" id="counter-hint-label">تراقب الكاميرا حركة رأسك للتفادي ثم حركة يدك لإصابة كف المدرب (+20)</div>
+                <div class="stick-sub-hint" id="counter-hint-label">تراقب الكاميرا حركة رأسك للتفادي ثم مد ذراعك لإصابة كف المدرب (+20)</div>
             </div>
 
             <div class="score-grid">
@@ -816,7 +816,7 @@
             const pipBox = document.getElementById('cam-pip-box');
             const pipTag = document.getElementById('cam-pip-status');
             if (pipBox) pipBox.classList.remove('guard-down');
-            if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
+            if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PHYS' : 'GPU + PHYS';
         }
     }
 
@@ -932,7 +932,7 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker المطور: Predictive Kalman + فحص دقيق للقبضة ووضوح الكادر
+    // 🧵 Web Worker الفيزيائي: حساب سرعة الاندفاع + امتداد الذراع لمنع الإصابات الكاذبة
     // =========================================================================
     let poseWorker = null;
     let predictedLeftWrist = null;
@@ -956,7 +956,7 @@
                     this.x = this.x + k * (measurement - this.x);
                     this.p = (1 - k) * this.p;
                     this.v = (this.x - prevX);
-                    const predictedPos = this.x + (this.v * 1.8);
+                    const predictedPos = this.x + (this.v * 1.6);
                     return { pos: this.x, pred: predictedPos, vel: this.v };
                 }
             }
@@ -988,13 +988,19 @@
                 const rightGuardDown = (rVis > 0.60) && (rWY.pos > shoulderAvgY + 0.22);
                 const shoulderSlope = (lShX - rShX);
 
+                // حساب سرعة اندفاع كل قبضة وامتداد الذراع عن الكتف
+                const leftSpeed = Math.hypot(lWX.vel, lWY.vel);
+                const rightSpeed = Math.hypot(rWX.vel, rWY.vel);
+                const leftExt = Math.hypot(lWX.pos - lShX, lWY.pos - lShY);
+                const rightExt = Math.hypot(rWX.pos - rShX, rWY.pos - rShY);
+
                 self.postMessage({
                     type: 'KALMAN_RESULT',
                     guardDown: (leftGuardDown || rightGuardDown),
                     shoulderSlope: shoulderSlope,
                     nose: { x: nX.pos, y: nY.pos },
-                    leftWrist: { x: lWX.pos, y: lWY.pos },
-                    rightWrist: { x: rWX.pos, y: rWY.pos },
+                    leftWrist: { x: lWX.pos, y: lWY.pos, speed: leftSpeed, ext: leftExt, vis: lVis },
+                    rightWrist: { x: rWX.pos, y: rWY.pos, speed: rightSpeed, ext: rightExt, vis: rVis },
                     predLeftWrist: { x: lWX.pred, y: lWY.pred },
                     predRightWrist: { x: rWX.pred, y: rWY.pred }
                 });
@@ -1005,6 +1011,16 @@
         poseWorker.onmessage = function(e) {
             if (e.data.type === 'KALMAN_RESULT') handleKalmanWorkerResult(e.data);
         };
+    }
+
+    // دالة التحقق الفيزيائي من اللكمة الحقيقية (تمنع الاحتساب أثناء الوقوف الساكن)
+    function isRealPunchStrike(wristObj, predObj, targetX, targetY) {
+        if (!wristObj || (wristObj.vis !== undefined && wristObj.vis < 0.50)) return false;
+        const distNow = Math.hypot(wristObj.x - targetX, wristObj.y - targetY);
+        const distPred = predObj ? Math.hypot(predObj.x - targetX, predObj.y - targetY) : distNow;
+        const nearTarget = (distNow < 0.18 || distPred < 0.18);
+        const hasPunchMotion = (wristObj.speed > 0.016) && (wristObj.ext > 0.13);
+        return nearTarget && hasPunchMotion;
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -1049,7 +1065,7 @@
     }
 
     // =========================================================================
-    // 📊 نظام تسجيل وحفظ الإحصائيات الفوري (سواء انتهت الجولات أو أُوقفت يدوياً)
+    // 📊 نظام تسجيل وحفظ الإحصائيات الفوري
     // =========================================================================
     function saveSessionRecord(modeName, scoreStats) {
         const record = {
@@ -1068,7 +1084,8 @@
         let hasData = false;
 
         if (modeKey === 'mitts' && (mittsPunchesCount > 0 || mittsCamHitsCount > 0)) {
-            summaryTitle = `🧤 كف: ${mittsPunchesCount} لكمة | ${mittsCamHitsCount} إصابة`;
+            const acc = mittsPunchesCount > 0 ? Math.round((mittsCamHitsCount / mittsPunchesCount) * 100) : 0;
+            summaryTitle = `🧤 كف: ${mittsCamHitsCount}/${mittsPunchesCount} (${acc}%)`;
             hasData = true;
         } else if (modeKey === 'stick' && (refSuccessCount > 0 || refHitCount > 0)) {
             summaryTitle = `🥢 عصا: ${refPoints} نقطة (${refSuccessCount}/${refSuccessCount + refHitCount})`;
@@ -1176,7 +1193,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Predictive Kalman + Tactics Modes) وإحصائيات الملاكم: كف المدرب ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Physics Punch Velocity + Tactics Modes) وإحصائيات الملاكم: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1505,8 +1522,8 @@
         if (mode === 'feint') {
             const tx = padAnimState.camTargetX;
             const ty = padAnimState.camTargetY;
-            const punched = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-            const didPunch = punched(curLeftWrist) || punched(curRightWrist) || punched(predictedLeftWrist) || punched(predictedRightWrist);
+            const didPunch = isRealPunchStrike(curLeftWrist, predictedLeftWrist, tx, ty) ||
+                             isRealPunchStrike(curRightWrist, predictedRightWrist, tx, ty);
             const dx = Math.abs(curNoseX - strikeStartX);
             const dy = curNoseY - strikeStartY;
 
@@ -1810,7 +1827,7 @@
     }
 
     // =========================================================================
-    // مراقبة الكاميرا مع القياس الدقيق للقبضة
+    // مراقبة الكاميرا مع القياس الفيزيائي لللكمة
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1943,11 +1960,15 @@
             ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2); ctx.stroke();
             ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
 
+            // التحقق الفيزيائي الحقيقي من اللكمة نحو كف المدرب (سرعة + امتداد ذراع + قرب من الهدف)
             if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
                 const tx = padAnimState.camTargetX; const ty = padAnimState.camTargetY;
-                ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 22, 0, Math.PI * 2); ctx.stroke();
-                const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-                if (hit(curLeftWrist) || hit(curRightWrist) || hit(predictedLeftWrist) || hit(predictedRightWrist)) {
+                ctx.strokeStyle = '#10b981'; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(tx * canvasEl.width, ty * canvasEl.height, 18, 0, Math.PI * 2); ctx.stroke();
+
+                const validHit = isRealPunchStrike(curLeftWrist, predictedLeftWrist, tx, ty) ||
+                                 isRealPunchStrike(curRightWrist, predictedRightWrist, tx, ty);
+
+                if (validHit) {
                     padAnimState.camScoredThisPad = true;
                     mittsCamHitsCount++;
                     document.getElementById('mitts-cam-hits').textContent = mittsCamHitsCount;
@@ -1992,7 +2013,7 @@
             guardViolationCount = 0;
             if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
                 pipBox.classList.remove('guard-down');
-                pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
+                pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PHYS' : 'GPU + PHYS';
             }
         }
     }
@@ -2045,8 +2066,9 @@
     function evaluateCounterPunch(tx, ty) {
         if (!counterWindow.active) return;
         if (performance.now() > counterWindow.expiresAt) { counterWindow.active = false; if (mittGroup) mittGroup.visible = false; return; }
-        const hit = (w) => w && Math.hypot(w.x - tx, w.y - ty) < 0.28;
-        if (hit(curLeftWrist) || hit(curRightWrist) || hit(predictedLeftWrist) || hit(predictedRightWrist)) {
+        const validHit = isRealPunchStrike(curLeftWrist, predictedLeftWrist, tx, ty) ||
+                         isRealPunchStrike(curRightWrist, predictedRightWrist, tx, ty);
+        if (validHit) {
             const ms = Math.max(110, Math.round(performance.now() - counterWindow.startTime));
             counterWindow.active = false; if (mittGroup) mittGroup.visible = false;
             cntPoints += 20; cntHitsCount++;
@@ -2279,7 +2301,7 @@
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
 
         const pipTag = document.getElementById('cam-pip-status');
-        if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
+        if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PHYS' : 'GPU + PHYS';
         updateStageEntityVisibility();
 
         build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
@@ -2512,7 +2534,7 @@
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Punches: ${mittsPunchesCount}, Tactics: ${tacPoints}`);
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Hits: ${mittsCamHitsCount}/${mittsPunchesCount}, Tactics: ${tacPoints}`);
                     speakText(advice);
                 } else speakText("Rest time.");
             } else {
