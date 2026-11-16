@@ -983,7 +983,6 @@
                 const lVis = arr[10];
                 const rVis = arr[11];
 
-                // فحص الحماية فقط إذا كانت اليد مرئية بوضوح داخل الكادر، مع هامش مريح أسفل الكتف (+0.22)
                 const shoulderAvgY = (lShY + rShY) / 2;
                 const leftGuardDown = (lVis > 0.60) && (lWY.pos > shoulderAvgY + 0.22);
                 const rightGuardDown = (rVis > 0.60) && (rWY.pos > shoulderAvgY + 0.22);
@@ -1049,6 +1048,9 @@
         localStorage.setItem('boxing_ai_custom_model', customAiModelName);
     }
 
+    // =========================================================================
+    // 📊 نظام تسجيل وحفظ الإحصائيات الفوري (سواء انتهت الجولات أو أُوقفت يدوياً)
+    // =========================================================================
     function saveSessionRecord(modeName, scoreStats) {
         const record = {
             date: new Date().toLocaleDateString('ar-SA') + ' ' + new Date().toLocaleTimeString('ar-SA', {hour: '2-digit', minute:'2-digit'}),
@@ -1061,18 +1063,59 @@
         renderAnalyticsDashboard();
     }
 
+    function recordCurrentActivityIfAny(modeKey) {
+        let summaryTitle = '';
+        let hasData = false;
+
+        if (modeKey === 'mitts' && (mittsPunchesCount > 0 || mittsCamHitsCount > 0)) {
+            summaryTitle = `🧤 كف: ${mittsPunchesCount} لكمة | ${mittsCamHitsCount} إصابة`;
+            hasData = true;
+        } else if (modeKey === 'stick' && (refSuccessCount > 0 || refHitCount > 0)) {
+            summaryTitle = `🥢 عصا: ${refPoints} نقطة (${refSuccessCount}/${refSuccessCount + refHitCount})`;
+            hasData = true;
+        } else if (modeKey === 'counter' && (cntHitsCount > 0 || cntPoints > 0)) {
+            summaryTitle = `⚡ كاونتر: ${cntHitsCount} رد | ${cntPoints} نقطة`;
+            hasData = true;
+        } else if (modeKey === 'tactics' && (tacPoints > 0 || tacCorrect > 0)) {
+            summaryTitle = `🎯 تكتيك: ${tacPoints} نقطة (${tacCorrect} صحيح)`;
+            hasData = true;
+        } else if (modeKey === 'train' && (roundDuration - timeLeft >= 10 || currentRound > 1)) {
+            summaryTitle = `🥊 تدريب: جولة ${currentRound}`;
+            hasData = true;
+        }
+
+        if (hasData) {
+            const guardScore = Math.max(50, 100 - (sessionGuardViolations * 5));
+            saveSessionRecord(summaryTitle, {
+                summary: `حماية ${guardScore}%`,
+                bestMs: cntBestMs,
+                guardRate: guardScore
+            });
+        }
+    }
+
     function renderAnalyticsDashboard() {
         const listEl = document.getElementById('session-history-list');
         const totalSessionsEl = document.getElementById('stat-total-sessions');
         const bestReactionEl = document.getElementById('stat-best-reaction');
+        const guardRateEl = document.getElementById('stat-guard-rate');
 
         if (totalSessionsEl) totalSessionsEl.textContent = sessionHistory.length;
 
         let bestMs = 9999;
+        let guardSum = 0;
+        let guardCount = 0;
+
         sessionHistory.forEach(rec => {
             if (rec.stats && rec.stats.bestMs && rec.stats.bestMs < bestMs) bestMs = rec.stats.bestMs;
+            if (rec.stats && typeof rec.stats.guardRate === 'number') {
+                guardSum += rec.stats.guardRate;
+                guardCount++;
+            }
         });
+
         if (bestReactionEl) bestReactionEl.textContent = (bestMs < 9999) ? `${bestMs} ms` : '-- ms';
+        if (guardRateEl) guardRateEl.textContent = guardCount > 0 ? `${Math.round(guardSum / guardCount)}%` : '100%';
 
         if (listEl) {
             if (sessionHistory.length === 0) {
@@ -1082,7 +1125,7 @@
                 sessionHistory.forEach(rec => {
                     const div = document.createElement('div');
                     div.className = 'history-item';
-                    div.innerHTML = `<span><strong>${rec.mode}</strong> (${rec.date})</span><span>${rec.stats.summary || ''}</span>`;
+                    div.innerHTML = `<span><strong>${rec.mode}</strong><br><small>${rec.date}</small></span><span style="align-self:center; color:var(--accent); font-weight:700;">${rec.stats.summary || ''}</span>`;
                     listEl.appendChild(div);
                 });
             }
@@ -1179,6 +1222,7 @@
         document.getElementById('tab-' + tabId).classList.add('active');
         if (btn) btn.classList.add('active');
 
+        if (tabId === 'analytics') renderAnalyticsDashboard();
         updateStageEntityVisibility();
         resize3DRenderer();
     }
@@ -1505,7 +1549,7 @@
 
     function toggleTacticsSession() { if (isTacticsRunning) stopTacticsSession(); else startTacticsSession(); }
     function startTacticsSession() {
-        isTacticsRunning = true; isResting = false;
+        isTacticsRunning = true; isResting = false; sessionGuardViolations = 0;
         tacticsChallengeState.pyramidSeq = ['JAB'];
         onTacticsModeChange();
         if (!isCamRefActive && document.getElementById('tactics-mode-select').value !== 'pyramid') {
@@ -1527,6 +1571,7 @@
     }
 
     function stopTacticsSession() {
+        if (isTacticsRunning) recordCurrentActivityIfAny('tactics');
         isTacticsRunning = false;
         tacticsChallengeState.active = false;
         stickState.active = false;
@@ -1742,7 +1787,7 @@
 
     function toggleMittsSession() { if (isMittsRunning) stopMittsSession(); else startMittsSession(); }
     function startMittsSession() {
-        isMittsRunning = true; isMittsBusy = false; isResting = false;
+        isMittsRunning = true; isMittsBusy = false; isResting = false; sessionGuardViolations = 0;
         if (mittsSubMode === 'repeat' && mittsRepeatDone >= parseInt(document.getElementById('mitts-repeat-target').value)) resetMittsRepeatProgress();
         updateStageEntityVisibility(); resetPadsToGuardPosition();
         document.getElementById('mitts-start-btn').textContent = '⏹ إيقاف التمرين'; document.getElementById('mitts-start-btn').classList.add('danger');
@@ -1753,6 +1798,7 @@
         mittsLoopTimer = setInterval(() => { if (isMittsRunning && !isResting && !isMittsBusy) executeNextMittCombo(); }, 800);
     }
     function stopMittsSession() {
+        if (isMittsRunning) recordCurrentActivityIfAny('mitts');
         isMittsRunning = false; isMittsBusy = false; padAnimState.activePunch = null; stopSharedRoundClock(); clearInterval(mittsLoopTimer);
         mittsStepTimers.forEach(t => clearTimeout(t)); mittsStepTimers = []; resetPadsToGuardPosition();
         document.getElementById('mitts-start-btn').textContent = '🧤 ابدأ تمرين كف المدرب'; document.getElementById('mitts-start-btn').classList.remove('danger');
@@ -1877,7 +1923,6 @@
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
 
             if (poseWorker) {
-                // استخدام مفصل القبضة (19, 20) أو المعصم (15, 16) لقياس أدق لارتفاع اليد عند الذقن
                 const lHand = (lm[19] && lm[19].visibility > 0.5) ? lm[19] : lWrist;
                 const rHand = (lm[20] && lm[20].visibility > 0.5) ? lm[20] : rWrist;
 
@@ -2094,7 +2139,7 @@
 
     function toggleStickSession() { if (isStickRunning) stopStickSession(); else startStickSession(); }
     function startStickSession() {
-        isStickRunning = true; isResting = false; updateStageEntityVisibility();
+        isStickRunning = true; isResting = false; sessionGuardViolations = 0; updateStageEntityVisibility();
         document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا'; document.getElementById('stick-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
@@ -2104,6 +2149,7 @@
         stickLoopTimer = setInterval(triggerStickStrike, 2600);
     }
     function stopStickSession() {
+        if (isStickRunning) recordCurrentActivityIfAny('stick');
         isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer);
         document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا'; document.getElementById('stick-start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
@@ -2112,7 +2158,7 @@
 
     function toggleCounterSession() { if (isCounterRunning) stopCounterSession(); else startCounterSession(); }
     function startCounterSession() {
-        isCounterRunning = true; isResting = false; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
+        isCounterRunning = true; isResting = false; sessionGuardViolations = 0; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
         document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر'; document.getElementById('counter-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
@@ -2122,6 +2168,7 @@
         counterLoopTimer = setInterval(triggerStickStrike, 3600);
     }
     function stopCounterSession() {
+        if (isCounterRunning) recordCurrentActivityIfAny('counter');
         isCounterRunning = false; stickState.active = false; counterWindow.active = false;
         if (mittGroup) mittGroup.visible = false;
         stopSharedRoundClock(); clearInterval(counterLoopTimer);
@@ -2426,6 +2473,7 @@
         }, 1200);
     }
     function stopSession() {
+        if (isRunning) recordCurrentActivityIfAny('train');
         isRunning = false; isComboBusy = false; moveQueue = []; stopSharedRoundClock(); clearInterval(comboId);
         document.getElementById('start-btn').textContent = 'ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
@@ -2460,7 +2508,6 @@
                     else if (activeClockOwner === 'counter') stopCounterSession();
                     else if (activeClockOwner === 'tactics') stopTacticsSession();
                     else stopSession();
-                    saveSessionRecord(activeClockOwner, { summary: 'جولات مكتملة', bestMs: cntBestMs });
                     resetSharedRoundState(); speakText("Workout complete!"); return;
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
