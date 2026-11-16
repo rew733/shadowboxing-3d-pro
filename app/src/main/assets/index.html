@@ -676,20 +676,28 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-                <div class="setting-item" style="margin-bottom: 0;">
+                <div class="setting-item" style="margin-bottom: 4px;">
                     <span class="setting-header"><span>المؤثرات الصوتية:</span></span>
                     <select id="sfx-mode-select" onchange="updateAdvancedTrainingOptions()">
                         <option value="on" selected>مفعلة (جرس وارتطام 🔔)</option>
                         <option value="off">صامتة</option>
                     </select>
                 </div>
-                <div class="setting-item" style="margin-bottom: 0;">
+                <div class="setting-item" style="margin-bottom: 4px;">
                     <span class="setting-header"><span>وضع العرض (3D / صوت):</span></span>
                     <select id="audio-only-select" onchange="toggleAudioOnlyMode()">
                         <option value="3d" selected>عرض 3D كامل</option>
                         <option value="audio">صوت فقط (توفير البطارية)</option>
                     </select>
                 </div>
+            </div>
+
+            <div class="setting-item" style="margin-top: 6px; margin-bottom: 0;">
+                <span class="setting-header"><span>تنبيه رفع الحماية بالكاميرا (Guard Up Alert):</span></span>
+                <select id="guard-alert-select" onchange="updateAdvancedTrainingOptions()">
+                    <option value="on" selected>مفعل (قياس دقيق لمفصل القبضة)</option>
+                    <option value="off">متوقف (بدون تنبيه Guard Up)</option>
+                </select>
             </div>
         </div>
 
@@ -792,6 +800,7 @@
     let burnoutEnabled = true;
     let adaptiveDifficultyEnabled = true;
     let sfxEnabled = true;
+    let guardAlertEnabled = true;
     let isAudioOnlyMode = false;
     let isBurnoutActiveNow = false;
     let sessionGuardViolations = 0;
@@ -800,6 +809,15 @@
         burnoutEnabled = document.getElementById('burnout-mode-select').value === 'on';
         adaptiveDifficultyEnabled = document.getElementById('adaptive-ai-select').value === 'on';
         sfxEnabled = document.getElementById('sfx-mode-select').value === 'on';
+        guardAlertEnabled = document.getElementById('guard-alert-select').value === 'on';
+
+        if (!guardAlertEnabled) {
+            guardViolationCount = 0;
+            const pipBox = document.getElementById('cam-pip-box');
+            const pipTag = document.getElementById('cam-pip-status');
+            if (pipBox) pipBox.classList.remove('guard-down');
+            if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PRED' : 'GPU + PRED';
+        }
     }
 
     function toggleAudioOnlyMode() {
@@ -914,7 +932,7 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker المطور: Predictive Kalman + تحليل زاوية الكتفين
+    // 🧵 Web Worker المطور: Predictive Kalman + فحص دقيق للقبضة ووضوح الكادر
     // =========================================================================
     let poseWorker = null;
     let predictedLeftWrist = null;
@@ -952,7 +970,7 @@
 
             self.onmessage = function(e) {
                 const arr = new Float32Array(e.data);
-                if (arr.length < 10) return;
+                if (arr.length < 12) return;
 
                 const nX = kfNoseX.filter(arr[0]);
                 const nY = kfNoseY.filter(arr[1]);
@@ -962,15 +980,18 @@
                 const lWY = kfLWristY.filter(arr[7]);
                 const rWX = kfRWristX.filter(arr[8]);
                 const rWY = kfRWristY.filter(arr[9]);
+                const lVis = arr[10];
+                const rVis = arr[11];
 
+                // فحص الحماية فقط إذا كانت اليد مرئية بوضوح داخل الكادر، مع هامش مريح أسفل الكتف (+0.22)
                 const shoulderAvgY = (lShY + rShY) / 2;
-                const leftGuardOk = (lWY.pos < shoulderAvgY + 0.09);
-                const rightGuardOk = (rWY.pos < shoulderAvgY + 0.09);
+                const leftGuardDown = (lVis > 0.60) && (lWY.pos > shoulderAvgY + 0.22);
+                const rightGuardDown = (rVis > 0.60) && (rWY.pos > shoulderAvgY + 0.22);
                 const shoulderSlope = (lShX - rShX);
 
                 self.postMessage({
                     type: 'KALMAN_RESULT',
-                    guardDown: (!leftGuardOk || !rightGuardOk),
+                    guardDown: (leftGuardDown || rightGuardDown),
                     shoulderSlope: shoulderSlope,
                     nose: { x: nX.pos, y: nY.pos },
                     leftWrist: { x: lWX.pos, y: lWY.pos },
@@ -1172,7 +1193,6 @@
         const flipBtn = document.getElementById('flip-btn');
         const camBtn = document.getElementById('cam-btn');
 
-        // إدارة ظهور العناصر ثلاثية الأبعاد حسب التبويب والوضع التكتيكي
         const showBoxer = (!isStickOrCounter && !isMittsTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
         const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
         const showPads = isMittsTab || (isTacticsTab && (tacMode === 'feint' || tacMode === 'pocket'));
@@ -1282,7 +1302,7 @@
     let tacticsChallengeState = {
         active: false,
         mode: 'feint',
-        signalColor: 'GREEN', // GREEN = HIT, RED = FEINT/DODGE, YELLOW = STEP_BACK
+        signalColor: 'GREEN',
         targetAngleX: 0,
         pyramidSeq: ['JAB'],
         resolved: false,
@@ -1396,7 +1416,6 @@
             syncComboText(comboStr);
             playComboSequence(seq);
 
-            // تجهيز المستوى التالي بإضافة حركة جديدة
             const nextMove = pool[Math.floor(Math.random() * pool.length)];
             tacticsChallengeState.pyramidSeq = [...seq, nextMove];
             tacStreak = seq.length;
@@ -1745,7 +1764,7 @@
     }
 
     // =========================================================================
-    // مراقبة الكاميرا مع التنبؤ بالمسار (Trajectory Prediction)
+    // مراقبة الكاميرا مع القياس الدقيق للقبضة
     // =========================================================================
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
@@ -1858,12 +1877,18 @@
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
 
             if (poseWorker) {
+                // استخدام مفصل القبضة (19, 20) أو المعصم (15, 16) لقياس أدق لارتفاع اليد عند الذقن
+                const lHand = (lm[19] && lm[19].visibility > 0.5) ? lm[19] : lWrist;
+                const rHand = (lm[20] && lm[20].visibility > 0.5) ? lm[20] : rWrist;
+
                 const buffer = new Float32Array([
                     nose.x, nose.y,
                     lShoulder.x, lShoulder.y,
                     rShoulder.x, rShoulder.y,
-                    lWrist ? lWrist.x : 0, lWrist ? lWrist.y : 0,
-                    rWrist ? rWrist.x : 0, rWrist ? rWrist.y : 0
+                    lHand ? lHand.x : 0.5, lHand ? lHand.y : 0.3,
+                    rHand ? rHand.x : 0.5, rHand ? rHand.y : 0.3,
+                    lHand ? (lHand.visibility || 0) : 0,
+                    rHand ? (rHand.visibility || 0) : 0
                 ]);
                 poseWorker.postMessage(buffer.buffer, [buffer.buffer]);
             }
@@ -1909,9 +1934,9 @@
         const pipTag = document.getElementById('cam-pip-status');
         if (!pipBox || !pipTag) return;
 
-        if (data.guardDown) {
+        if (guardAlertEnabled && data.guardDown) {
             guardViolationCount++;
-            if (guardViolationCount === 20) {
+            if (guardViolationCount === 45) {
                 sessionGuardViolations++;
                 pipBox.classList.add('guard-down');
                 pipTag.textContent = '⚠️ GUARD UP!';
