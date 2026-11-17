@@ -2,8 +2,8 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Boxing Coach Pro • High-Performance WebGPU & Predictive Kalman Engine</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Boxing Coach Pro • Neon Arena Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -11,90 +11,251 @@
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/pose.js" crossorigin="anonymous"></script>
     <style>
         :root {
-            --bg: #070b14;
-            --panel: #111827;
-            --card: #1f2937;
+            --bg: #000000;
+            --surface: #0b0f17;
+            --card: #131a26;
+            --neon: #00BFFF;
+            --neon-glow: rgba(0, 191, 255, 0.25);
             --accent: #f59e0b;
-            --defense: #38bdf8;
             --stick: #f43f5e;
             --counter: #a855f7;
             --mitt: #10b981;
             --tactics: #ec4899;
             --danger: #ef4444;
             --success: #10b981;
-            --text: #f9fafb;
-            --muted: #9ca3af;
-            --border: rgba(255, 255, 255, 0.09);
+            --text: #ffffff;
+            --muted: #8b9bb4;
+            --border: rgba(255, 255, 255, 0.08);
         }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
-        body { background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 6px; }
-        .app { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 8px; }
-        
-        .tabs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 1px; background: var(--panel); padding: 3px; border-radius: 14px; border: 1px solid var(--border); }
-        .tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 0px; border-radius: 7px; font-size: 0.43rem; font-weight: 800; cursor: pointer; transition: 0.2s; text-align: center; }
-        .tab-btn.active { background: var(--accent); color: #000; }
-        .tab-btn.stick-tab.active { background: var(--stick); color: #fff; }
-        .tab-btn.counter-tab.active { background: var(--counter); color: #fff; }
-        .tab-btn.mitt-tab.active { background: var(--mitt); color: #000; }
-        .tab-btn.tactics-tab.active { background: var(--tactics); color: #fff; }
-        .tab-btn.analytics-tab.active { background: var(--defense); color: #000; }
-        .tab-btn.tv-tab { color: #38bdf8; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: 76px;
+        }
+        .app { width: 100%; max-width: 460px; display: flex; flex-direction: column; gap: 10px; padding: 8px; }
 
-        .tab-content { display: none; flex-direction: column; gap: 8px; }
-        .tab-content.active { display: flex; }
+        /* الهيدر العلوي الأنيق */
+        .top-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 4px 6px;
+        }
+        .brand-box { display: flex; align-items: center; gap: 8px; }
+        .brand-box img { width: 32px; height: 32px; object-fit: contain; border-radius: 8px; }
+        .brand-title { font-size: 0.95rem; font-weight: 900; letter-spacing: 0.3px; color: #fff; }
+        .brand-title span { color: var(--neon); }
+        .top-actions { display: flex; gap: 6px; align-items: center; }
+        .icon-pill-btn {
+            background: var(--card); color: var(--neon); border: 1px solid rgba(0,191,255,0.3);
+            padding: 6px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 800; cursor: pointer;
+        }
 
-        .sub-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: rgba(0,0,0,0.35); padding: 4px; border-radius: 10px; border: 1px solid var(--border); margin-bottom: 8px; }
-        .sub-tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 4px; border-radius: 7px; font-size: 0.74rem; font-weight: 800; cursor: pointer; transition: 0.2s; }
-        .sub-tab-btn.active { background: var(--mitt); color: #000; }
-
+        /* مسرح العرض 3D والخلفيات */
         .stage-box {
-            width: 100%; height: 290px;
-            background-color: #090d16;
-            background-image: radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%);
+            width: 100%; height: 325px;
+            background-color: #05080f;
+            background-image: url('assets_images_bgchampionshipring.jpg');
             background-size: cover;
             background-position: center;
-            border-radius: 16px; border: 1px solid var(--border); position: relative; overflow: hidden; transition: height 0.3s;
+            border-radius: 22px;
+            border: 1px solid rgba(0, 191, 255, 0.25);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 191, 255, 0.08);
+            position: relative; overflow: hidden; transition: height 0.3s;
         }
         .stage-box.has-gym-bg::before {
             content: ''; position: absolute; inset: 0;
-            background: linear-gradient(to bottom, rgba(7,11,20,0.35) 0%, rgba(7,11,20,0.15) 55%, rgba(7,11,20,0.68) 100%);
+            background: linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(0,0,0,0.12) 50%, rgba(0,0,0,0.78) 100%);
             pointer-events: none; z-index: 1;
         }
-        .stage-box.audio-only-collapsed { height: 74px; }
+        .stage-box.audio-only-collapsed { height: 82px; }
         #canvas-3d { width: 100%; height: 100%; position: relative; z-index: 2; }
-        
-        .badge-stance { position: absolute; top: 10px; left: 10px; z-index: 5; background: rgba(0,0,0,0.75); color: var(--accent); font-size: 0.62rem; padding: 4px 8px; border-radius: 20px; border: 1px solid rgba(245,158,11,0.35); font-weight: 800; }
-        .badge-action { position: absolute; top: 10px; right: 10px; z-index: 5; background: rgba(245,158,11,0.25); color: #fff; font-size: 0.65rem; padding: 4px 8px; border-radius: 20px; font-weight: 800; direction: ltr; }
-        .flip-quick-btn { position: absolute; bottom: 10px; left: 10px; z-index: 5; background: rgba(17,24,39,0.88); color: var(--text); border: 1px solid var(--border); font-size: 0.65rem; padding: 5px 8px; border-radius: 10px; font-weight: 700; cursor: pointer; }
-        .camera-btn { position: absolute; bottom: 10px; right: 10px; z-index: 5; background: rgba(220, 38, 38, 0.88); color: #fff; border: 1px solid var(--border); font-size: 0.65rem; padding: 5px 8px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; }
-        .glb-status { position: absolute; bottom: 8px; left: 10px; right: 10px; z-index: 6; text-align: center; font-size: 0.7rem; color: var(--accent); background: rgba(0,0,0,0.85); padding: 6px 10px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.4); }
 
-        .cam-pip-box {
-            display: none; position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); z-index: 15;
-            width: 82px; height: 92px; border-radius: 12px; overflow: hidden;
-            border: 2px solid var(--defense); background: #000;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.85); transition: border-color 0.2s, box-shadow 0.2s;
+        /* شارات المسرح والمؤقت الزجاجي العائم */
+        .badge-stance {
+            position: absolute; top: 12px; left: 12px; z-index: 5;
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(8px);
+            color: var(--neon); font-size: 0.66rem; padding: 5px 10px;
+            border-radius: 20px; border: 1px solid rgba(0,191,255,0.35); font-weight: 800;
         }
-        .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 16px rgba(16, 185, 129, 0.95); }
-        .cam-pip-box.hit-counter { border-color: var(--counter); box-shadow: 0 0 18px rgba(168, 85, 247, 0.95); }
-        .cam-pip-box.hit-fail { border-color: var(--danger); box-shadow: 0 0 16px rgba(239, 68, 68, 0.95); }
+        .badge-action {
+            position: absolute; top: 12px; right: 12px; z-index: 5;
+            background: rgba(0, 191, 255, 0.2); backdrop-filter: blur(8px);
+            color: #fff; font-size: 0.68rem; padding: 5px 10px;
+            border-radius: 20px; border: 1px solid rgba(255,255,255,0.15); font-weight: 800; direction: ltr;
+        }
+        .stage-hud-overlay {
+            position: absolute; bottom: 10px; left: 12px; right: 12px; z-index: 6;
+            display: flex; justify-content: space-between; align-items: flex-end;
+            pointer-events: none;
+        }
+        .hud-controls-left { display: flex; gap: 6px; pointer-events: auto; }
+        .hud-mini-btn {
+            background: rgba(11, 15, 23, 0.82); backdrop-filter: blur(8px);
+            color: #fff; border: 1px solid rgba(255,255,255,0.15);
+            font-size: 0.68rem; padding: 6px 10px; border-radius: 12px; font-weight: 700; cursor: pointer;
+        }
+        .hud-mini-btn.cam { background: rgba(239, 68, 68, 0.85); border-color: rgba(239, 68, 68, 0.5); }
+
+        .glb-status {
+            position: absolute; top: 50%; left: 16px; right: 16px; transform: translateY(-50%); z-index: 8;
+            text-align: center; font-size: 0.76rem; color: var(--neon);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(6px);
+            padding: 10px 14px; border-radius: 14px; border: 1px solid rgba(0,191,255,0.4);
+        }
+
+        /* نافذة الكاميرا العائمة */
+        .cam-pip-box {
+            display: none; position: absolute; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 15;
+            width: 84px; height: 96px; border-radius: 14px; overflow: hidden;
+            border: 2px solid var(--neon); background: #000;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.9); transition: 0.2s;
+        }
+        .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 18px rgba(16, 185, 129, 0.95); }
         .cam-pip-box.guard-down { border-color: var(--danger); box-shadow: 0 0 18px rgba(239, 68, 68, 0.95); }
         #pose-video { display: none; }
         #pose-canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
         .cam-pip-tag {
             position: absolute; bottom: 0; left: 0; right: 0;
-            background: rgba(0,0,0,0.78); color: #fff; font-size: 0.50rem;
+            background: rgba(0,0,0,0.8); color: var(--neon); font-size: 0.50rem;
             text-align: center; padding: 2px 0; font-weight: 800; direction: ltr;
         }
 
+        /* الأقسام الأربعة الرئيسية */
+        .main-section { display: none; flex-direction: column; gap: 10px; }
+        .main-section.active { display: flex; }
+
+        /* شريط التنقل السفلي الحديث */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; z-index: 90;
+            background: rgba(11, 15, 23, 0.94); backdrop-filter: blur(14px);
+            border-top: 1px solid rgba(0, 191, 255, 0.2);
+            display: flex; justify-content: center; padding: 6px 8px 10px 8px;
+        }
+        .bottom-nav-inner {
+            width: 100%; max-width: 460px;
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+        }
+        .nav-item {
+            background: transparent; border: none; color: var(--muted);
+            display: flex; flex-direction: column; align-items: center; gap: 3px;
+            padding: 6px 4px; border-radius: 14px; cursor: pointer; transition: 0.2s;
+        }
+        .nav-item .nav-icon { font-size: 1.2rem; line-height: 1; }
+        .nav-item .nav-label { font-size: 0.68rem; font-weight: 800; }
+        .nav-item.active {
+            background: rgba(0, 191, 255, 0.14);
+            color: var(--neon);
+            box-shadow: inset 0 0 0 1px rgba(0, 191, 255, 0.35);
+        }
+
+        /* البطاقات والألواح */
+        .panel {
+            background: var(--surface); border-radius: 18px; padding: 12px;
+            border: 1px solid var(--border);
+        }
+        .timer-hero {
+            display: flex; justify-content: space-between; align-items: center;
+            background: var(--card); padding: 10px 14px; border-radius: 14px;
+            border: 1px solid rgba(0,191,255,0.18); margin-bottom: 10px;
+        }
+        .timer-hero .round-info { display: flex; flex-direction: column; gap: 2px; }
+        .timer-hero .round-info strong { font-size: 0.9rem; color: #fff; }
+        .timer-hero .round-info span { font-size: 0.72rem; color: var(--neon); font-weight: 700; }
+        .timer { font-size: 2.2rem; font-weight: 900; color: #fff; letter-spacing: 1px; font-variant-numeric: tabular-nums; }
+        .timer.burnout { color: var(--danger); animation: pulseBurnout 0.7s infinite alternate; }
+        @keyframes pulseBurnout { from { transform: scale(1); } to { transform: scale(1.06); } }
+
+        .combo-display {
+            background: linear-gradient(135deg, rgba(0, 191, 255, 0.08) 0%, rgba(19, 26, 38, 0.9) 100%);
+            border: 1.5px solid rgba(0, 191, 255, 0.4);
+            border-radius: 14px; padding: 12px; text-align: center;
+            min-height: 78px; display: flex; flex-direction: column; justify-content: center; direction: ltr;
+        }
+        .combo-display h2 { color: var(--neon); font-size: 1.18rem; font-weight: 900; line-height: 1.35; }
+        .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
+
+        /* بطاقات اختيار وضع التفاعل (Drills Cards) */
+        .drill-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+        .drill-mode-card {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+            padding: 8px 4px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--muted);
+        }
+        .drill-mode-card .d-icon { font-size: 1.25rem; display: block; margin-bottom: 3px; }
+        .drill-mode-card .d-name { font-size: 0.68rem; font-weight: 800; display: block; }
+        .drill-mode-card.active {
+            background: rgba(0, 191, 255, 0.14); border-color: var(--neon); color: #fff;
+            box-shadow: 0 4px 12px rgba(0, 191, 255, 0.15);
+        }
+        .drill-sub-view { display: none; flex-direction: column; gap: 8px; }
+        .drill-sub-view.active { display: flex; }
+
+        .sub-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; background: #05080f; padding: 4px; border-radius: 12px; border: 1px solid var(--border); }
+        .sub-tab-btn { background: transparent; color: var(--muted); border: none; padding: 7px 4px; border-radius: 8px; font-size: 0.74rem; font-weight: 800; cursor: pointer; }
+        .sub-tab-btn.active { background: var(--neon); color: #000; }
+
+        .stick-box {
+            background: rgba(0, 191, 255, 0.06); border: 1.5px solid var(--neon);
+            border-radius: 14px; padding: 10px; text-align: center; min-height: 82px;
+            display: flex; flex-direction: column; justify-content: center; gap: 4px;
+        }
+        .stick-box.stick-theme { background: rgba(244, 63, 94, 0.08); border-color: var(--stick); }
+        .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
+        .stick-box.tactics-theme { background: rgba(236, 72, 153, 0.09); border-color: var(--tactics); }
+        .stick-move-title { font-size: 1.02rem; color: var(--neon); font-weight: 900; direction: ltr; }
+        .stick-box.stick-theme .stick-move-title { color: #fda4af; }
+        .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
+        .stick-box.tactics-theme .stick-move-title { color: #f472b6; }
+        .stick-dodge-cue { font-size: 0.88rem; color: #fff; font-weight: 800; }
+        .stick-sub-hint { font-size: 0.7rem; color: var(--muted); }
+
+        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 6px; }
+        .score-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 7px; text-align: center; }
+        .score-card span { display: block; font-size: 0.64rem; color: var(--muted); }
+        .score-card strong { font-size: 1.02rem; font-weight: 900; }
+
+        /* الأزرار الرئيسية */
+        .main-btns { display: grid; grid-template-columns: 2.2fr 1fr; gap: 8px; }
+        .btn {
+            background: var(--neon); color: #000; border: none; padding: 12px;
+            border-radius: 14px; font-size: 0.9rem; font-weight: 900; cursor: pointer;
+            box-shadow: 0 4px 14px rgba(0, 191, 255, 0.25); transition: 0.15s;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn.danger { background: var(--danger); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3); }
+        .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
+        .btn.small { padding: 8px 10px; font-size: 0.76rem; border-radius: 10px; }
+
+        .setting-item { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+        .setting-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-weight: 700; }
+        input[type="range"] { width: 100%; accent-color: var(--neon); }
+        select, .text-input { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 8px 10px; border-radius: 10px; font-size: 0.8rem; width: 100%; }
+
+        .cat-title { font-size: 0.74rem; color: var(--neon); font-weight: 800; margin-top: 8px; margin-bottom: 4px; }
+        .move-chips { display: flex; flex-wrap: wrap; gap: 5px; direction: ltr; }
+        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 6px 9px; border-radius: 9px; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+        .chip.head { border-color: rgba(0, 191, 255, 0.4); color: #7dd3fc; }
+        .chip.foot { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
+        
+        .builder-box { background: #05080f; border: 1px solid rgba(0,191,255,0.3); padding: 10px; border-radius: 12px; min-height: 44px; font-size: 0.82rem; color: var(--neon); font-weight: 800; direction: ltr; display: flex; align-items: center; margin-top: 8px; }
+        .saved-list { display: flex; flex-direction: column; gap: 6px; max-height: 170px; overflow-y: auto; margin-top: 6px; }
+        .saved-item { background: var(--card); padding: 8px 10px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; direction: ltr; gap: 6px; }
+        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 5px 8px; border-radius: 7px; font-weight: 800; cursor: pointer; }
+        .drill-pick-btn { background: rgba(0, 191, 255, 0.2); color: var(--neon); border: none; padding: 5px 8px; border-radius: 7px; font-weight: 800; cursor: pointer; }
+        .clips-box { background: #05080f; border-radius: 10px; padding: 8px; font-size: 0.7rem; color: var(--success); direction: ltr; max-height: 110px; overflow-y: auto; margin-top: 7px; line-height: 1.4; white-space: pre-line; }
+
+        /* نافذة الدليل البصري */
         .tutorial-modal {
             display: none; position: fixed; inset: 0; z-index: 300;
-            background: rgba(7, 11, 20, 0.92); backdrop-filter: blur(6px);
+            background: rgba(0, 0, 0, 0.9); backdrop-filter: blur(8px);
             padding: 16px; flex-direction: column; justify-content: center; align-items: center;
         }
         .tutorial-modal.open { display: flex; }
         .tutorial-card {
-            background: var(--panel); border: 1px solid var(--accent); border-radius: 16px;
+            background: var(--surface); border: 1px solid var(--neon); border-radius: 18px;
             max-width: 400px; width: 100%; padding: 14px; text-align: center;
         }
         .tutorial-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin: 10px 0; }
@@ -102,155 +263,80 @@
         .tutorial-step img { width: 100%; height: 105px; object-fit: cover; border-radius: 7px; }
         .tutorial-step span { display: block; font-size: 0.64rem; color: var(--text); font-weight: 700; margin-top: 4px; }
 
+        /* وضع التلفزيون الكامل */
         .tv-hud { display: none; }
         body.tv-fullscreen { padding: 0; overflow: hidden; }
-        body.tv-fullscreen .tabs,
-        body.tv-fullscreen .panel,
-        body.tv-fullscreen .main-btns,
-        body.tv-fullscreen .flip-quick-btn { display: none !important; }
-        body.tv-fullscreen .app { max-width: 100vw; width: 100vw; height: 100vh; gap: 0; }
+        body.tv-fullscreen .top-header,
+        body.tv-fullscreen .bottom-nav,
+        body.tv-fullscreen .main-section,
+        body.tv-fullscreen .stage-hud-overlay { display: none !important; }
+        body.tv-fullscreen .app { max-width: 100vw; width: 100vw; height: 100vh; padding: 0; }
         body.tv-fullscreen .stage-box { position: fixed; inset: 0; width: 100vw; height: 100vh; border-radius: 0; border: none; z-index: 100; }
-        body.tv-fullscreen .cam-pip-box { bottom: 14px; left: 50%; transform: translateX(-50%); width: 112px; height: 126px; z-index: 125; }
-        body.tv-fullscreen .camera-btn { bottom: 18px; right: 18px; z-index: 120; font-size: 0.82rem; padding: 8px 14px; }
-        body.tv-fullscreen .badge-stance { top: 16px; left: 16px; z-index: 120; font-size: 0.8rem; }
-        body.tv-fullscreen .badge-action { top: 16px; right: 16px; z-index: 120; font-size: 0.85rem; padding: 6px 12px; }
-
+        body.tv-fullscreen .cam-pip-box { bottom: 16px; left: 50%; transform: translateX(-50%); width: 112px; height: 126px; z-index: 125; }
         body.tv-fullscreen .tv-hud {
             display: flex; flex-direction: column; justify-content: space-between;
             position: fixed; inset: 0; z-index: 110; pointer-events: none; padding: 52px 18px 145px 18px;
         }
         .tv-top-bar {
             display: flex; justify-content: space-between; align-items: center;
-            background: rgba(7, 11, 20, 0.55); backdrop-filter: blur(4px);
-            padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(6px);
+            padding: 8px 14px; border-radius: 14px; border: 1px solid rgba(0,191,255,0.3);
         }
-        .tv-timer { font-size: 1.8rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
-        .tv-round { font-size: 0.95rem; font-weight: 800; color: var(--accent); }
+        .tv-timer { font-size: 1.8rem; font-weight: 900; color: #fff; }
+        .tv-round { font-size: 0.95rem; font-weight: 800; color: var(--neon); }
         .tv-combo-banner {
             align-self: center; text-align: center;
-            background: rgba(7, 11, 20, 0.72); backdrop-filter: blur(5px);
-            border: 1px solid rgba(245, 158, 11, 0.45); border-radius: 14px;
-            padding: 8px 18px; max-width: 92vw;
+            background: rgba(0, 0, 0, 0.78); backdrop-filter: blur(6px);
+            border: 1px solid rgba(0, 191, 255, 0.5); border-radius: 14px;
+            padding: 10px 20px; max-width: 92vw;
         }
-        .tv-combo-banner h2 { color: var(--accent); font-size: 1.3rem; font-weight: 900; }
+        .tv-combo-banner h2 { color: var(--neon); font-size: 1.35rem; font-weight: 900; }
         .tv-actions-bar {
             position: fixed; bottom: 18px; left: 18px; z-index: 120;
             display: flex; gap: 8px; pointer-events: auto;
         }
-        .tv-ctrl-btn { background: var(--accent); color: #000; border: none; padding: 9px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 900; cursor: pointer; }
-        .tv-ctrl-btn.exit { background: rgba(31, 41, 55, 0.92); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .tv-ctrl-btn { background: var(--neon); color: #000; border: none; padding: 9px 14px; border-radius: 10px; font-size: 0.82rem; font-weight: 900; cursor: pointer; }
+        .tv-ctrl-btn.exit { background: rgba(19, 26, 38, 0.92); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
         .tv-ctrl-btn.stop { background: var(--danger); color: #fff; }
 
-        .panel { background: var(--panel); border-radius: 16px; padding: 10px; border: 1px solid var(--border); }
-        .status-row { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-weight: 700; }
-        .timer { text-align: center; font-size: 2.1rem; font-weight: 900; margin: 2px 0; letter-spacing: 1px; }
-        .timer.burnout { color: var(--danger); animation: pulseBurnout 0.8s infinite alternate; }
-        @keyframes pulseBurnout { from { transform: scale(1); } to { transform: scale(1.06); } }
-        
-        .mini-timer-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: rgba(0, 0, 0, 0.42); padding: 5px 10px; border-radius: 10px;
-            border: 1px solid var(--border); margin-bottom: 7px;
-        }
-        .mini-timer-bar .round-txt { font-size: 0.75rem; color: var(--muted); font-weight: 800; }
-        .mini-timer-bar .clock-txt { font-size: 1.2rem; font-weight: 900; color: #fff; letter-spacing: 1px; }
-        .mini-timer-bar .clock-txt.rest { color: var(--accent); }
-        .mini-timer-bar .clock-txt.burnout { color: var(--danger); }
-
-        .combo-display { background: rgba(245, 158, 11, 0.06); border: 2px dashed var(--accent); border-radius: 12px; padding: 9px; text-align: center; min-height: 74px; display: flex; flex-direction: column; justify-content: center; direction: ltr; }
-        .combo-display h2 { color: var(--accent); font-size: 1.1rem; font-weight: 900; line-height: 1.35; }
-        .combo-display span { font-size: 0.72rem; color: var(--muted); margin-top: 4px; direction: rtl; }
-
-        .stick-box { background: rgba(244, 63, 94, 0.08); border: 2px solid var(--stick); border-radius: 14px; padding: 9px; text-align: center; min-height: 80px; display: flex; flex-direction: column; justify-content: center; gap: 3px; }
-        .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
-        .stick-box.mitt-theme { background: rgba(16, 185, 129, 0.09); border-color: var(--mitt); }
-        .stick-box.tactics-theme { background: rgba(236, 72, 153, 0.09); border-color: var(--tactics); }
-        .stick-move-title { font-size: 1.02rem; color: #fda4af; font-weight: 900; direction: ltr; }
-        .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
-        .stick-box.mitt-theme .stick-move-title { color: #6ee7b7; }
-        .stick-box.tactics-theme .stick-move-title { color: #f472b6; }
-        .stick-dodge-cue { font-size: 0.86rem; color: #fff; font-weight: 800; }
-        .stick-sub-hint { font-size: 0.7rem; color: var(--muted); }
-        
-        .score-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-top: 7px; }
-        .score-card { background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px; padding: 6px; text-align: center; }
-        .score-card span { display: block; font-size: 0.62rem; color: var(--muted); }
-        .score-card strong { font-size: 0.98rem; font-weight: 900; }
-
-        .main-btns { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; }
-        .btn { background: var(--accent); color: #000; border: none; padding: 11px; border-radius: 12px; font-size: 0.88rem; font-weight: 800; cursor: pointer; }
-        .btn.stick-btn { background: var(--stick); color: #fff; }
-        .btn.counter-btn { background: var(--counter); color: #fff; }
-        .btn.mitt-btn { background: var(--mitt); color: #000; }
-        .btn.tactics-btn { background: var(--tactics); color: #fff; }
-        .btn.cam-ref-btn { background: var(--defense); color: #000; }
-        .btn.danger { background: var(--danger); color: #fff; }
-        .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); }
-        .btn.small { padding: 7px 9px; font-size: 0.75rem; border-radius: 8px; }
-
-        .setting-item { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
-        .setting-header { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--muted); font-weight: 700; }
-        input[type="range"] { width: 100%; accent-color: var(--accent); }
-        select, .text-input { background: var(--card); color: #fff; border: 1px solid var(--border); padding: 7px; border-radius: 8px; font-size: 0.8rem; width: 100%; }
-
-        .cat-title { font-size: 0.72rem; color: var(--accent); font-weight: 800; margin-top: 6px; margin-bottom: 3px; }
-        .move-chips { display: flex; flex-wrap: wrap; gap: 4px; direction: ltr; }
-        .chip { background: var(--card); color: var(--text); border: 1px solid var(--border); padding: 5px 7px; border-radius: 7px; font-size: 0.7rem; font-weight: 700; cursor: pointer; }
-        .chip.head { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
-        .chip.foot { border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7; }
-        
-        .builder-box { background: rgba(0,0,0,0.4); border: 1px solid var(--border); padding: 8px; border-radius: 10px; min-height: 40px; font-size: 0.8rem; color: var(--accent); font-weight: 700; direction: ltr; display: flex; align-items: center; margin-top: 7px; }
-        .saved-list { display: flex; flex-direction: column; gap: 5px; max-height: 170px; overflow-y: auto; margin-top: 6px; }
-        .saved-item { background: var(--card); padding: 7px 9px; border-radius: 9px; display: flex; justify-content: space-between; align-items: center; font-size: 0.74rem; direction: ltr; gap: 5px; }
-        .del-btn { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: none; padding: 4px 7px; border-radius: 5px; font-weight: 800; cursor: pointer; }
-        .drill-pick-btn { background: rgba(245, 158, 11, 0.2); color: var(--accent); border: none; padding: 4px 7px; border-radius: 5px; font-weight: 800; cursor: pointer; }
-        .clips-box { background: rgba(0,0,0,0.35); border-radius: 10px; padding: 7px; font-size: 0.7rem; color: var(--success); direction: ltr; max-height: 120px; overflow-y: auto; margin-top: 7px; line-height: 1.4; white-space: pre-line; }
-
         .ai-audit-report {
-            background: rgba(0, 0, 0, 0.45);
-            border: 1px solid rgba(168, 85, 247, 0.45);
-            border-radius: 10px;
-            padding: 9px;
-            font-size: 0.75rem;
-            color: #f3e8ff;
-            line-height: 1.5;
-            max-height: 220px;
-            overflow-y: auto;
-            margin-top: 7px;
-            white-space: pre-line;
-            display: none;
+            background: #05080f; border: 1px solid rgba(0, 191, 255, 0.4); border-radius: 10px;
+            padding: 9px; font-size: 0.75rem; color: #e0f2fe; line-height: 1.5;
+            max-height: 200px; overflow-y: auto; margin-top: 7px; white-space: pre-line; display: none;
         }
-
-        .analytics-card { background: rgba(56, 189, 248, 0.08); border: 1px solid var(--defense); border-radius: 12px; padding: 10px; margin-bottom: 8px; }
-        .analytics-card h3 { color: var(--defense); font-size: 0.88rem; margin-bottom: 6px; }
-        .history-list { max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
-        .history-item { background: var(--card); padding: 7px; border-radius: 8px; font-size: 0.72rem; display: flex; justify-content: space-between; color: var(--muted); }
-        .history-item strong { color: var(--text); }
+        .history-list { max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-top: 6px; }
+        .history-item { background: var(--card); padding: 8px; border-radius: 10px; font-size: 0.74rem; display: flex; justify-content: space-between; color: var(--muted); }
+        .history-item strong { color: #fff; }
     </style>
 </head>
 <body>
 
 <div class="app">
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('train', this)">🥊 التدريب</button>
-        <button class="tab-btn mitt-tab" onclick="switchTab('mitts', this)">🧤 الكف</button>
-        <button class="tab-btn stick-tab" onclick="switchTab('stick', this)">🥢 العصا</button>
-        <button class="tab-btn counter-tab" onclick="switchTab('counter', this)">⚡ كاونتر</button>
-        <button class="tab-btn tactics-tab" onclick="switchTab('tactics', this)">🎯 تكتيك</button>
-        <button class="tab-btn analytics-tab" onclick="switchTab('analytics', this)">📊 التحليلات</button>
-        <button class="tab-btn tv-tab" onclick="enterTvFullscreen()">📺 TV</button>
-        <button class="tab-btn" onclick="switchTab('drill', this)">🔁 الإتقان</button>
-        <button class="tab-btn" onclick="switchTab('combos', this)">➕ الكومبو</button>
-        <button class="tab-btn" onclick="switchTab('settings', this)">⚙️ الضبط</button>
+    <!-- الهيدر العلوي -->
+    <div class="top-header">
+        <div class="brand-box">
+            <img src="assets_images_file_boxing_app_icon.png" alt="Logo">
+            <div class="brand-title">BOXING <span>COACH PRO</span></div>
+        </div>
+        <div class="top-actions">
+            <button class="icon-pill-btn" onclick="openTutorialModal()">📖 الدليل</button>
+            <button class="icon-pill-btn" onclick="enterTvFullscreen()">📺 TV</button>
+        </div>
     </div>
 
+    <!-- مسرح العرض 3D والخلفيات -->
     <div class="stage-box has-gym-bg" id="stage-box">
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
-        <button class="flip-quick-btn" id="flip-btn" onclick="toggleModelFacing()">🔄 عكس الاتجاه</button>
-        <button class="camera-btn" id="cam-btn" onclick="toggleCameraView()">🎥 منظور الخصم</button>
         <div id="canvas-3d"></div>
         <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
+
+        <div class="stage-hud-overlay" id="stage-hud-overlay">
+            <div class="hud-controls-left">
+                <button class="hud-mini-btn" id="flip-btn" onclick="toggleModelFacing()">🔄 عكس</button>
+                <button class="hud-mini-btn cam" id="cam-btn" onclick="toggleCameraView()">🎥 منظور الخصم</button>
+            </div>
+        </div>
 
         <div class="cam-pip-box" id="cam-pip-box">
             <video id="pose-video" autoplay muted playsinline></video>
@@ -273,10 +359,11 @@
         </div>
     </div>
 
-    <div class="tutorial-modal" id="tutorial-modal" onclick="closeTutorialModal(event)">
+    <!-- نافذة دليل الكاميرا -->
+    <div class="tutorial-modal" id="tutorial-modal" onclick="closeTutorialModal()">
         <div class="tutorial-card" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center;">
-                <strong style="color:var(--accent); font-size:0.9rem;">📖 دليل وضعية الكاميرا والحماية</strong>
+                <strong style="color:var(--neon); font-size:0.9rem;">📖 دليل وضعية الكاميرا والحماية</strong>
                 <button class="del-btn" onclick="closeTutorialModal()">✕</button>
             </div>
             <div class="tutorial-grid">
@@ -297,542 +384,351 @@
         </div>
     </div>
 
-    <!-- التبويب 1: التدريب -->
-    <div id="tab-train" class="tab-content active">
+    <!-- القسم 1: الحلبة (التدريب الحر) -->
+    <div id="sec-arena" class="main-section active">
         <div class="panel">
-            <div class="status-row">
-                <span id="round-label">الجولة 1 / 3</span>
-                <span id="mode-badge" style="color: var(--accent);">الوضع: 70 كومبو عشوائي</span>
+            <div class="timer-hero">
+                <div class="round-info">
+                    <strong id="round-label">الجولة 1 / 3</strong>
+                    <span id="mode-badge">70 كومبو عشوائي</span>
+                </div>
+                <div class="timer" id="timer-display">03:00</div>
             </div>
-            <div class="timer" id="timer-display">03:00</div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ للتدريب العادي أو اختر 🧤 كف المدرب</span>
+                <span id="combo-sub">اضغط ابدأ للتدريب أو انتقل إلى 🧤 التفاعل لكفوف المدرب</span>
             </div>
         </div>
 
         <div class="main-btns">
-            <button class="btn" id="start-btn">ابدأ الجلسة</button>
+            <button class="btn" id="start-btn">🥊 ابدأ الجلسة</button>
             <button class="btn secondary" onclick="resetSession()">إعادة</button>
         </div>
     </div>
 
-    <!-- التبويب 2: كف المدرب الشخصي -->
-    <div id="tab-mitts" class="tab-content">
-        <div class="panel">
-            <div class="mini-timer-bar">
-                <span class="round-txt" id="mitts-round-label">الجولة 1 / 3</span>
-                <span class="clock-txt" id="mitts-timer-display">03:00</span>
+    <!-- القسم 2: التفاعل (الكف، العصا، الكاونتر، التكتيك) -->
+    <div id="sec-drills" class="main-section">
+        <div class="drill-cards-grid">
+            <div class="drill-mode-card active" id="dcard-mitts" onclick="selectDrillSubMode('mitts')">
+                <span class="d-icon">🧤</span>
+                <span class="d-name">كف المدرب</span>
             </div>
-
-            <div class="sub-tabs">
-                <button class="sub-tab-btn active" id="mitts-sub-random" onclick="switchMittsSubMode('random')">🔄 كومبوهات متنوعة</button>
-                <button class="sub-tab-btn" id="mitts-sub-repeat" onclick="switchMittsSubMode('repeat')">🔁 تكرار الكومبو</button>
+            <div class="drill-mode-card" id="dcard-stick" onclick="selectDrillSubMode('stick')">
+                <span class="d-icon">🥢</span>
+                <span class="d-name">عصا التفادي</span>
             </div>
+            <div class="drill-mode-card" id="dcard-counter" onclick="selectDrillSubMode('counter')">
+                <span class="d-icon">⚡</span>
+                <span class="d-name">كاونتر</span>
+            </div>
+            <div class="drill-mode-card" id="dcard-tactics" onclick="selectDrillSubMode('tactics')">
+                <span class="d-icon">🎯</span>
+                <span class="d-name">تكتيك</span>
+            </div>
+        </div>
 
-            <div id="mitts-repeat-controls" style="display: none; background: rgba(0,0,0,0.28); padding: 8px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border);">
-                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px;">
-                    <div>
-                        <span style="font-size: 0.7rem; color: var(--muted); font-weight: 700;">اختر الكومبو للتكرار:</span>
-                        <select id="mitts-repeat-select" style="margin-top: 3px; padding: 6px; font-size: 0.75rem;" onchange="resetMittsRepeatProgress()"></select>
-                    </div>
-                    <div>
-                        <span style="font-size: 0.7rem; color: var(--muted); font-weight: 700;">التكرارات:</span>
-                        <select id="mitts-repeat-target" style="margin-top: 3px; padding: 6px; font-size: 0.75rem;" onchange="resetMittsRepeatProgress()">
+        <!-- وضع الكف -->
+        <div id="drill-view-mitts" class="drill-sub-view active">
+            <div class="panel">
+                <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
+                    <div class="round-info"><strong id="mitts-round-label">الجولة 1 / 3</strong><span>Focus Mitts</span></div>
+                    <div class="timer" id="mitts-timer-display" style="font-size: 1.65rem;">03:00</div>
+                </div>
+
+                <div class="sub-tabs" style="margin-bottom: 8px;">
+                    <button class="sub-tab-btn active" id="mitts-sub-random" onclick="switchMittsSubMode('random')">🔄 كومبوهات متنوعة</button>
+                    <button class="sub-tab-btn" id="mitts-sub-repeat" onclick="switchMittsSubMode('repeat')">🔁 تكرار الكومبو</button>
+                </div>
+
+                <div id="mitts-repeat-controls" style="display: none; background: #05080f; padding: 8px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--border);">
+                    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px;">
+                        <select id="mitts-repeat-select" onchange="resetMittsRepeatProgress()"></select>
+                        <select id="mitts-repeat-target" onchange="resetMittsRepeatProgress()">
                             <option value="5">5 مرات</option>
                             <option value="10" selected>10 مرات</option>
                             <option value="15">15 مرة</option>
-                            <option value="20">20 مرة</option>
                             <option value="999">مستمر ∞</option>
                         </select>
                     </div>
-                </div>
-                <div style="font-size: 0.72rem; color: var(--mitt); font-weight: 800; margin-top: 6px; text-align: center;">
-                    تقدم التكرار: <span id="mitts-repeat-progress">0 / 10</span>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-3" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا (Kalman)</button>
-                <button class="btn secondary small" onclick="openTutorialModal()">📖 دليل الكاميرا</button>
-            </div>
-
-            <div class="stick-box mitt-theme">
-                <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS COMBOS</div>
-                <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة على كفوف المدرب</div>
-                <div class="stick-sub-hint" id="mitts-hint-label">يتم احتساب الإصابة فقط عند مد الذراع وتسديد لكمة فعلية</div>
-            </div>
-
-            <div class="move-chips" style="margin-top: 8px; justify-content: center;">
-                <button class="chip" onclick="previewSinglePad('JAB')">1 Jab</button>
-                <button class="chip" onclick="previewSinglePad('CROSS')">2 Cross</button>
-                <button class="chip" onclick="previewSinglePad('L_HOOK')">3 L-Hook</button>
-                <button class="chip" onclick="previewSinglePad('R_HOOK')">4 R-Hook</button>
-                <button class="chip" onclick="previewSinglePad('L_UPPER')">5 L-Upper</button>
-                <button class="chip" onclick="previewSinglePad('R_UPPER')">6 R-Upper</button>
-            </div>
-
-            <div class="score-grid">
-                <div class="score-card">
-                    <span>اللكمات المطلوبة</span>
-                    <strong id="mitts-punches-count" style="color: var(--mitt);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>إصابات الكاميرا</span>
-                    <strong id="mitts-cam-hits" style="color: var(--accent);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>الكومبوهات</span>
-                    <strong id="mitts-combos-count" style="color: var(--defense);">0</strong>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 7px;">
-                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('mitts')">📺 عرض كف المدرب على التلفزيون</button>
-            </div>
-        </div>
-
-        <div class="main-btns">
-            <button class="btn mitt-btn" id="mitts-start-btn" onclick="toggleMittsSession()">🧤 ابدأ تمرين كف المدرب</button>
-            <button class="btn secondary" onclick="resetMittsSession()">إعادة</button>
-        </div>
-    </div>
-
-    <!-- التبويب 3: العصا -->
-    <div id="tab-stick" class="tab-content">
-        <div class="panel">
-            <div class="mini-timer-bar">
-                <span class="round-txt" id="stick-round-label">الجولة 1 / 3</span>
-                <span class="clock-txt" id="stick-timer-display">03:00</span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
-                <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة الوقفة</button>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div class="setting-item" style="margin-bottom: 0;">
-                    <span class="setting-header"><span>سرعة اندفاع العصا:</span></span>
-                    <select id="stick-speed">
-                        <option value="0.65">بطيئة (تعلم المسار)</option>
-                        <option value="1.0" selected>متوسطة (واقعية)</option>
-                        <option value="1.45">سريعة (رد فعل خاطف)</option>
-                    </select>
-                </div>
-                <div class="setting-item" style="margin-bottom: 0;">
-                    <span class="setting-header"><span>توجيه الصوت:</span></span>
-                    <select id="stick-voice-mode">
-                        <option value="silent" selected>صامت (تفاعل بالعين فقط)</option>
-                        <option value="voiced">مع نطق حركة التفادي</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="stick-box">
-                <div class="stick-move-title" id="stick-attack-label">🥢 SPARRING STICK (DEFENSE ONLY)</div>
-                <div class="stick-dodge-cue" id="stick-dodge-label">فعّل الكاميرا أو ابدأ اشتباك العصا</div>
-                <div class="stick-sub-hint" id="stick-hint-label">في الرول: انحنِ للأسفل واخرج في عكس اتجاه قدوم العصا</div>
-            </div>
-
-            <div class="score-grid">
-                <div class="score-card">
-                    <span>النقاط</span>
-                    <strong id="ref-points" style="color: var(--success);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>التزام الدفاع</span>
-                    <strong id="ref-accuracy" style="color: var(--defense);">0%</strong>
-                </div>
-                <div class="score-card">
-                    <span>تفادي / إصابة</span>
-                    <strong id="ref-ratio" style="color: var(--accent);">0 / 0</strong>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 7px;">
-                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('stick')">📺 عرض العصا على التلفزيون</button>
-            </div>
-        </div>
-
-        <div class="main-btns">
-            <button class="btn stick-btn" id="stick-start-btn" onclick="toggleStickSession()">🥢 ابدأ اشتباك العصا</button>
-            <button class="btn secondary" onclick="resetStickSession()">إعادة</button>
-        </div>
-    </div>
-
-    <!-- التبويب 4: الرد الهجومي بعد التفادي -->
-    <div id="tab-counter" class="tab-content">
-        <div class="panel">
-            <div class="mini-timer-bar">
-                <span class="round-txt" id="counter-round-label">الجولة 1 / 3</span>
-                <span class="clock-txt" id="counter-timer-display">03:00</span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-2" onclick="toggleCameraReferee()">📷 تفعيل مراقبة الكاميرا</button>
-                <button class="btn secondary small" onclick="testMittPreview()">🎯 تجربة كف الرد</button>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
-                <div class="setting-item" style="margin-bottom: 0;">
-                    <span class="setting-header"><span>سرعة الاشتباك:</span></span>
-                    <select id="counter-speed">
-                        <option value="0.70">بطيئة (تعلم الكاونتر)</option>
-                        <option value="1.0" selected>متوسطة (واقعية)</option>
-                        <option value="1.35">سريعة (اشتباك حاد)</option>
-                    </select>
-                </div>
-                <div class="setting-item" style="margin-bottom: 0;">
-                    <span class="setting-header"><span>نطق المدرب:</span></span>
-                    <select id="counter-voice-mode">
-                        <option value="voiced" selected>مفعّل (نطق التفادي والرد)</option>
-                        <option value="silent">صامت (بصري فقط)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="stick-box counter-theme">
-                <div class="stick-move-title" id="counter-phase-label">⚡ DODGE & COUNTER VISION</div>
-                <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ليظهر كف المدرب!</div>
-                <div class="stick-sub-hint" id="counter-hint-label">تراقب الكاميرا حركة رأسك للتفادي ثم مد ذراعك لإصابة كف المدرب (+20)</div>
-            </div>
-
-            <div class="score-grid">
-                <div class="score-card">
-                    <span>نقاط الكاونتر</span>
-                    <strong id="cnt-points" style="color: var(--counter);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>أسرع رد فعل</span>
-                    <strong id="cnt-best-ms" style="color: var(--success);">-- ms</strong>
-                </div>
-                <div class="score-card">
-                    <span>كاونتر ناجح</span>
-                    <strong id="cnt-hits" style="color: var(--accent);">0</strong>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 7px;">
-                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('counter')">📺 عرض الكاونتر على التلفزيون</button>
-            </div>
-        </div>
-
-        <div class="main-btns">
-            <button class="btn counter-btn" id="counter-start-btn" onclick="toggleCounterSession()">⚡ ابدأ تدريب الكاونتر</button>
-            <button class="btn secondary" onclick="resetCounterSession()">إعادة</button>
-        </div>
-    </div>
-
-    <!-- التبويب 5: التدريبات التكتيكية الخمسة المتقدمة -->
-    <div id="tab-tactics" class="tab-content">
-        <div class="panel">
-            <div class="mini-timer-bar">
-                <span class="round-txt" id="tactics-round-label">الجولة 1 / 3</span>
-                <span class="clock-txt" id="tactics-timer-display">03:00</span>
-            </div>
-
-            <div class="setting-item" style="margin-bottom: 8px;">
-                <span class="setting-header"><span>اختر التدريب التكتيكي المتقدم:</span></span>
-                <select id="tactics-mode-select" onchange="onTacticsModeChange()">
-                    <option value="feint">1️⃣ الخداع البصري والقرار اللحظي (أخضر/أحمر/أصفر)</option>
-                    <option value="mirror">2️⃣ ملاكم الظل التفاعلي وملاحقة الزوايا (Angle Cut)</option>
-                    <option value="pyramid">3️⃣ تحدي الذاكرة الحركية المتراكمة (1 ➔ 8 حركات)</option>
-                    <option value="pocket">4️⃣ الضغط داخل المسافة القريبة (Pocket Survival)</option>
-                    <option value="archetype">5️⃣ القتال ضد أنماط الخصوم (Swarmer / Out-Boxer / Southpaw)</option>
-                </select>
-            </div>
-
-            <div id="archetype-selector-box" style="display: none; margin-bottom: 8px;">
-                <select id="opponent-archetype-type" onchange="onTacticsModeChange()">
-                    <option value="swarmer">🐂 المهاجم الضاغط (Swarmer - هجوم متواصل)</option>
-                    <option value="outboxer">🦒 طويل القامة (Out-Boxer - اختراق المسافة)</option>
-                    <option value="southpaw">🔄 الملاكم الأعسر (Southpaw - زوايا معكوسة)</option>
-                </select>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn cam-ref-btn small" id="cam-ref-toggle-btn-4" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا التفاعلية</button>
-                <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة</button>
-            </div>
-
-            <div class="stick-box tactics-theme" id="tactics-display-box">
-                <div class="stick-move-title" id="tactics-title-label">🎯 FEINT & DECISION</div>
-                <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب | أحمر = تفادَ (خدعة) | أصفر = تراجع</div>
-                <div class="stick-sub-hint" id="tactics-hint-label">اضغط ابدأ لبدء التحدي التكتيكي التفاعلي</div>
-            </div>
-
-            <div class="score-grid">
-                <div class="score-card">
-                    <span>نقاط التكتيك</span>
-                    <strong id="tac-points" style="color: var(--tactics);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>المستوى / السلسلة</span>
-                    <strong id="tac-streak" style="color: var(--success);">0</strong>
-                </div>
-                <div class="score-card">
-                    <span>قرارات صحيحة</span>
-                    <strong id="tac-correct" style="color: var(--accent);">0</strong>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 7px;">
-                <button class="btn secondary small" style="width: 100%; padding: 6px;" onclick="enterTvFullscreenForMode('tactics')">📺 عرض التكتيك على التلفزيون</button>
-            </div>
-        </div>
-
-        <div class="main-btns">
-            <button class="btn tactics-btn" id="tactics-start-btn" onclick="toggleTacticsSession()">🎯 ابدأ التدريب التكتيكي</button>
-            <button class="btn secondary" onclick="resetTacticsSession()">إعادة</button>
-        </div>
-    </div>
-
-    <!-- التبويب 6: التحليلات وأداء اللاعب -->
-    <div id="tab-analytics" class="tab-content">
-        <div class="panel">
-            <div class="analytics-card" style="display:flex; align-items:center; gap:10px;">
-                <img src="assets_images_file_boxing_app_icon.png" alt="Boxing Pro" style="width:52px; height:52px; object-fit:contain; flex-shrink:0;">
-                <div style="flex:1;">
-                    <h3>📊 ملخص إحصائيات الأداء التراكمي</h3>
-                    <div class="score-grid" style="margin-top: 4px;">
-                        <div class="score-card">
-                            <span>الجلسات</span>
-                            <strong id="stat-total-sessions" style="color: var(--defense);">0</strong>
-                        </div>
-                        <div class="score-card">
-                            <span>رد الفعل</span>
-                            <strong id="stat-best-reaction" style="color: var(--success);">-- ms</strong>
-                        </div>
-                        <div class="score-card">
-                            <span>الحماية</span>
-                            <strong id="stat-guard-rate" style="color: var(--accent);">100%</strong>
-                        </div>
+                    <div style="font-size: 0.72rem; color: var(--neon); font-weight: 800; margin-top: 5px; text-align: center;">
+                        التقدم: <span id="mitts-repeat-progress">0 / 10</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="setting-header" style="margin-top: 8px;"><span>سجل الجلسات المحفوظة في الجهاز:</span></div>
-            <div class="history-list" id="session-history-list">
-                <div style="text-align: center; color: var(--muted); font-size: 0.75rem; padding: 12px;">لا توجد جلسات مسجلة بعد. ابدأ التدريب لتظهر الإحصائيات هنا!</div>
-            </div>
+                <button class="btn secondary small" id="cam-ref-toggle-btn-3" style="width: 100%; margin-bottom: 8px; border-color: var(--neon); color: var(--neon);" onclick="toggleCameraReferee()">📷 تفعيل تتبع الكاميرا (Kalman)</button>
 
-            <div style="margin-top: 8px;">
-                <button class="btn secondary small" style="width: 100%;" onclick="clearSessionHistory()">🗑️ مسح سجل التحليلات</button>
+                <div class="stick-box">
+                    <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS</div>
+                    <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة على كفوف المدرب</div>
+                    <div class="stick-sub-hint">يتم احتساب الإصابة عند مد الذراع وتسديد لكمة فعلية</div>
+                </div>
+
+                <div class="move-chips" style="margin-top: 8px; justify-content: center;">
+                    <button class="chip" onclick="previewSinglePad('JAB')">1 Jab</button>
+                    <button class="chip" onclick="previewSinglePad('CROSS')">2 Cross</button>
+                    <button class="chip" onclick="previewSinglePad('L_HOOK')">3 L-Hook</button>
+                    <button class="chip" onclick="previewSinglePad('R_HOOK')">4 R-Hook</button>
+                    <button class="chip" onclick="previewSinglePad('L_UPPER')">5 L-Upper</button>
+                    <button class="chip" onclick="previewSinglePad('R_UPPER')">6 R-Upper</button>
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-card"><span>المطلوبة</span><strong id="mitts-punches-count" style="color: var(--neon);">0</strong></div>
+                    <div class="score-card"><span>إصاباتك</span><strong id="mitts-cam-hits" style="color: var(--success);">0</strong></div>
+                    <div class="score-card"><span>الكومبوهات</span><strong id="mitts-combos-count" style="color: var(--accent);">0</strong></div>
+                </div>
+            </div>
+            <div class="main-btns">
+                <button class="btn" id="mitts-start-btn" onclick="toggleMittsSession()">🧤 ابدأ تمرين الكف</button>
+                <button class="btn secondary" onclick="resetMittsSession()">إعادة</button>
+            </div>
+        </div>
+
+        <!-- وضع العصا -->
+        <div id="drill-view-stick" class="drill-sub-view">
+            <div class="panel">
+                <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
+                    <div class="round-info"><strong id="stick-round-label">الجولة 1 / 3</strong><span>Defense Stick</span></div>
+                    <div class="timer" id="stick-timer-display" style="font-size: 1.65rem;">03:00</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <button class="btn secondary small" id="cam-ref-toggle-btn" style="border-color: var(--neon); color: var(--neon);" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا</button>
+                    <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <select id="stick-speed">
+                        <option value="0.65">سرعة بطيئة</option>
+                        <option value="1.0" selected>سرعة متوسطة</option>
+                        <option value="1.45">سرعة خاطفة</option>
+                    </select>
+                    <select id="stick-voice-mode">
+                        <option value="silent" selected>صامت (بصري)</option>
+                        <option value="voiced">مع نطق التفادي</option>
+                    </select>
+                </div>
+
+                <div class="stick-box stick-theme">
+                    <div class="stick-move-title" id="stick-attack-label">🥢 SPARRING STICK</div>
+                    <div class="stick-dodge-cue" id="stick-dodge-label">تفادَ اندفاع العصا بحركة الرأس</div>
+                    <div class="stick-sub-hint">Slip يمين/يسار أو انحنِ للأسفل في الهوك</div>
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-card"><span>النقاط</span><strong id="ref-points" style="color: var(--success);">0</strong></div>
+                    <div class="score-card"><span>الدقة</span><strong id="ref-accuracy" style="color: var(--neon);">0%</strong></div>
+                    <div class="score-card"><span>تفادي / إصابة</span><strong id="ref-ratio" style="color: var(--accent);">0 / 0</strong></div>
+                </div>
+            </div>
+            <div class="main-btns">
+                <button class="btn" id="stick-start-btn" onclick="toggleStickSession()">🥢 ابدأ اشتباك العصا</button>
+                <button class="btn secondary" onclick="resetStickSession()">إعادة</button>
+            </div>
+        </div>
+
+        <!-- وضع الكاونتر -->
+        <div id="drill-view-counter" class="drill-sub-view">
+            <div class="panel">
+                <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
+                    <div class="round-info"><strong id="counter-round-label">الجولة 1 / 3</strong><span>Dodge & Counter</span></div>
+                    <div class="timer" id="counter-timer-display" style="font-size: 1.65rem;">03:00</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <button class="btn secondary small" id="cam-ref-toggle-btn-2" style="border-color: var(--neon); color: var(--neon);" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا</button>
+                    <button class="btn secondary small" onclick="testMittPreview()">🎯 تجربة الكف</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <select id="counter-speed">
+                        <option value="0.70">بطيء</option>
+                        <option value="1.0" selected>متوسط</option>
+                        <option value="1.35">سريع</option>
+                    </select>
+                    <select id="counter-voice-mode">
+                        <option value="voiced" selected>مع النطق</option>
+                        <option value="silent">صامت</option>
+                    </select>
+                </div>
+
+                <div class="stick-box counter-theme">
+                    <div class="stick-move-title" id="counter-phase-label">⚡ DODGE & COUNTER</div>
+                    <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ليظهر كف الرد الهجومي!</div>
+                    <div class="stick-sub-hint">يقيس سرعة رد فعلك بالملي ثانية</div>
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-card"><span>النقاط</span><strong id="cnt-points" style="color: var(--counter);">0</strong></div>
+                    <div class="score-card"><span>أسرع رد</span><strong id="cnt-best-ms" style="color: var(--success);">-- ms</strong></div>
+                    <div class="score-card"><span>كاونتر ناجح</span><strong id="cnt-hits" style="color: var(--neon);">0</strong></div>
+                </div>
+            </div>
+            <div class="main-btns">
+                <button class="btn" id="counter-start-btn" onclick="toggleCounterSession()">⚡ ابدأ تدريب الكاونتر</button>
+                <button class="btn secondary" onclick="resetCounterSession()">إعادة</button>
+            </div>
+        </div>
+
+        <!-- وضع التكتيك -->
+        <div id="drill-view-tactics" class="drill-sub-view">
+            <div class="panel">
+                <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
+                    <div class="round-info"><strong id="tactics-round-label">الجولة 1 / 3</strong><span>Tactical Arena</span></div>
+                    <div class="timer" id="tactics-timer-display" style="font-size: 1.65rem;">03:00</div>
+                </div>
+
+                <select id="tactics-mode-select" style="margin-bottom: 6px;" onchange="onTacticsModeChange()">
+                    <option value="feint">1️⃣ الخداع البصري (أخضر=اضرب / أحمر=تفادَ / أصفر=تراجع)</option>
+                    <option value="mirror">2️⃣ ملاكم الظل وملاحقة الزوايا (Angle Cut)</option>
+                    <option value="pyramid">3️⃣ تحدي الذاكرة المتراكمة (1 ➔ 8 حركات)</option>
+                    <option value="pocket">4️⃣ القتال في المسافة القريبة (Pocket)</option>
+                    <option value="archetype">5️⃣ أنماط الخصوم (Swarmer / Out-Boxer / Southpaw)</option>
+                </select>
+
+                <div id="archetype-selector-box" style="display: none; margin-bottom: 6px;">
+                    <select id="opponent-archetype-type" onchange="onTacticsModeChange()">
+                        <option value="swarmer">🐂 المهاجم الضاغط (Swarmer)</option>
+                        <option value="outboxer">🦒 طويل القامة (Out-Boxer)</option>
+                        <option value="southpaw">🔄 الملاكم الأعسر (Southpaw)</option>
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <button class="btn secondary small" id="cam-ref-toggle-btn-4" style="border-color: var(--neon); color: var(--neon);" onclick="toggleCameraReferee()">📷 تفعيل الكاميرا</button>
+                    <button class="btn secondary small" onclick="calibrateStance()">🎯 معايرة</button>
+                </div>
+
+                <div class="stick-box tactics-theme">
+                    <div class="stick-move-title" id="tactics-title-label">🎯 FEINT & DECISION</div>
+                    <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب | أحمر = تفادَ | أصفر = تراجع</div>
+                    <div class="stick-sub-hint" id="tactics-hint-label">اضغط ابدأ لبدء التحدي التكتيكي</div>
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-card"><span>النقاط</span><strong id="tac-points" style="color: var(--tactics);">0</strong></div>
+                    <div class="score-card"><span>السلسلة</span><strong id="tac-streak" style="color: var(--success);">0</strong></div>
+                    <div class="score-card"><span>صحيح</span><strong id="tac-correct" style="color: var(--neon);">0</strong></div>
+                </div>
+            </div>
+            <div class="main-btns">
+                <button class="btn" id="tactics-start-btn" onclick="toggleTacticsSession()">🎯 ابدأ التكتيك</button>
+                <button class="btn secondary" onclick="resetTacticsSession()">إعادة</button>
             </div>
         </div>
     </div>
 
-    <!-- التبويب 7: الإتقان -->
-    <div id="tab-drill" class="tab-content">
+    <!-- القسم 3: مختبر الكومبو والإتقان -->
+    <div id="sec-lab" class="main-section">
         <div class="panel">
-            <div class="setting-item">
-                <span class="setting-header"><span>وضع التكرار للإتقان:</span></span>
+            <div class="setting-header" style="color: var(--neon);"><span>🔁 وضع التكرار للإتقان (Drill Mode):</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                 <select id="drill-enabled" onchange="updateModeBadge()">
-                    <option value="off">متوقف (تدريب متنوع تلقائي)</option>
-                    <option value="on">مُفعّل (تكرار الكومبو المختار لإتقانه)</option>
+                    <option value="off">متوقف (تنوع تلقائي)</option>
+                    <option value="on">مُفعّل (تكرار الكومبو)</option>
                 </select>
-            </div>
-            <div class="setting-item">
-                <span class="setting-header"><span>اختر الكومبو المراد إتقانه (70 كومبو + مخصص):</span></span>
-                <select id="drill-combo-select"></select>
-            </div>
-            <div class="setting-item">
-                <div class="setting-header">
-                    <span>عدد التكرارات المطلوبة:</span>
-                    <span id="drill-target-val" style="color: var(--accent);">10 مرات</span>
-                </div>
                 <select id="drill-reps-target" onchange="updateDrillTarget()">
                     <option value="5">5 تكرارات</option>
                     <option value="10" selected>10 تكرارات</option>
                     <option value="15">15 تكراراً</option>
-                    <option value="20">20 تكراراً</option>
-                    <option value="999">تكرار مستمر طوال الجولة</option>
+                    <option value="999">مستمر ∞</option>
                 </select>
             </div>
-            <div style="background: rgba(0,0,0,0.35); padding: 12px; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
-                <div style="font-size: 0.78rem; color: var(--muted);">تقدم الإتقان الحالي:</div>
-                <div id="drill-counter-display" style="font-size: 1.5rem; font-weight: 900; color: var(--success); margin-top: 4px;">0 / 10</div>
-                <button class="btn secondary small" style="margin-top: 8px;" onclick="resetDrillCounter()">تصفير العداد</button>
+            <select id="drill-combo-select" style="margin-top: 6px;"></select>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top: 8px; background: var(--card); padding: 8px 12px; border-radius: 10px;">
+                <span style="font-size:0.75rem; color:var(--muted);">تقدم الإتقان: <strong id="drill-counter-display" style="color:var(--neon);">0 / 10</strong></span>
+                <button class="btn secondary small" onclick="resetDrillCounter()">تصفير</button>
             </div>
         </div>
-    </div>
 
-    <!-- التبويب 8: الكومبوهات -->
-    <div id="tab-combos" class="tab-content">
         <div class="panel">
-            <div class="setting-header"><span>مصدر الكومبوهات في التدريب العادي:</span></div>
+            <div class="setting-header"><span>➕ مصمم الكومبوهات المخصصة:</span></div>
             <select id="combo-source" style="margin-top: 5px;" onchange="updateModeBadge()">
-                <option value="mixed_all">مكتبة الـ 70 كومبو (شامل ومتجدد)</option>
+                <option value="mixed_all">مكتبة الـ 70 كومبو (شامل)</option>
                 <option value="custom">كومبوهاتي المحفوظة فقط</option>
-                <option value="both">دمج الـ 70 كومبو مع كومبوهاتي</option>
+                <option value="both">دمج الكل</option>
             </select>
 
-            <div class="cat-title">🥊 اللكمات (اضغط لاختبار كل لكمة على حدة):</div>
+            <div class="cat-title">🥊 اللكمات:</div>
             <div class="move-chips">
                 <button class="chip" onclick="addAndPreview('JAB')">1 Jab</button>
                 <button class="chip" onclick="addAndPreview('CROSS')">2 Cross</button>
-                <button class="chip" onclick="addAndPreview('L_HOOK')">3 Lead Hook</button>
-                <button class="chip" onclick="addAndPreview('R_HOOK')">4 Rear Hook</button>
-                <button class="chip" onclick="addAndPreview('L_UPPER')">5 Lead Upper</button>
-                <button class="chip" onclick="addAndPreview('R_UPPER')">6 Rear Upper</button>
+                <button class="chip" onclick="addAndPreview('L_HOOK')">3 L-Hook</button>
+                <button class="chip" onclick="addAndPreview('R_HOOK')">4 R-Hook</button>
+                <button class="chip" onclick="addAndPreview('L_UPPER')">5 L-Upper</button>
+                <button class="chip" onclick="addAndPreview('R_UPPER')">6 R-Upper</button>
             </div>
 
-            <div class="cat-title">🛡️ حركة الرأس:</div>
+            <div class="cat-title">🛡️ الدفاع والقدمين:</div>
             <div class="move-chips">
-                <button class="chip head" onclick="addAndPreview('SLIP_L')">Slip Left</button>
-                <button class="chip head" onclick="addAndPreview('SLIP_R')">Slip Right</button>
+                <button class="chip head" onclick="addAndPreview('SLIP_L')">Slip L</button>
+                <button class="chip head" onclick="addAndPreview('SLIP_R')">Slip R</button>
                 <button class="chip head" onclick="addAndPreview('ROLL')">Roll</button>
-                <button class="chip head" onclick="addAndPreview('PULL')">Pull Back</button>
-            </div>
-
-            <div class="cat-title">👟 حركة القدمين:</div>
-            <div class="move-chips">
+                <button class="chip head" onclick="addAndPreview('PULL')">Pull</button>
                 <button class="chip foot" onclick="addAndPreview('STEP_IN')">Step In</button>
                 <button class="chip foot" onclick="addAndPreview('STEP_BACK')">Step Back</button>
-                <button class="chip foot" onclick="addAndPreview('PIVOT_L')">Pivot Left</button>
-                <button class="chip foot" onclick="addAndPreview('PIVOT_R')">Pivot Right</button>
+                <button class="chip foot" onclick="addAndPreview('PIVOT_L')">Pivot L</button>
+                <button class="chip foot" onclick="addAndPreview('PIVOT_R')">Pivot R</button>
             </div>
 
             <div class="builder-box" id="builder-preview">اضغط على الحركات لبناء الكومبو...</div>
             <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-top: 8px;">
-                <button class="btn small" onclick="saveCustomCombo()">حفظ الكومبو</button>
+                <button class="btn small" onclick="saveCustomCombo()">💾 حفظ الكومبو</button>
                 <button class="btn secondary small" onclick="clearBuilder()">مسح</button>
             </div>
-        </div>
 
-        <div class="panel">
-            <div class="setting-header"><span>كومبوهاتك المحفوظة (<span id="saved-count">0</span>):</span></div>
+            <div class="setting-header" style="margin-top: 10px;"><span>كومبوهاتك المحفوظة (<span id="saved-count">0</span>):</span></div>
             <div class="saved-list" id="saved-list"></div>
         </div>
     </div>
 
-    <!-- التبويب 9: الضبط -->
-    <div id="tab-settings" class="tab-content">
-        <div class="panel" style="border: 1px solid var(--accent); background: rgba(245, 158, 11, 0.05);">
-            <div class="setting-header" style="margin-bottom: 6px; color: var(--accent);"><span>🏟️ بيئة الحلبة وخلفية المسرح 3D:</span></div>
-            <div class="setting-item" style="margin-bottom: 0;">
-                <select id="gym-bg-select" onchange="changeGymBackground(this.value)">
-                    <option value="assets_images_bgchampionshipring.jpg" selected>🏆 حلبة البطولة تحت الأضواء (Championship Ring)</option>
-                    <option value="assets_images_bgdarkboxing.jpg">🥊 صالة الملاكمة الداكنة (Dark Boxing Gym)</option>
-                    <option value="assets_images_bghomegym.jpg">🏠 النادي المنزلي (Home Gym)</option>
-                    <option value="assets_images_bgsunrisegym.jpg">🌅 صالة الشروق (Sunrise Gym)</option>
-                    <option value="none">🌑 خلفية داكنة كلاسيكية (بدون صورة)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="panel" style="border: 1px solid var(--mitt); background: rgba(16, 185, 129, 0.05);">
-            <div class="setting-header" style="margin-bottom: 6px; color: var(--mitt);"><span>🔥 أوضاع التدريب الاحترافية وتوفير الطاقة:</span></div>
-            
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div class="setting-item" style="margin-bottom: 4px;">
-                    <span class="setting-header"><span>تحدي آخر 30 ثانية:</span></span>
-                    <select id="burnout-mode-select" onchange="updateAdvancedTrainingOptions()">
-                        <option value="on" selected>مفعل (سرعة قصوى 🔥)</option>
-                        <option value="off">متوقف (إيقاع ثابت)</option>
-                    </select>
-                </div>
-                <div class="setting-item" style="margin-bottom: 4px;">
-                    <span class="setting-header"><span>التكييف الذكي التلقائي:</span></span>
-                    <select id="adaptive-ai-select" onchange="updateAdvancedTrainingOptions()">
-                        <option value="on" selected>مفعل (تصحيح الأخطاء)</option>
-                        <option value="off">متوقف (عشوائي)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
-                <div class="setting-item" style="margin-bottom: 4px;">
-                    <span class="setting-header"><span>المؤثرات الصوتية والاهتزاز:</span></span>
-                    <select id="sfx-mode-select" onchange="updateAdvancedTrainingOptions()">
-                        <option value="on" selected>مفعلة (جرس واهتزاز 📳)</option>
-                        <option value="off">صامتة</option>
-                    </select>
-                </div>
-                <div class="setting-item" style="margin-bottom: 4px;">
-                    <span class="setting-header"><span>وضع العرض (3D / صوت):</span></span>
-                    <select id="audio-only-select" onchange="toggleAudioOnlyMode()">
-                        <option value="3d" selected>عرض 3D كامل</option>
-                        <option value="audio">صوت فقط (توفير البطارية)</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="setting-item" style="margin-top: 6px; margin-bottom: 0;">
-                <span class="setting-header"><span>تنبيه رفع الحماية بالكاميرا (Guard Up Alert):</span></span>
-                <select id="guard-alert-select" onchange="updateAdvancedTrainingOptions()">
-                    <option value="on" selected>مفعل (قياس دقيق لمفصل القبضة)</option>
-                    <option value="off">متوقف (بدون تنبيه Guard Up)</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="panel" style="border: 1px solid var(--counter); background: rgba(168, 85, 247, 0.05);">
-            <div class="setting-header" style="margin-bottom: 6px; color: var(--counter);"><span>🤖 مساعد المدرب الذكي (AI Cornerman & Auditor):</span></div>
-            
-            <div class="setting-item">
-                <span class="setting-header"><span>حالة الذكاء الاصطناعي:</span></span>
-                <select id="ai-mode-select" onchange="updateAiSettings()">
-                    <option value="off">مغلق (بدون إنترنت / تدريب طبيعي)</option>
-                    <option value="on">مفعل (تحليل وتوجيه ذكي بين الجولات)</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <span class="setting-header"><span>اختيار نموذج الذكاء الاصطناعي (Model):</span></span>
-                <select id="ai-model-select" onchange="onAiModelSelectChange()">
-                    <option value="gemini-2.0-flash" selected>gemini-2.0-flash (سريع ومستقر)</option>
-                    <option value="gemini-1.5-flash">gemini-1.5-flash (ممتاز وثابت)</option>
-                    <option value="gemini-1.5-pro">gemini-1.5-pro (تحليل عميق)</option>
-                    <option value="gemini-3.8-flash">gemini-3.8-flash</option>
-                    <option value="custom">✏️ كتابة اسم نموذج مخصص يدوياً...</option>
-                </select>
-                <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اكتب اسم النموذج هنا" oninput="updateAiSettings()" style="display: none; margin-top: 5px; direction: ltr;">
-            </div>
-
-            <div class="setting-item" style="margin-top: 4px;">
-                <span class="setting-header"><span>مفتاح API Key (AI Studio مجاني AIzaSy):</span></span>
-                <input type="password" id="gemini-api-key" class="text-input" placeholder="AIzaSy..." oninput="updateAiSettings()" style="direction: ltr;">
-            </div>
-
-            <button class="btn counter-btn small" id="ai-audit-btn" style="width: 100%; margin-top: 4px;" onclick="runAiAppAudit()">🔍 فحص التطبيق واقتراح التحسينات</button>
-            <div class="ai-audit-report" id="ai-audit-report"></div>
-            <div id="ai-audit-actions" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
-                <button class="btn secondary small" onclick="readAuditReportAloud()">🔊 قراءة التقرير صوتياً</button>
-                <button class="btn secondary small" onclick="copyAuditReport()">📋 نسخ التقرير</button>
-            </div>
-        </div>
-
+    <!-- القسم 4: الأداء والضبط -->
+    <div id="sec-settings" class="main-section">
+        <!-- التحليلات -->
         <div class="panel">
-            <div class="setting-header" style="margin-bottom: 6px;"><span>حالة المجسم والحركات المدمجة في المستودع:</span></div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button class="btn secondary small" onclick="toggleModelFacing()">🔄 عكس وجه المجسم (180°)</button>
-                <button class="btn secondary small" onclick="returnToIdle()">🛡️ العودة للوقفة</button>
+            <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>📊 ملخص الأداء وسجل الجلسات:</span></div>
+            <div class="score-grid">
+                <div class="score-card"><span>الجلسات</span><strong id="stat-total-sessions" style="color: var(--neon);">0</strong></div>
+                <div class="score-card"><span>أسرع رد</span><strong id="stat-best-reaction" style="color: var(--success);">-- ms</strong></div>
+                <div class="score-card"><span>الحماية</span><strong id="stat-guard-rate" style="color: var(--accent);">100%</strong></div>
             </div>
-            <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة في assets...</div>
+            <div class="history-list" id="session-history-list"></div>
+            <button class="btn secondary small" style="width: 100%; margin-top: 6px;" onclick="clearSessionHistory()">🗑️ مسح السجل</button>
         </div>
 
+        <!-- بيئة الحلبة -->
+        <div class="panel">
+            <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>🏟️ بيئة الحلبة وخلفية المسرح 3D:</span></div>
+            <select id="gym-bg-select" onchange="changeGymBackground(this.value)">
+                <option value="assets_images_bgchampionshipring.jpg" selected>🏆 حلبة البطولة تحت الأضواء (Championship Ring)</option>
+                <option value="assets_images_bgdarkboxing.jpg">🥊 صالة الملاكمة الداكنة (Dark Boxing Gym)</option>
+                <option value="assets_images_bghomegym.jpg">🏠 النادي المنزلي (Home Gym)</option>
+                <option value="assets_images_bgsunrisegym.jpg">🌅 صالة الشروق (Sunrise Gym)</option>
+                <option value="none">🌑 خلفية سوداء كلاسيكية</option>
+            </select>
+        </div>
+
+        <!-- الجولات والصوت -->
         <div class="panel">
             <div class="setting-item">
                 <div class="setting-header">
-                    <span>سرعة نطق المدرب وحركة الكف والمجسم:</span>
-                    <span id="voice-rate-val" style="color: var(--accent);">0.75x (هادئ وواضح)</span>
+                    <span>سرعة المدرب والحركة:</span>
+                    <span id="voice-rate-val" style="color: var(--neon);">0.75x</span>
                 </div>
                 <input type="range" id="voice-rate" min="0.25" max="1.40" step="0.05" value="0.75" oninput="changeVoiceRate(this.value)">
-                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت والجرس والاهتزاز</button>
+                <button class="btn secondary small" style="margin-top: 4px;" onclick="testVoice()">🔊 تجربة الصوت والجرس والاهتزاز</button>
             </div>
 
-            <div class="setting-item" style="margin-top: 8px;">
+            <div class="setting-item">
                 <div class="setting-header">
                     <span>الفاصل بين الكومبوهات:</span>
-                    <span id="interval-val" style="color: var(--accent);">5.0 ثانية</span>
+                    <span id="interval-val" style="color: var(--neon);">5.0 ثانية</span>
                 </div>
                 <input type="range" id="combo-interval" min="2.5" max="9.0" step="0.3" value="5.0" oninput="changeInterval(this.value)">
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="setting-item">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div class="setting-item" style="margin-bottom:0;">
                     <span class="setting-header">عدد الجولات:</span>
                     <select id="rounds-select" onchange="updateRoundsSetting()">
                         <option value="3">3 جولات</option>
@@ -841,7 +737,7 @@
                         <option value="12">12 جولة</option>
                     </select>
                 </div>
-                <div class="setting-item">
+                <div class="setting-item" style="margin-bottom:0;">
                     <span class="setting-header">مدة الجولة:</span>
                     <select id="time-select" onchange="updateTimeSetting()">
                         <option value="180">3 دقائق</option>
@@ -850,11 +746,84 @@
                     </select>
                 </div>
             </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <select id="burnout-mode-select" onchange="updateAdvancedTrainingOptions()">
+                    <option value="on" selected>🔥 تحدي آخر 30ث: مفعل</option>
+                    <option value="off">تحدي آخر 30ث: متوقف</option>
+                </select>
+                <select id="adaptive-ai-select" onchange="updateAdvancedTrainingOptions()">
+                    <option value="on" selected>🧠 التكييف الذكي: مفعل</option>
+                    <option value="off">التكييف الذكي: متوقف</option>
+                </select>
+                <select id="sfx-mode-select" onchange="updateAdvancedTrainingOptions()">
+                    <option value="on" selected>📳 الصوت والاهتزاز: مفعل</option>
+                    <option value="off">الصوت والاهتزاز: صامت</option>
+                </select>
+                <select id="guard-alert-select" onchange="updateAdvancedTrainingOptions()">
+                    <option value="on" selected>🛡️ تنبيه الحماية: مفعل</option>
+                    <option value="off">تنبيه الحماية: متوقف</option>
+                </select>
+            </div>
+            <select id="audio-only-select" style="margin-top: 8px;" onchange="toggleAudioOnlyMode()">
+                <option value="3d" selected>🎮 عرض 3D كامل</option>
+                <option value="audio">🔋 وضع الصوت فقط (توفير البطارية)</option>
+            </select>
+        </div>
+
+        <!-- الذكاء الاصطناعي -->
+        <div class="panel">
+            <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>🤖 مساعد المدرب الذكي (Gemini AI):</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+                <select id="ai-mode-select" onchange="updateAiSettings()">
+                    <option value="off">مغلق</option>
+                    <option value="on">مفعل</option>
+                </select>
+                <select id="ai-model-select" onchange="onAiModelSelectChange()">
+                    <option value="gemini-2.0-flash" selected>gemini-2.0-flash</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="custom">نموذج مخصص...</option>
+                </select>
+            </div>
+            <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اسم النموذج المخصص" oninput="updateAiSettings()" style="display: none; margin-bottom: 6px; direction: ltr;">
+            <input type="password" id="gemini-api-key" class="text-input" placeholder="مفتاح AIzaSy..." oninput="updateAiSettings()" style="direction: ltr; margin-bottom: 6px;">
+            <button class="btn secondary small" id="ai-audit-btn" style="width: 100%; border-color: var(--neon); color: var(--neon);" onclick="runAiAppAudit()">🔍 فحص الأداء واقتراح التحسينات</button>
+            <div class="ai-audit-report" id="ai-audit-report"></div>
+            <div id="ai-audit-actions" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                <button class="btn secondary small" onclick="readAuditReportAloud()">🔊 قراءة التقرير</button>
+                <button class="btn secondary small" onclick="copyAuditReport()">📋 نسخ</button>
+            </div>
+            <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة في assets...</div>
         </div>
     </div>
 </div>
 
+<!-- شريط التنقل السفلي الحديث -->
+<nav class="bottom-nav">
+    <div class="bottom-nav-inner">
+        <button class="nav-item active" id="nav-arena" onclick="switchMainSection('arena')">
+            <span class="nav-icon">🥊</span>
+            <span class="nav-label">الحلبة</span>
+        </button>
+        <button class="nav-item" id="nav-drills" onclick="switchMainSection('drills')">
+            <span class="nav-icon">🧤</span>
+            <span class="nav-label">التفاعل</span>
+        </button>
+        <button class="nav-item" id="nav-lab" onclick="switchMainSection('lab')">
+            <span class="nav-icon">➕</span>
+            <span class="nav-label">الكومبو</span>
+        </button>
+        <button class="nav-item" id="nav-settings" onclick="switchMainSection('settings')">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">الأداء والضبط</span>
+        </button>
+    </div>
+</nav>
+
 <script>
+    let currentMainSection = 'arena';
+    let activeDrillSubMode = 'mitts';
     let activeTabName = 'train';
 
     let aiEnabled = localStorage.getItem('boxing_ai_enabled') === 'on';
@@ -872,6 +841,47 @@
     let isAudioOnlyMode = false;
     let isBurnoutActiveNow = false;
     let sessionGuardViolations = 0;
+
+    function switchMainSection(sec) {
+        if (activeTabName === 'stick' && isStickRunning) stopStickSession();
+        if (activeTabName === 'counter' && isCounterRunning) stopCounterSession();
+        if (activeTabName === 'mitts' && isMittsRunning) stopMittsSession();
+        if (activeTabName === 'tactics' && isTacticsRunning) stopTacticsSession();
+        if (activeTabName === 'train' && sec !== 'arena' && isRunning) stopSession();
+
+        currentMainSection = sec;
+        document.querySelectorAll('.main-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('sec-' + sec).classList.add('active');
+        document.getElementById('nav-' + sec).classList.add('active');
+
+        if (sec === 'arena') activeTabName = 'train';
+        else if (sec === 'drills') activeTabName = activeDrillSubMode;
+        else if (sec === 'lab') activeTabName = 'combos';
+        else if (sec === 'settings') {
+            activeTabName = 'settings';
+            renderAnalyticsDashboard();
+        }
+
+        updateStageEntityVisibility();
+        resize3DRenderer();
+    }
+
+    function selectDrillSubMode(sub) {
+        if (activeTabName === 'stick' && sub !== 'stick' && isStickRunning) stopStickSession();
+        if (activeTabName === 'counter' && sub !== 'counter' && isCounterRunning) stopCounterSession();
+        if (activeTabName === 'mitts' && sub !== 'mitts' && isMittsRunning) stopMittsSession();
+        if (activeTabName === 'tactics' && sub !== 'tactics' && isTacticsRunning) stopTacticsSession();
+
+        activeDrillSubMode = sub;
+        activeTabName = sub;
+        document.querySelectorAll('.drill-mode-card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('.drill-sub-view').forEach(v => v.classList.remove('active'));
+        document.getElementById('dcard-' + sub).classList.add('active');
+        document.getElementById('drill-view-' + sub).classList.add('active');
+
+        updateStageEntityVisibility();
+    }
 
     // =========================================================================
     // 🔆 نظام منع إغلاق الشاشة تلقائياً أثناء التدريب (Screen Wake Lock API)
@@ -895,14 +905,12 @@
     }
 
     // =========================================================================
-    // 📳 دالة الاهتزاز الحسي التفاعلي (Haptic Feedback)
+    // 📳 الاهتزاز الحسي التفاعلي
     // =========================================================================
     function triggerHapticFeedback(pattern) {
         if (!sfxEnabled) return;
         try {
-            if ('vibrate' in navigator) {
-                navigator.vibrate(pattern);
-            }
+            if ('vibrate' in navigator) navigator.vibrate(pattern);
         } catch (e) {}
     }
 
@@ -913,19 +921,15 @@
         if (!stageBox) return;
         if (!bgFile || bgFile === 'none') {
             stageBox.classList.remove('has-gym-bg');
-            stageBox.style.backgroundImage = 'radial-gradient(circle at 50% 45%, #1e293b 0%, #090d16 100%)';
+            stageBox.style.backgroundImage = 'radial-gradient(circle at 50% 45%, #111827 0%, #000000 100%)';
         } else {
             stageBox.classList.add('has-gym-bg');
             stageBox.style.backgroundImage = `url('${bgFile}')`;
         }
     }
 
-    function openTutorialModal() {
-        document.getElementById('tutorial-modal').classList.add('open');
-    }
-    function closeTutorialModal() {
-        document.getElementById('tutorial-modal').classList.remove('open');
-    }
+    function openTutorialModal() { document.getElementById('tutorial-modal').classList.add('open'); }
+    function closeTutorialModal() { document.getElementById('tutorial-modal').classList.remove('open'); }
 
     function updateAdvancedTrainingOptions() {
         burnoutEnabled = document.getElementById('burnout-mode-select').value === 'on';
@@ -958,7 +962,7 @@
     }
 
     // =========================================================================
-    // 🔊 محرك المؤثرات الصوتية الرقمية + الاهتزاز (Web Audio API & Haptics)
+    // 🔊 محرك المؤثرات الصوتية + الاهتزاز
     // =========================================================================
     let audioCtx = null;
     function initAudioEngine() {
@@ -1058,7 +1062,7 @@
     }
 
     // =========================================================================
-    // 🧵 Web Worker الفيزيائي: حساب سرعة الاندفاع + امتداد الذراع لمنع الإصابات الكاذبة
+    // 🧵 Web Worker الفيزيائي
     // =========================================================================
     let poseWorker = null;
     let predictedLeftWrist = null;
@@ -1194,7 +1198,7 @@
     }
 
     // =========================================================================
-    // 📊 نظام تسجيل وحفظ الإحصائيات الفوري
+    // 📊 نظام تسجيل الإحصائيات
     // =========================================================================
     function saveSessionRecord(modeName, scoreStats) {
         const record = {
@@ -1265,13 +1269,13 @@
 
         if (listEl) {
             if (sessionHistory.length === 0) {
-                listEl.innerHTML = '<div style="text-align: center; color: var(--muted); font-size: 0.75rem; padding: 12px;">لا توجد جلسات مسجلة بعد. ابدأ التدريب لتظهر الإحصائيات هنا!</div>';
+                listEl.innerHTML = '<div style="text-align: center; color: var(--muted); font-size: 0.74rem; padding: 10px;">لا توجد جلسات مسجلة بعد. ابدأ التدريب لتظهر إحصائياتك!</div>';
             } else {
                 listEl.innerHTML = '';
                 sessionHistory.forEach(rec => {
                     const div = document.createElement('div');
                     div.className = 'history-item';
-                    div.innerHTML = `<span><strong>${rec.mode}</strong><br><small>${rec.date}</small></span><span style="align-self:center; color:var(--accent); font-weight:700;">${rec.stats.summary || ''}</span>`;
+                    div.innerHTML = `<span><strong>${rec.mode}</strong><br><small>${rec.date}</small></span><span style="align-self:center; color:var(--neon); font-weight:800;">${rec.stats.summary || ''}</span>`;
                     listEl.appendChild(div);
                 });
             }
@@ -1322,7 +1326,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Haptics + WakeLock + Realistic Pads + Physics Punch Velocity) وإحصائيات الملاكم: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
+        const promptText = `أنت مدرب ملاكمة محترف. قيّم باختصار باللغة العربية أداء الملاكم بناءً على إحصائياته: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1342,7 +1346,7 @@
         } catch (err) {
             reportBox.textContent = `❌ تعذر الاتصال: ${err.message}`;
         } finally {
-            btn.textContent = '🔍 فحص التطبيق واقتراح التحسينات';
+            btn.textContent = '🔍 فحص الأداء واقتراح التحسينات';
             btn.disabled = false;
         }
     }
@@ -1355,24 +1359,6 @@
         }
     }
 
-    function switchTab(tabId, btn) {
-        if (activeTabName === 'stick' && tabId !== 'stick' && isStickRunning) stopStickSession();
-        if (activeTabName === 'counter' && tabId !== 'counter' && isCounterRunning) stopCounterSession();
-        if (activeTabName === 'mitts' && tabId !== 'mitts' && isMittsRunning) stopMittsSession();
-        if (activeTabName === 'tactics' && tabId !== 'tactics' && isTacticsRunning) stopTacticsSession();
-        if (activeTabName === 'train' && ['stick', 'counter', 'mitts', 'tactics'].includes(tabId) && isRunning) stopSession();
-
-        activeTabName = tabId;
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        if (btn) btn.classList.add('active');
-
-        if (tabId === 'analytics') renderAnalyticsDashboard();
-        updateStageEntityVisibility();
-        resize3DRenderer();
-    }
-
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const isMittsTab = (activeTabName === 'mitts');
@@ -1380,8 +1366,7 @@
         const tacMode = document.getElementById('tactics-mode-select') ? document.getElementById('tactics-mode-select').value : 'feint';
 
         const stageTag = document.getElementById('stage-mode-tag');
-        const flipBtn = document.getElementById('flip-btn');
-        const camBtn = document.getElementById('cam-btn');
+        const hudOverlay = document.getElementById('stage-hud-overlay');
 
         const showBoxer = (!isStickOrCounter && !isMittsTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
         const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
@@ -1397,28 +1382,23 @@
 
         if (isTacticsTab) {
             stageTag.textContent = `🎯 TACTICS: ${tacMode.toUpperCase()}`;
-            stageTag.style.color = '#f472b6';
-            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
+            hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.45); camera.lookAt(0, 1.25, 0); }
         } else if (isMittsTab) {
             stageTag.textContent = mittsSubMode === 'repeat' ? '🔁 MITTS REPEAT' : '🧤 FOCUS MITTS';
-            stageTag.style.color = '#6ee7b7';
-            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
+            hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.38, 2.35); camera.lookAt(0, 1.32, 0); }
         } else if (activeTabName === 'stick') {
             stageTag.textContent = isCamRefActive ? 'AR STICK DEFENSE' : '3D SPARRING STICK';
-            stageTag.style.color = '#fda4af';
-            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
+            hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else if (activeTabName === 'counter') {
             stageTag.textContent = '⚡ DODGE & COUNTER';
-            stageTag.style.color = '#d8b4fe';
-            flipBtn.style.display = 'none'; camBtn.style.display = 'none';
+            hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
-            stageTag.textContent = gpuAccelerationActive ? '⚡ WEBGPU 70 COMBOS' : '70 PRO COMBOS';
-            stageTag.style.color = '#f59e0b';
-            flipBtn.style.display = 'block'; camBtn.style.display = 'block';
+            stageTag.textContent = gpuAccelerationActive ? '⚡ WEBGPU ARENA' : '70 PRO COMBOS';
+            hudOverlay.style.display = 'flex';
             if (camera) {
                 if (isFPV) { camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0); }
                 else { camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0); }
@@ -1458,12 +1438,6 @@
         resize3DRenderer();
     }
 
-    function enterTvFullscreenForMode(modeName) {
-        activeTabName = modeName;
-        updateStageEntityVisibility();
-        enterTvFullscreen();
-    }
-
     function exitTvFullscreen() {
         document.body.classList.remove('tv-fullscreen');
         document.getElementById('tv-actions-bar').style.display = 'none';
@@ -1481,7 +1455,7 @@
     }
 
     // =========================================================================
-    // 🎯 محرك التدريبات التكتيكية الخمسة المتقدمة (Tactics Engine)
+    // 🎯 محرك التدريبات التكتيكية الخمسة
     // =========================================================================
     let isTacticsRunning = false;
     let tacticsLoopTimer = null;
@@ -1490,13 +1464,8 @@
     let tacCorrect = 0;
 
     let tacticsChallengeState = {
-        active: false,
-        mode: 'feint',
-        signalColor: 'GREEN',
-        targetAngleX: 0,
-        pyramidSeq: ['JAB'],
-        resolved: false,
-        expiresAt: 0
+        active: false, mode: 'feint', signalColor: 'GREEN',
+        targetAngleX: 0, pyramidSeq: ['JAB'], resolved: false, expiresAt: 0
     };
 
     function onTacticsModeChange() {
@@ -1731,7 +1700,7 @@
         if (rightPadMesh) setPadColor(rightPadMesh, 0xffffff);
         resetPadsToGuardPosition();
         if (modelRoot) { modelRoot.position.x = 0; modelRoot.rotation.y = facingFlip; }
-        document.getElementById('tactics-start-btn').textContent = '🎯 ابدأ التدريب التكتيكي';
+        document.getElementById('tactics-start-btn').textContent = '🎯 ابدأ التكتيك';
         document.getElementById('tactics-start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ';
         document.getElementById('tv-start-btn').classList.remove('stop');
@@ -1746,7 +1715,7 @@
     }
 
     // =========================================================================
-    // كفوف المدرب الشخصي بإكساء الصور الواقعية الشفافة (Realistic Focus Mitts)
+    // كفوف المدرب الواقعية الشفافة
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -1967,7 +1936,7 @@
         releaseScreenWakeLock();
         stopSharedRoundClock(); clearInterval(mittsLoopTimer);
         mittsStepTimers.forEach(t => clearTimeout(t)); mittsStepTimers = []; resetPadsToGuardPosition();
-        document.getElementById('mitts-start-btn').textContent = '🧤 ابدأ تمرين كف المدرب'; document.getElementById('mitts-start-btn').classList.remove('danger');
+        document.getElementById('mitts-start-btn').textContent = '🧤 ابدأ تمرين الكف'; document.getElementById('mitts-start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
     }
     function resetMittsSession() {
@@ -2018,7 +1987,7 @@
                 btn.textContent = '⏹ إيقاف الكاميرا';
                 btn.classList.add('danger');
             } else {
-                btn.textContent = (id === 'cam-ref-toggle-btn-3') ? '📷 تفعيل الكاميرا (Kalman)' : '📷 تفعيل مراقبة الكاميرا';
+                btn.textContent = (id === 'cam-ref-toggle-btn-3') ? '📷 تفعيل تتبع الكاميرا (Kalman)' : '📷 تفعيل الكاميرا';
                 btn.classList.remove('danger');
             }
         });
@@ -2108,7 +2077,7 @@
             if (!stickState.active) { strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan; }
 
             ctx.strokeStyle = '#f43f5e'; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.arc(strikeStartX * canvasEl.width, strikeStartY * canvasEl.height, 14, 0, Math.PI * 2); ctx.stroke();
-            ctx.fillStyle = '#38bdf8'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#00BFFF'; ctx.beginPath(); ctx.arc(curNoseX * canvasEl.width, curNoseY * canvasEl.height, 6, 0, Math.PI * 2); ctx.fill();
 
             if (activeTabName === 'mitts' && padAnimState.activePunch && !padAnimState.camScoredThisPad) {
                 const tx = padAnimState.camTargetX; const ty = padAnimState.camTargetY;
@@ -2160,7 +2129,7 @@
             }
         } else {
             guardViolationCount = 0;
-            if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('hit-counter') && !pipBox.classList.contains('hit-fail')) {
+            if (!pipBox.classList.contains('hit-ok') && !pipBox.classList.contains('guard-down')) {
                 pipBox.classList.remove('guard-down');
                 pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PHYS' : 'GPU + PHYS';
             }
@@ -2427,7 +2396,7 @@
             btn.textContent = '🎥 المنظور الخارجي'; btn.style.background = 'rgba(16, 185, 129, 0.88)';
         } else {
             camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0);
-            btn.textContent = '🎥 منظور الخصم'; btn.style.background = 'rgba(220, 38, 38, 0.88)';
+            btn.textContent = '🎥 منظور الخصم'; btn.style.background = 'rgba(239, 68, 68, 0.85)';
         }
     }
 
@@ -2457,7 +2426,7 @@
 
         const floor = new THREE.Mesh(
             new THREE.CircleGeometry(1.4, 36),
-            new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.75, transparent: true, opacity: 0.55 })
+            new THREE.MeshStandardMaterial({ color: 0x05080f, roughness: 0.75, transparent: true, opacity: 0.55 })
         );
         floor.rotation.x = -Math.PI / 2; scene.add(floor);
 
@@ -2591,7 +2560,7 @@
     window.addEventListener('load', init3DScene);
 
     // =========================================================================
-    // إدارة الجلسات والتوقيت والصوت وتحدي آخر 30 ثانية (Burnout)
+    // إدارة الجلسات والتوقيت والصوت
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
@@ -2644,7 +2613,7 @@
     function startSession() {
         isRunning = true; isResting = false; sessionGuardViolations = 0;
         requestScreenWakeLock();
-        document.getElementById('start-btn').textContent = 'إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
+        document.getElementById('start-btn').textContent = '⏹ إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
         speakText(`Round ${currentRound}. Fight!`);
@@ -2659,7 +2628,7 @@
         isRunning = false; isComboBusy = false; moveQueue = [];
         releaseScreenWakeLock();
         stopSharedRoundClock(); clearInterval(comboId);
-        document.getElementById('start-btn').textContent = 'ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
+        document.getElementById('start-btn').textContent = '🥊 ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
         syncComboText('READY'); returnToIdle();
     }
@@ -2722,7 +2691,7 @@
     }
 
     // =========================================================================
-    // إدارة الكومبوهات المخصصة ووضع الإتقان والتكييف الذكي
+    // إدارة الكومبوهات المخصصة ووضع الإتقان
     // =========================================================================
     let customCombos = JSON.parse(localStorage.getItem('user_custom_combos') || '[]');
     let currentBuilderSeq = [];
@@ -2836,8 +2805,6 @@
     }
 
     function updateDrillTarget() {
-        const target = parseInt(document.getElementById('drill-reps-target').value);
-        document.getElementById('drill-target-val').textContent = target === 999 ? 'مستمر' : `${target} مرات`;
         resetDrillCounter();
     }
 
@@ -2850,7 +2817,7 @@
     function updateModeBadge() {
         const isDrill = document.getElementById('drill-enabled').value === 'on';
         const badge = document.getElementById('mode-badge');
-        if (badge) badge.textContent = isDrill ? 'الوضع: تكرار الإتقان' : 'الوضع: 70 كومبو عشوائي';
+        if (badge) badge.textContent = isDrill ? 'وضع الإتقان (تكرار)' : '70 كومبو عشوائي';
     }
 
     function updateRoundsSetting() {
