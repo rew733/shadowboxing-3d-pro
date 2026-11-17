@@ -1510,7 +1510,7 @@
         } else if (mode === 'mirror') {
             const dirs = [
                 { x: -0.55, label: '⬅ الخصم يتحرك لليسار.. دور لليسار (PIVOT L)', say: 'Angle Left' },
-                { x:  0.55, label: '➔ الخصم يتحرك لليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
+                { x:  0.55, label: '➔ الخصم يتحرك ليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
                 { x:  0.00, label: '🎯 الخصم في المنتصف.. أطلق 1-2!', say: 'Center! One Two!' }
             ];
             const pick = dirs[Math.floor(Math.random() * dirs.length)];
@@ -1678,7 +1678,7 @@
     }
 
     // =========================================================================
-    // كفوف المدرب الواقعية الشفافة (مع تعديل زوايا التوجيه للممتدرب)
+    // كفوف المدرب الاحترافية (كلا الكفين بكف مدرب مفتوح وشفاف تماماً مثل الكف الأسود)
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -1736,11 +1736,14 @@
 
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
+        
+        // استخدام صورة الكف الاحترافي الشفاف لكلا اليدين لضمان ظهورهما ككفوف مدرب مفتوحة وليست قفازات مغلقة
         leftPadMesh = createRealisticPadSprite('assets_images_image_fully_transparent_pad_jab.png', 0.44, 0.64);
         leftPadMesh.position.set(0.26, 1.48, 0.70);
         coachPadsGroup.add(leftPadMesh);
 
-        rightPadMesh = createRealisticPadSprite('assets_images_jab.png', 0.48, 0.40);
+        rightPadMesh = createRealisticPadSprite('assets_images_image_fully_transparent_pad_jab.png', 0.44, 0.64);
+        rightPadMesh.scale.x = -1; // عكس الكف الأيمن أفقياً ليتناسق مع اليد الأخرى
         rightPadMesh.position.set(-0.26, 1.48, 0.70);
         coachPadsGroup.add(rightPadMesh);
 
@@ -1787,7 +1790,7 @@
     function resetPadsToGuardPosition() {
         if (!leftPadMesh || !rightPadMesh) return;
         leftPadMesh.position.set(0.26, 1.48, 0.70); leftPadMesh.rotation.set(0.1, -0.3, 0.1); leftPadMesh.scale.set(0.85, 0.85, 0.85);
-        rightPadMesh.position.set(-0.26, 1.48, 0.70); rightPadMesh.rotation.set(0.1, 0.3, -0.1); rightPadMesh.scale.set(0.85, 0.85, 0.85);
+        rightPadMesh.position.set(-0.26, 1.48, 0.70); rightPadMesh.rotation.set(0.1, 0.3, -0.1); rightPadMesh.scale.set(-0.85, 0.85, 0.85);
     }
 
     function presentPadForPunch(punchKey, speakIndividually = false) {
@@ -1803,7 +1806,7 @@
         const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
         targetPad.position.set(cfg.x, cfg.y, cfg.z);
         targetPad.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ);
-        targetPad.scale.set(1.22, 1.22, 1.22);
+        targetPad.scale.set(cfg.hand === 'LEFT' ? 1.22 : -1.22, 1.22, 1.22);
 
         mittsPunchesCount++;
         document.getElementById('mitts-punches-count').textContent = mittsPunchesCount;
