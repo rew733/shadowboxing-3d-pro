@@ -87,7 +87,6 @@
             text-align: center; padding: 2px 0; font-weight: 800; direction: ltr;
         }
 
-        /* نافذة الدليل البصري للمعايرة */
         .tutorial-modal {
             display: none; position: fixed; inset: 0; z-index: 300;
             background: rgba(7, 11, 20, 0.92); backdrop-filter: blur(6px);
@@ -274,7 +273,6 @@
         </div>
     </div>
 
-    <!-- نافذة دليل معايرة الكاميرا البصري -->
     <div class="tutorial-modal" id="tutorial-modal" onclick="closeTutorialModal(event)">
         <div class="tutorial-card" onclick="event.stopPropagation()">
             <div style="display:flex; justify-content:space-between; align-items:center;">
@@ -496,7 +494,7 @@
 
             <div class="stick-box counter-theme">
                 <div class="stick-move-title" id="counter-phase-label">⚡ DODGE & COUNTER VISION</div>
-                <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ليظهر كف المدرب البنفسجي!</div>
+                <div class="stick-dodge-cue" id="counter-cue-label">تفادَ العصا أولاً ليظهر كف المدرب!</div>
                 <div class="stick-sub-hint" id="counter-hint-label">تراقب الكاميرا حركة رأسك للتفادي ثم مد ذراعك لإصابة كف المدرب (+20)</div>
             </div>
 
@@ -746,9 +744,9 @@
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
                 <div class="setting-item" style="margin-bottom: 4px;">
-                    <span class="setting-header"><span>المؤثرات الصوتية:</span></span>
+                    <span class="setting-header"><span>المؤثرات الصوتية والاهتزاز:</span></span>
                     <select id="sfx-mode-select" onchange="updateAdvancedTrainingOptions()">
-                        <option value="on" selected>مفعلة (جرس وارتطام 🔔)</option>
+                        <option value="on" selected>مفعلة (جرس واهتزاز 📳)</option>
                         <option value="off">صامتة</option>
                     </select>
                 </div>
@@ -822,7 +820,7 @@
                     <span id="voice-rate-val" style="color: var(--accent);">0.75x (هادئ وواضح)</span>
                 </div>
                 <input type="range" id="voice-rate" min="0.25" max="1.40" step="0.05" value="0.75" oninput="changeVoiceRate(this.value)">
-                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت والجرس</button>
+                <button class="btn secondary small" style="margin-top: 5px;" onclick="testVoice()">🔊 تجربة سرعة الصوت والجرس والاهتزاز</button>
             </div>
 
             <div class="setting-item" style="margin-top: 8px;">
@@ -874,6 +872,39 @@
     let isAudioOnlyMode = false;
     let isBurnoutActiveNow = false;
     let sessionGuardViolations = 0;
+
+    // =========================================================================
+    // 🔆 نظام منع إغلاق الشاشة تلقائياً أثناء التدريب (Screen Wake Lock API)
+    // =========================================================================
+    let screenWakeLock = null;
+    async function requestScreenWakeLock() {
+        try {
+            if ('wakeLock' in navigator && !screenWakeLock) {
+                screenWakeLock = await navigator.wakeLock.request('screen');
+                screenWakeLock.addEventListener('release', () => { screenWakeLock = null; });
+            }
+        } catch (e) {}
+    }
+    function releaseScreenWakeLock() {
+        try {
+            if (screenWakeLock) {
+                screenWakeLock.release();
+                screenWakeLock = null;
+            }
+        } catch (e) {}
+    }
+
+    // =========================================================================
+    // 📳 دالة الاهتزاز الحسي التفاعلي (Haptic Feedback)
+    // =========================================================================
+    function triggerHapticFeedback(pattern) {
+        if (!sfxEnabled) return;
+        try {
+            if ('vibrate' in navigator) {
+                navigator.vibrate(pattern);
+            }
+        } catch (e) {}
+    }
 
     function changeGymBackground(bgFile) {
         savedGymBg = bgFile;
@@ -927,7 +958,7 @@
     }
 
     // =========================================================================
-    // 🔊 محرك المؤثرات الصوتية الرقمية (Web Audio API)
+    // 🔊 محرك المؤثرات الصوتية الرقمية + الاهتزاز (Web Audio API & Haptics)
     // =========================================================================
     let audioCtx = null;
     function initAudioEngine() {
@@ -946,6 +977,7 @@
             const now = audioCtx.currentTime;
 
             if (type === 'BELL') {
+                triggerHapticFeedback([180, 80, 180]);
                 [523.25, 783.99, 1046.5, 1318.5].forEach((freq, idx) => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -959,6 +991,7 @@
                     osc.stop(now + 1.8);
                 });
             } else if (type === 'CLAPPER') {
+                triggerHapticFeedback([60, 40, 60]);
                 [0, 0.14].forEach(offset => {
                     const osc = audioCtx.createOscillator();
                     const gain = audioCtx.createGain();
@@ -973,6 +1006,7 @@
                     osc.stop(now + offset + 0.07);
                 });
             } else if (type === 'PAD_HIT') {
+                triggerHapticFeedback(45);
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sine';
@@ -985,6 +1019,7 @@
                 osc.start(now);
                 osc.stop(now + 0.12);
             } else if (type === 'GUARD_WARN') {
+                triggerHapticFeedback([110, 50, 110]);
                 const osc = audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 osc.type = 'sawtooth';
@@ -1287,7 +1322,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Realistic Pads + Physics Punch Velocity) وإحصائيات الملاكم: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
+        const promptText = `أنت مهندس تطبيقات رياضية ومدرب ملاكمة. قيّم باختصار باللغة العربية أداء التطبيق (WebGPU + Haptics + WakeLock + Realistic Pads + Physics Punch Velocity) وإحصائيات الملاكم: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1636,12 +1671,14 @@
                 } else if (dx > 0.08) {
                     tacticsChallengeState.resolved = true;
                     tacPoints += 20; tacStreak++; tacCorrect++;
+                    triggerHapticFeedback(35);
                     document.getElementById('tactics-cue-label').textContent = '✅ تفادي ذكي للخدعة! (+20)';
                     updateTacticsScoreboard();
                 }
             } else if (tacticsChallengeState.signalColor === 'YELLOW' && dy < -0.04) {
                 tacticsChallengeState.resolved = true;
                 tacPoints += 15; tacStreak++; tacCorrect++;
+                triggerHapticFeedback(35);
                 document.getElementById('tactics-cue-label').textContent = '✅ تراجع موفق في الوقت المناسب! (+15)';
                 updateTacticsScoreboard();
             }
@@ -1651,6 +1688,7 @@
             if ((targetX < -0.2 && noseOffset < -0.07) || (targetX > 0.2 && noseOffset > 0.07)) {
                 tacticsChallengeState.resolved = true;
                 tacPoints += 15; tacStreak++; tacCorrect++;
+                triggerHapticFeedback(35);
                 document.getElementById('tactics-cue-label').textContent = '✅ قطع زاوية ناجح ومواجهة الخصم! (+15)';
                 updateTacticsScoreboard();
             }
@@ -1660,6 +1698,7 @@
     function toggleTacticsSession() { if (isTacticsRunning) stopTacticsSession(); else startTacticsSession(); }
     function startTacticsSession() {
         isTacticsRunning = true; isResting = false; sessionGuardViolations = 0;
+        requestScreenWakeLock();
         tacticsChallengeState.pyramidSeq = ['JAB'];
         onTacticsModeChange();
         if (!isCamRefActive && document.getElementById('tactics-mode-select').value !== 'pyramid') {
@@ -1683,6 +1722,7 @@
     function stopTacticsSession() {
         if (isTacticsRunning) recordCurrentActivityIfAny('tactics');
         isTacticsRunning = false;
+        releaseScreenWakeLock();
         tacticsChallengeState.active = false;
         stickState.active = false;
         stopSharedRoundClock();
@@ -1764,12 +1804,10 @@
 
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
-        // كف اليسار: الكف الأسود/الأحمر الاحترافي المرقم
         leftPadMesh = createRealisticPadSprite('assets_images_image_fully_transparent_pad_jab.png', 0.44, 0.64);
         leftPadMesh.position.set(0.26, 1.48, 0.70);
         coachPadsGroup.add(leftPadMesh);
 
-        // كف اليمين: الكف الأحمر البيضاوي الشفاف
         rightPadMesh = createRealisticPadSprite('assets_images_jab.png', 0.48, 0.40);
         rightPadMesh.position.set(-0.26, 1.48, 0.70);
         coachPadsGroup.add(rightPadMesh);
@@ -1913,6 +1951,7 @@
     function toggleMittsSession() { if (isMittsRunning) stopMittsSession(); else startMittsSession(); }
     function startMittsSession() {
         isMittsRunning = true; isMittsBusy = false; isResting = false; sessionGuardViolations = 0;
+        requestScreenWakeLock();
         if (mittsSubMode === 'repeat' && mittsRepeatDone >= parseInt(document.getElementById('mitts-repeat-target').value)) resetMittsRepeatProgress();
         updateStageEntityVisibility(); resetPadsToGuardPosition();
         document.getElementById('mitts-start-btn').textContent = '⏹ إيقاف التمرين'; document.getElementById('mitts-start-btn').classList.add('danger');
@@ -1924,7 +1963,9 @@
     }
     function stopMittsSession() {
         if (isMittsRunning) recordCurrentActivityIfAny('mitts');
-        isMittsRunning = false; isMittsBusy = false; padAnimState.activePunch = null; stopSharedRoundClock(); clearInterval(mittsLoopTimer);
+        isMittsRunning = false; isMittsBusy = false; padAnimState.activePunch = null;
+        releaseScreenWakeLock();
+        stopSharedRoundClock(); clearInterval(mittsLoopTimer);
         mittsStepTimers.forEach(t => clearTimeout(t)); mittsStepTimers = []; resetPadsToGuardPosition();
         document.getElementById('mitts-start-btn').textContent = '🧤 ابدأ تمرين كف المدرب'; document.getElementById('mitts-start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
@@ -1962,6 +2003,7 @@
     function calibrateStance() {
         if (!hasPoseFrame) return;
         strikeStartX = curNoseX; strikeStartY = curNoseY; strikeStartSpan = curShoulderSpan;
+        triggerHapticFeedback(40);
         const pipBox = document.getElementById('cam-pip-box'); pipBox.classList.add('hit-ok');
         setTimeout(() => pipBox.classList.remove('hit-ok'), 700);
         speakText("Stance calibrated");
@@ -2135,6 +2177,7 @@
 
         if (dodged) {
             stickState.evaluated = true;
+            triggerHapticFeedback(35);
             if (activeTabName === 'counter') {
                 cntPoints += 10;
                 updateCounterScoreboard();
@@ -2214,6 +2257,7 @@
         if (stickState.progress >= 1) {
             if (!stickState.evaluated && isCamRefActive && activeTabName === 'stick') {
                 refHitCount++;
+                triggerHapticFeedback([90, 40, 90]);
                 updateRefereeScoreboard();
             }
             stickState.active = false;
@@ -2268,7 +2312,9 @@
 
     function toggleStickSession() { if (isStickRunning) stopStickSession(); else startStickSession(); }
     function startStickSession() {
-        isStickRunning = true; isResting = false; sessionGuardViolations = 0; updateStageEntityVisibility();
+        isStickRunning = true; isResting = false; sessionGuardViolations = 0;
+        requestScreenWakeLock();
+        updateStageEntityVisibility();
         document.getElementById('stick-start-btn').textContent = '⏹ إيقاف العصا'; document.getElementById('stick-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
@@ -2279,7 +2325,9 @@
     }
     function stopStickSession() {
         if (isStickRunning) recordCurrentActivityIfAny('stick');
-        isStickRunning = false; stickState.active = false; stopSharedRoundClock(); clearInterval(stickLoopTimer);
+        isStickRunning = false; stickState.active = false;
+        releaseScreenWakeLock();
+        stopSharedRoundClock(); clearInterval(stickLoopTimer);
         document.getElementById('stick-start-btn').textContent = '🥢 ابدأ اشتباك العصا'; document.getElementById('stick-start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
     }
@@ -2287,7 +2335,9 @@
 
     function toggleCounterSession() { if (isCounterRunning) stopCounterSession(); else startCounterSession(); }
     function startCounterSession() {
-        isCounterRunning = true; isResting = false; sessionGuardViolations = 0; updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
+        isCounterRunning = true; isResting = false; sessionGuardViolations = 0;
+        requestScreenWakeLock();
+        updateStageEntityVisibility(); if (!isCamRefActive) startCameraReferee();
         document.getElementById('counter-start-btn').textContent = '⏹ إيقاف الكاونتر'; document.getElementById('counter-start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
@@ -2299,6 +2349,7 @@
     function stopCounterSession() {
         if (isCounterRunning) recordCurrentActivityIfAny('counter');
         isCounterRunning = false; stickState.active = false; counterWindow.active = false;
+        releaseScreenWakeLock();
         if (mittGroup) mittGroup.visible = false;
         stopSharedRoundClock(); clearInterval(counterLoopTimer);
         document.getElementById('counter-start-btn').textContent = '⚡ ابدأ تدريب الكاونتر'; document.getElementById('counter-start-btn').classList.remove('danger');
@@ -2592,6 +2643,7 @@
     document.getElementById('start-btn').addEventListener('click', () => { if (isRunning) stopSession(); else startSession(); });
     function startSession() {
         isRunning = true; isResting = false; sessionGuardViolations = 0;
+        requestScreenWakeLock();
         document.getElementById('start-btn').textContent = 'إيقاف الجلسة'; document.getElementById('start-btn').classList.add('danger');
         document.getElementById('tv-start-btn').textContent = '⏹ إيقاف'; document.getElementById('tv-start-btn').classList.add('stop');
         playBoxingSFX('BELL');
@@ -2604,7 +2656,9 @@
     }
     function stopSession() {
         if (isRunning) recordCurrentActivityIfAny('train');
-        isRunning = false; isComboBusy = false; moveQueue = []; stopSharedRoundClock(); clearInterval(comboId);
+        isRunning = false; isComboBusy = false; moveQueue = [];
+        releaseScreenWakeLock();
+        stopSharedRoundClock(); clearInterval(comboId);
         document.getElementById('start-btn').textContent = 'ابدأ الجلسة'; document.getElementById('start-btn').classList.remove('danger');
         document.getElementById('tv-start-btn').textContent = '▶ ابدأ'; document.getElementById('tv-start-btn').classList.remove('stop');
         syncComboText('READY'); returnToIdle();
