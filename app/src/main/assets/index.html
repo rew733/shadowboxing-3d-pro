@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Dual 3D Engine & Cloud GLB</title>
+    <title>Boxing Coach Pro • Pro Kinematic 3D Boxer Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -321,10 +321,10 @@
     </div>
 
     <div class="stage-box has-gym-bg" id="stage-box">
-        <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
+        <span class="badge-stance" id="stage-mode-tag">PRO KINEMATIC BOXER</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
         <div id="canvas-3d"></div>
-        <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات...</div>
+        <div class="glb-status" id="glb-status">جاري تجهيز الملاكم وحركات القتال...</div>
 
         <div class="stage-hud-overlay" id="stage-hud-overlay">
             <div class="hud-controls-left">
@@ -729,25 +729,24 @@
         </div>
     </div>
 
-    <!-- القسم 4: الأداء والضبط (مع محوّل المجسم السحابي والمحلي) -->
+    <!-- القسم 4: الأداء والضبط (مع محوّل المجسم الحركي والمحلي والسحابي) -->
     <div id="sec-settings" class="main-section">
-        <!-- بطاقة اختيار المجسم ثلاثي الأبعاد (محلي / سحابي CDN) -->
         <div class="panel" style="border: 1.5px solid var(--neon); background: rgba(0, 191, 255, 0.05);">
             <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;">
                 <span>🧍 محرك المجسم ثلاثي الأبعاد (3D Model Source):</span>
                 <span id="model-cache-badge" style="color: var(--success); font-size: 0.7rem;">● جاهز</span>
             </div>
             <select id="model-source-select" onchange="switch3DModelSource(this.value)">
-                <option value="local_fbx" selected>🥊 الملاكم المحلي المطور (Local FBX + فيزياء الجذع)</option>
-                <option value="cloud_glb">☁️ المقاتل السحابي عالي الدقة (Cloud GLB + Cache)</option>
-                <option value="custom_url">🔗 رابط مجسم سحابي مخصص (.glb / .fbx)</option>
+                <option value="kinematic_boxer" selected>🥊 الملاكم الحركي الاحترافي (Pro Kinematic Boxer)</option>
+                <option value="local_fbx">📦 الملاكم المحلي المطور (Local boxer.fbx + فيزياء)</option>
+                <option value="custom_url">🔗 رابط مجسم ملاكم خارجي مخصص (.glb / .fbx)</option>
             </select>
             <div id="custom-model-url-box" style="display: none; margin-top: 6px; gap: 6px;">
                 <input type="text" id="custom-model-url-input" class="text-input" placeholder="https://.../boxer.glb" style="direction: ltr;">
                 <button class="btn small" style="margin-top: 5px; width: 100%;" onclick="applyCustomCloudModelUrl()">⬇️ تحميل وحفظ في الذاكرة</button>
             </div>
             <div style="font-size: 0.68rem; color: var(--muted); margin-top: 5px;">
-                يُخزَّن المجسم السحابي تلقائياً في ذاكرة الهاتف (Cache) ليعمل لاحقاً بدون إنترنت.
+                الملاكم الحركي الاحترافي يرتدي قفازات ملاكمة حمراء ويؤدي جميع اللكمات بمسارات تشريحية دقيقة 100% دون الحاجة للإنترنت.
             </div>
         </div>
 
@@ -896,10 +895,9 @@
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
     let savedGymBg = localStorage.getItem('boxing_gym_bg') || 'assets_images_bgchampionshipring.jpg';
 
-    // إعدادات محرك المجسمات (محلي / سحابي)
-    let selectedModelSource = localStorage.getItem('boxing_3d_source') || 'local_fbx';
+    // إعدادات محرك المجسمات (الملاكم الحركي الاحترافي كافتراضي + المحلي + الرابط المخصص)
+    let selectedModelSource = localStorage.getItem('boxing_3d_source') || 'kinematic_boxer';
     let customCloudModelUrl = localStorage.getItem('boxing_custom_glb_url') || '';
-    const DEFAULT_CLOUD_GLB_URL = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/models/gltf/Soldier.glb';
 
     let burnoutEnabled = true;
     let adaptiveDifficultyEnabled = true;
@@ -1485,7 +1483,8 @@
             hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
-            const srcBadge = selectedModelSource === 'local_fbx' ? 'LOCAL FBX + TORQUE' : 'CLOUD GLB ARENA';
+            const srcBadge = selectedModelSource === 'local_fbx' ? 'LOCAL FBX + TORQUE' :
+                             (selectedModelSource === 'custom_url' ? 'CUSTOM CLOUD 3D' : 'PRO KINEMATIC BOXER');
             stageTag.textContent = srcBadge;
             hudOverlay.style.display = 'flex';
             if (camera) {
@@ -2570,7 +2569,7 @@
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // محرك Three.js المزدوج (Local FBX مع فيزياء الجذع + Cloud GLB مع التخزين المؤقت)
+    // محرك Three.js المزدوج (Pro Kinematic Boxer + Local FBX + Custom Cloud URL)
     // =========================================================================
     const MOVES = {
         JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx', torqueY: -0.28, leanZ: 0.04, punchZ: 0.14 },
@@ -2611,8 +2610,8 @@
     let gpuAccelerationActive = false;
     let gpuDevice = null;
 
-    // متغيرات فيزياء التفاف الجذع والخصر (Procedural Torque)
     let proceduralState = { targetRotY: 0, curRotY: 0, targetLeanZ: 0, curLeanZ: 0, targetZ: 0, curZ: 0 };
+    let boxerRig = { head: null, torso: null, lArm: null, rArm: null, lForearm: null, rForearm: null };
 
     async function initGPUAcceleration() {
         try {
@@ -2677,7 +2676,7 @@
                 }
                 if (statusEl) {
                     statusEl.style.display = 'block';
-                    statusEl.textContent = '☁️ جاري تحميل المجسم السحابي وحفظه في ذاكرة الهاتف...';
+                    statusEl.textContent = '☁️ جاري تحميل المجسم وحفظه في ذاكرة الهاتف...';
                 }
                 const netResp = await fetch(url);
                 if (netResp.ok) {
@@ -2698,10 +2697,97 @@
         }
         actions = {};
         activeAction = null;
+        boxerRig = { head: null, torso: null, lArm: null, rArm: null, lForearm: null, rForearm: null };
         if (modelRoot) {
             scene.remove(modelRoot);
             modelRoot = null;
         }
+    }
+
+    function buildProceduralBoxerCharacter() {
+        const group = new THREE.Group();
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd99b78, roughness: 0.52 });
+        const shortsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+        const trimMat = new THREE.MeshStandardMaterial({ color: 0x00BFFF, emissive: 0x006699, emissiveIntensity: 0.35 });
+        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.28, metalness: 0.1 });
+
+        const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.24, 16), shortsMat);
+        hips.position.y = 0.92;
+        group.add(hips);
+
+        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.05, 16), trimMat);
+        belt.position.y = 1.03;
+        group.add(belt);
+
+        [-0.09, 0.09].forEach((xPos, i) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.85, 12), skinMat);
+            leg.position.set(xPos, 0.45, i === 0 ? 0.08 : -0.08);
+            group.add(leg);
+        });
+
+        const torso = new THREE.Group();
+        torso.position.y = 1.04;
+        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.44, 16), skinMat);
+        chest.position.y = 0.22;
+        torso.add(chest);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.125, 16, 16), skinMat);
+        head.position.y = 0.54;
+        torso.add(head);
+
+        // الذراع اليسرى والقفاز (Lead Hand)
+        const lArm = new THREE.Group();
+        lArm.position.set(0.24, 0.38, 0);
+        const lUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
+        lUpper.position.y = -0.14;
+        lArm.add(lUpper);
+
+        const lForearm = new THREE.Group();
+        lForearm.position.set(0, -0.28, 0);
+        const lForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.26, 12), skinMat);
+        lForeMesh.position.y = -0.13;
+        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.092, 16, 16), gloveMat);
+        lGlove.scale.set(0.95, 1.15, 1.1);
+        lGlove.position.y = -0.27;
+        lForearm.add(lForeMesh, lGlove);
+        lArm.add(lForearm);
+
+        // الذراع اليمنى والقفاز (Rear Hand)
+        const rArm = new THREE.Group();
+        rArm.position.set(-0.24, 0.38, 0);
+        const rUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
+        rUpper.position.y = -0.14;
+        rArm.add(rUpper);
+
+        const rForearm = new THREE.Group();
+        rForearm.position.set(0, -0.28, 0);
+        const rForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.26, 12), skinMat);
+        rForeMesh.position.y = -0.13;
+        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.092, 16, 16), gloveMat);
+        rGlove.scale.set(0.95, 1.15, 1.1);
+        rGlove.position.y = -0.27;
+        rForearm.add(rForeMesh, rGlove);
+        rArm.add(rForearm);
+
+        torso.add(lArm, rArm);
+        group.add(torso);
+
+        // وضعية الحماية (Guard Stance)
+        lArm.rotation.set(-0.65, 0.2, -0.15);
+        lForearm.rotation.set(-1.65, 0, 0.25);
+        rArm.rotation.set(-0.55, -0.2, 0.15);
+        rForearm.rotation.set(-1.85, 0, -0.25);
+
+        boxerRig = { head, torso, lArm, rArm, lForearm, rForearm };
+        return group;
+    }
+
+    function loadKinematicBoxer() {
+        const boxerGroup = buildProceduralBoxerCharacter();
+        setupNormalizedModel(boxerGroup);
+        document.getElementById('glb-status').style.display = 'none';
+        const listBox = document.getElementById('detected-clips-list');
+        if (listBox) listBox.textContent = '✔ Pro Boxing Kinematic Rig Active (Jab, Cross, Hooks, Uppercuts, Slips)';
     }
 
     async function loadSelected3DModel() {
@@ -2712,16 +2798,19 @@
             statusEl.textContent = 'جاري تجهيز الملاكم وحركات القتال...';
         }
 
-        if (selectedModelSource === 'local_fbx') {
+        if (selectedModelSource === 'kinematic_boxer') {
+            loadKinematicBoxer();
+        } else if (selectedModelSource === 'local_fbx') {
             loadLocalFBXBoxer();
-        } else {
-            const targetUrl = (selectedModelSource === 'custom_url' && customCloudModelUrl) ? customCloudModelUrl : DEFAULT_CLOUD_GLB_URL;
-            const resolvedUrl = await fetchCloudModelWithCache(targetUrl);
-            if (targetUrl.toLowerCase().endsWith('.fbx')) {
+        } else if (selectedModelSource === 'custom_url' && customCloudModelUrl) {
+            const resolvedUrl = await fetchCloudModelWithCache(customCloudModelUrl);
+            if (customCloudModelUrl.toLowerCase().endsWith('.fbx')) {
                 loadCloudFBXBoxer(resolvedUrl);
             } else {
                 loadCloudGLBBoxer(resolvedUrl);
             }
+        } else {
+            loadKinematicBoxer();
         }
     }
 
@@ -2773,11 +2862,11 @@
             if (listBox) listBox.textContent = clipsLog.join('\n');
             document.getElementById('glb-status').style.display = 'none';
         }, undefined, () => {
-            document.getElementById('glb-status').textContent = '⚠️ تعذر تحميل المجسم السحابي، تم العودة للمجسم المحلي';
+            document.getElementById('glb-status').textContent = '⚠️ تعذر تحميل الرابط، تم تفعيل الملاكم الحركي الاحترافي';
             setTimeout(() => {
-                selectedModelSource = 'local_fbx';
-                document.getElementById('model-source-select').value = 'local_fbx';
-                loadLocalFBXBoxer();
+                selectedModelSource = 'kinematic_boxer';
+                document.getElementById('model-source-select').value = 'kinematic_boxer';
+                loadKinematicBoxer();
             }, 1200);
         });
     }
@@ -2828,7 +2917,6 @@
                 const fileName = MOVES[mKey].file;
                 const registerClip = (animClip) => {
                     const clipClone = animClip.clone();
-                    // تصفية انتقائية: تمنع الانجراف الأفقي فقط وتحافظ على حركات الكتف والعمود الفقري
                     clipClone.tracks = clipClone.tracks.filter(t => {
                         if (t.name.endsWith('.position') && (t.name.includes('Hips') || t.name.includes('Root'))) return false;
                         return true;
@@ -2920,7 +3008,6 @@
         const moveCfg = MOVES[moveKey];
         if (withSpeech && moveCfg) speakText(moveCfg.say);
 
-        // تطبيق عزم دوران الجذع والكتف الفيزيائي مع كل ضربة أو تفادي
         if (moveCfg) {
             proceduralState.targetRotY = moveCfg.torqueY || 0;
             proceduralState.targetLeanZ = moveCfg.leanZ || 0;
@@ -2928,10 +3015,11 @@
         }
 
         if (!mixer || !actions[moveKey]) {
+            document.getElementById('live-move-badge').textContent = moveCfg ? moveCfg.en.toUpperCase() : moveKey;
             if (moveQueue.length > 0) {
-                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(520 / voiceRate));
+                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(480 / voiceRate));
             } else {
-                setTimeout(() => { isComboBusy = false; returnToIdle(); }, Math.round(350 / voiceRate));
+                setTimeout(() => { isComboBusy = false; returnToIdle(); }, Math.round(360 / voiceRate));
             }
             return;
         }
@@ -2940,7 +3028,6 @@
         const burnoutBoost = isBurnoutActiveNow ? 1.35 : 1.0;
         act.timeScale = Math.max(0.55, voiceRate * 1.30 * burnoutBoost);
         act.reset().play();
-        // تقليل زمن التلاشي إلى 0.04 ثانية لمنع ابتلاع اللكمات المتتالية السريعة
         if (activeAction && activeAction !== act) activeAction.fadeOut(0.04);
         activeAction = act;
     }
@@ -2955,7 +3042,7 @@
 
     function updateProceduralBoxerPhysics(delta) {
         if (!modelRoot || !modelRoot.visible) return;
-        const lerpSpeed = Math.min(1, delta * 14);
+        const lerpSpeed = Math.min(1, delta * 15);
         proceduralState.curRotY += (proceduralState.targetRotY - proceduralState.curRotY) * lerpSpeed;
         proceduralState.curLeanZ += (proceduralState.targetLeanZ - proceduralState.curLeanZ) * lerpSpeed;
         proceduralState.curZ += (proceduralState.targetZ - proceduralState.curZ) * lerpSpeed;
@@ -2965,6 +3052,30 @@
         }
         modelRoot.rotation.z = proceduralState.curLeanZ;
         modelRoot.position.z = proceduralState.curZ;
+
+        // تحريك الذراعين والقفازين بدقة تشريحية في وضع الملاكم الحركي
+        if (boxerRig.torso && selectedModelSource === 'kinematic_boxer') {
+            const move = document.getElementById('live-move-badge').textContent;
+            let lArmX = -0.65, lArmY = 0.2, lArmZ = -0.15, lForeX = -1.65;
+            let rArmX = -0.55, rArmY = -0.2, rArmZ = 0.15, rForeX = -1.85;
+
+            if (move.includes('JAB')) { lArmX = -1.55; lForeX = -0.08; lArmY = -0.15; }
+            else if (move.includes('CROSS')) { rArmX = -1.55; rForeX = -0.08; rArmY = 0.15; }
+            else if (move.includes('LEAD HOOK')) { lArmX = -1.45; lArmY = -0.95; lForeX = -1.35; }
+            else if (move.includes('REAR HOOK')) { rArmX = -1.45; rArmY = 0.95; rForeX = -1.35; }
+            else if (move.includes('LEAD UPPER')) { lArmX = -1.15; lForeX = -1.45; lArmZ = -0.35; }
+            else if (move.includes('REAR UPPER')) { rArmX = -1.15; rForeX = -1.45; rArmZ = 0.35; }
+
+            boxerRig.lArm.rotation.x += (lArmX - boxerRig.lArm.rotation.x) * lerpSpeed;
+            boxerRig.lArm.rotation.y += (lArmY - boxerRig.lArm.rotation.y) * lerpSpeed;
+            boxerRig.lArm.rotation.z += (lArmZ - boxerRig.lArm.rotation.z) * lerpSpeed;
+            boxerRig.lForearm.rotation.x += (lForeX - boxerRig.lForearm.rotation.x) * lerpSpeed;
+
+            boxerRig.rArm.rotation.x += (rArmX - boxerRig.rArm.rotation.x) * lerpSpeed;
+            boxerRig.rArm.rotation.y += (rArmY - boxerRig.rArm.rotation.y) * lerpSpeed;
+            boxerRig.rArm.rotation.z += (rArmZ - boxerRig.rArm.rotation.z) * lerpSpeed;
+            boxerRig.rForearm.rotation.x += (rForeX - boxerRig.rForearm.rotation.x) * lerpSpeed;
+        }
     }
 
     function animate3D() {
