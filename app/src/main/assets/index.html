@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Pro Kinematic 3D Boxer Edition</title>
+    <title>Boxing Coach Pro • Optimized Tactical Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -617,7 +617,7 @@
             </div>
         </div>
 
-        <!-- وضع التكتيك -->
+        <!-- وضع التكتيك المحدث (بدون تكرار متتالي ومع ربط الكف باللون الأخضر) -->
         <div id="drill-view-tactics" class="drill-sub-view">
             <div class="panel">
                 <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
@@ -626,7 +626,7 @@
                 </div>
 
                 <select id="tactics-mode-select" style="margin-bottom: 6px;" onchange="onTacticsModeChange()">
-                    <option value="feint">1️⃣ الخداع البصري (أخضر=اضرب / أحمر=تفادَ / أصفر=تراجع)</option>
+                    <option value="feint">1️⃣ الخداع البصري (أخضر=اضرب الكف الصحيح / أحمر=تفادَ / أصفر=تراجع)</option>
                     <option value="mirror">2️⃣ ملاكم الظل وملاحقة الزوايا (Angle Cut)</option>
                     <option value="pyramid">3️⃣ تحدي الذاكرة المتراكمة (1 ➔ 8 حركات)</option>
                     <option value="pocket">4️⃣ القتال في المسافة القريبة (Pocket)</option>
@@ -648,7 +648,7 @@
 
                 <div class="stick-box tactics-theme">
                     <div class="stick-move-title" id="tactics-title-label">🎯 FEINT & DECISION</div>
-                    <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب | أحمر = تفادَ | أصفر = تراجع</div>
+                    <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب الكف | أحمر = تفادَ | أصفر = تراجع</div>
                     <div class="stick-sub-hint" id="tactics-hint-label">اضغط ابدأ لبدء التحدي التكتيكي</div>
                 </div>
 
@@ -729,7 +729,7 @@
         </div>
     </div>
 
-    <!-- القسم 4: الأداء والضبط (مع محوّل المجسم الحركي والمحلي والسحابي) -->
+    <!-- القسم 4: الأداء والضبط -->
     <div id="sec-settings" class="main-section">
         <div class="panel" style="border: 1.5px solid var(--neon); background: rgba(0, 191, 255, 0.05);">
             <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;">
@@ -895,7 +895,6 @@
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
     let savedGymBg = localStorage.getItem('boxing_gym_bg') || 'assets_images_bgchampionshipring.jpg';
 
-    // إعدادات محرك المجسمات (الملاكم الحركي الاحترافي كافتراضي + المحلي + الرابط المخصص)
     let selectedModelSource = localStorage.getItem('boxing_3d_source') || 'kinematic_boxer';
     let customCloudModelUrl = localStorage.getItem('boxing_custom_glb_url') || '';
 
@@ -1699,17 +1698,18 @@
     }
 
     // =========================================================================
-    // 🎯 محرك التدريبات التكتيكية الخمسة
+    // 🎯 محرك التدريبات التكتيكية المحدث (منع التكرار المتتالي + ربط الكف باللون الأخضر)
     // =========================================================================
     let isTacticsRunning = false;
     let tacticsLoopTimer = null;
     let tacPoints = 0;
     let tacStreak = 0;
     let tacCorrect = 0;
+    let lastTacticsColor = '';
 
     let tacticsChallengeState = {
         active: false, mode: 'feint', signalColor: 'GREEN',
-        targetAngleX: 0, pyramidSeq: ['JAB'], resolved: false, expiresAt: 0
+        targetAngleX: 0, pyramidSeq: ['JAB'], resolved: false, expiresAt: 0, targetPunchKey: 'JAB'
     };
 
     function onTacticsModeChange() {
@@ -1724,7 +1724,7 @@
 
         if (mode === 'feint') {
             titleEl.textContent = '1️⃣ FEINT & SPLIT-SECOND DECISION';
-            cueEl.textContent = 'أخضر = اضرب الكف | أحمر = خدعة (تفادَ) | أصفر = تراجع';
+            cueEl.textContent = 'أخضر = اضرب الكف الصحيح | أحمر = خدعة (تفادَ) | أصفر = تراجع';
             hintEl.textContent = 'يختبر سرعة اتخاذ القرار ومنع الاندفاع العشوائي';
         } else if (mode === 'mirror') {
             titleEl.textContent = '2️⃣ MIRROR SHADOWBOXING & ANGLE CUT';
@@ -1769,24 +1769,54 @@
 
         if (mode === 'feint') {
             const colors = [
-                { code: 'GREEN', hex: 0x34d399, label: '🟢 أخضر: اضرب الآن! (HIT)', say: 'Hit!' },
+                { code: 'GREEN', hex: 0x34d399, label: '🟢 أخضر: اضرب الكف الصحيح! (HIT)', say: 'Hit!' },
                 { code: 'RED', hex: 0xf87171, label: '🔴 أحمر: خدعة! تفادَ برأسك (SLIP)', say: 'Feint! Slip!' },
                 { code: 'YELLOW', hex: 0xfbbf24, label: '🟡 أصفر: تراجع للخلف (PULL BACK)', say: 'Pull back!' }
             ];
-            const pick = colors[Math.floor(Math.random() * colors.length)];
-            tacticsChallengeState.signalColor = pick.code;
-            const isLeft = Math.random() < 0.5;
-            resetPadsToGuardPosition();
-            const targetPad = isLeft ? leftPadMesh : rightPadMesh;
-            setPadColor(targetPad, pick.hex);
-            targetPad.position.set(isLeft ? 0.25 : -0.25, 1.52, 0.88);
-            targetPad.scale.set(isLeft ? 1.25 : -1.25, 1.25, 1.25);
-            padAnimState.camTargetX = isLeft ? 0.65 : 0.35;
-            padAnimState.camTargetY = 0.42;
 
-            document.getElementById('tactics-cue-label').textContent = pick.label;
-            syncComboText(pick.label);
-            speakText(pick.say);
+            // منع تكرار نفس الإشارة مرتين متتاليتين (Anti-Repetition Queue)
+            let filteredColors = colors.filter(c => c.code !== lastTacticsColor);
+            const pick = filteredColors[Math.floor(Math.random() * filteredColors.length)];
+            lastTacticsColor = pick.code;
+            tacticsChallengeState.signalColor = pick.code;
+
+            resetPadsToGuardPosition();
+
+            if (pick.code === 'GREEN') {
+                // اختيار لكمة عشوائية وتوجيه الكف نحو إحداثياتها الصحيحة
+                const punchKeys = Object.keys(PAD_POSITIONS);
+                const pKey = punchKeys[Math.floor(Math.random() * punchKeys.length)];
+                tacticsChallengeState.targetPunchKey = pKey;
+                const cfg = PAD_POSITIONS[pKey];
+                const targetPad = (cfg.hand === 'LEFT') ? leftPadMesh : rightPadMesh;
+
+                setPadColor(targetPad, 0x34d399);
+                targetPad.position.set(cfg.x, cfg.y, cfg.z);
+                targetPad.rotation.set(cfg.rotX, cfg.rotY, cfg.rotZ);
+                targetPad.scale.set(cfg.hand === 'LEFT' ? 1.22 : -1.22, 1.22, 1.22);
+
+                padAnimState.activePunch = pKey;
+                padAnimState.camTargetX = cfg.camX;
+                padAnimState.camTargetY = cfg.camY;
+                padAnimState.camScoredThisPad = false;
+
+                const cueText = `🟢 أخضر: اضرب ${cfg.label}`;
+                document.getElementById('tactics-cue-label').textContent = cueText;
+                syncComboText(cueText);
+                speakText(cfg.say);
+            } else {
+                const isLeft = Math.random() < 0.5;
+                const targetPad = isLeft ? leftPadMesh : rightPadMesh;
+                setPadColor(targetPad, pick.hex);
+                targetPad.position.set(isLeft ? 0.25 : -0.25, 1.52, 0.88);
+                targetPad.scale.set(isLeft ? 1.25 : -1.25, 1.25, 1.25);
+                padAnimState.camTargetX = isLeft ? 0.65 : 0.35;
+                padAnimState.camTargetY = 0.42;
+
+                document.getElementById('tactics-cue-label').textContent = pick.label;
+                syncComboText(pick.label);
+                speakText(pick.say);
+            }
 
         } else if (mode === 'mirror') {
             const dirs = [
@@ -1872,7 +1902,7 @@
                 tacticsChallengeState.resolved = true;
                 tacPoints += 15; tacStreak++; tacCorrect++;
                 playBoxingSFX('PAD_HIT');
-                document.getElementById('tactics-cue-label').textContent = '✅ قرار صائب! ضربة خاطفة (+15)';
+                document.getElementById('tactics-cue-label').textContent = '✅ ضربة صحيحة للكف الأخضر! (+15)';
                 updateTacticsScoreboard();
             } else if (tacticsChallengeState.signalColor === 'RED') {
                 if (didPunch) {
@@ -2112,6 +2142,7 @@
         }
     }
 
+    // خوارزمية Fisher-Yates Shuffle لضمان تنوع الكومبوهات وتغيير البداية عشوائياً عند تشغيل التطبيق
     function getNextMittCombo() {
         if (isBurnoutActiveNow) {
             return BURNOUT_MITT_COMBOS[Math.floor(Math.random() * BURNOUT_MITT_COMBOS.length)];
@@ -2569,7 +2600,7 @@
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // محرك Three.js المزدوج (Pro Kinematic Boxer + Local FBX + Custom Cloud URL)
+    // محرك Three.js المزدوج
     // =========================================================================
     const MOVES = {
         JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx', torqueY: -0.28, leanZ: 0.04, punchZ: 0.14 },
@@ -2735,7 +2766,6 @@
         head.position.y = 0.54;
         torso.add(head);
 
-        // الذراع اليسرى والقفاز (Lead Hand)
         const lArm = new THREE.Group();
         lArm.position.set(0.24, 0.38, 0);
         const lUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
@@ -2752,7 +2782,6 @@
         lForearm.add(lForeMesh, lGlove);
         lArm.add(lForearm);
 
-        // الذراع اليمنى والقفاز (Rear Hand)
         const rArm = new THREE.Group();
         rArm.position.set(-0.24, 0.38, 0);
         const rUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
@@ -2772,7 +2801,6 @@
         torso.add(lArm, rArm);
         group.add(torso);
 
-        // وضعية الحماية (Guard Stance)
         lArm.rotation.set(-0.65, 0.2, -0.15);
         lForearm.rotation.set(-1.65, 0, 0.25);
         rArm.rotation.set(-0.55, -0.2, 0.15);
@@ -3053,7 +3081,6 @@
         modelRoot.rotation.z = proceduralState.curLeanZ;
         modelRoot.position.z = proceduralState.curZ;
 
-        // تحريك الذراعين والقفازين بدقة تشريحية في وضع الملاكم الحركي
         if (boxerRig.torso && selectedModelSource === 'kinematic_boxer') {
             const move = document.getElementById('live-move-badge').textContent;
             let lArmX = -0.65, lArmY = 0.2, lArmZ = -0.15, lForeX = -1.65;
