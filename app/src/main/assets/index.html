@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Neon Arena Edition</title>
+    <title>Boxing Coach Pro • Neon Arena & Heavy Bag Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -21,6 +21,7 @@
             --counter: #a855f7;
             --mitt: #10b981;
             --tactics: #ec4899;
+            --bag: #ef4444;
             --danger: #ef4444;
             --success: #10b981;
             --text: #ffffff;
@@ -171,16 +172,21 @@
         .combo-display h2 { color: var(--neon); font-size: 1.18rem; font-weight: 900; line-height: 1.35; }
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
-        .drill-cards-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+        /* بطاقات اختيار وضع التفاعل (5 بطاقات متناسقة) */
+        .drill-cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 8px; }
         .drill-mode-card {
-            background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
-            padding: 8px 4px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--muted);
+            background: var(--surface); border: 1px solid var(--border); border-radius: 13px;
+            padding: 7px 2px; text-align: center; cursor: pointer; transition: 0.2s; color: var(--muted);
         }
-        .drill-mode-card .d-icon { font-size: 1.25rem; display: block; margin-bottom: 3px; }
-        .drill-mode-card .d-name { font-size: 0.68rem; font-weight: 800; display: block; }
+        .drill-mode-card .d-icon { font-size: 1.15rem; display: block; margin-bottom: 2px; }
+        .drill-mode-card .d-name { font-size: 0.61rem; font-weight: 800; display: block; }
         .drill-mode-card.active {
             background: rgba(0, 191, 255, 0.14); border-color: var(--neon); color: #fff;
             box-shadow: 0 4px 12px rgba(0, 191, 255, 0.15);
+        }
+        .drill-mode-card.bag-card.active {
+            background: rgba(239, 68, 68, 0.16); border-color: var(--bag); color: #fff;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
         }
         .drill-sub-view { display: none; flex-direction: column; gap: 8px; }
         .drill-sub-view.active { display: flex; }
@@ -197,10 +203,12 @@
         .stick-box.stick-theme { background: rgba(244, 63, 94, 0.08); border-color: var(--stick); }
         .stick-box.counter-theme { background: rgba(168, 85, 247, 0.09); border-color: var(--counter); }
         .stick-box.tactics-theme { background: rgba(236, 72, 153, 0.09); border-color: var(--tactics); }
+        .stick-box.bag-theme { background: rgba(239, 68, 68, 0.09); border-color: var(--bag); }
         .stick-move-title { font-size: 1.02rem; color: var(--neon); font-weight: 900; direction: ltr; }
         .stick-box.stick-theme .stick-move-title { color: #fda4af; }
         .stick-box.counter-theme .stick-move-title { color: #d8b4fe; }
         .stick-box.tactics-theme .stick-move-title { color: #f472b6; }
+        .stick-box.bag-theme .stick-move-title { color: #fca5a5; }
         .stick-dodge-cue { font-size: 0.88rem; color: #fff; font-weight: 800; }
         .stick-sub-hint { font-size: 0.7rem; color: var(--muted); }
 
@@ -216,6 +224,7 @@
             box-shadow: 0 4px 14px rgba(0, 191, 255, 0.25); transition: 0.15s;
         }
         .btn:active { transform: scale(0.98); }
+        .btn.bag-btn { background: var(--bag); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3); }
         .btn.danger { background: var(--danger); color: #fff; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3); }
         .btn.secondary { background: var(--card); color: var(--text); border: 1px solid var(--border); box-shadow: none; }
         .btn.small { padding: 8px 10px; font-size: 0.76rem; border-radius: 10px; }
@@ -382,7 +391,7 @@
             </div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ للتدريب أو انتقل إلى 🧤 التفاعل لكفوف المدرب</span>
+                <span id="combo-sub">اضغط ابدأ للتدريب أو انتقل إلى 🧤 التفاعل للكفوف والكيس الثقيل</span>
             </div>
         </div>
 
@@ -392,16 +401,20 @@
         </div>
     </div>
 
-    <!-- القسم 2: التفاعل -->
+    <!-- القسم 2: التفاعل (5 أوضاع متكاملة ومعزولة) -->
     <div id="sec-drills" class="main-section">
         <div class="drill-cards-grid">
             <div class="drill-mode-card active" id="dcard-mitts" onclick="selectDrillSubMode('mitts')">
                 <span class="d-icon">🧤</span>
-                <span class="d-name">كف المدرب</span>
+                <span class="d-name">الكف</span>
+            </div>
+            <div class="drill-mode-card bag-card" id="dcard-heavybag" onclick="selectDrillSubMode('heavybag')">
+                <span class="d-icon">🥊</span>
+                <span class="d-name">الكيس الثقيل</span>
             </div>
             <div class="drill-mode-card" id="dcard-stick" onclick="selectDrillSubMode('stick')">
                 <span class="d-icon">🥢</span>
-                <span class="d-name">عصا التفادي</span>
+                <span class="d-name">العصا</span>
             </div>
             <div class="drill-mode-card" id="dcard-counter" onclick="selectDrillSubMode('counter')">
                 <span class="d-icon">⚡</span>
@@ -467,6 +480,55 @@
             <div class="main-btns">
                 <button class="btn" id="mitts-start-btn" onclick="toggleMittsSession()">🧤 ابدأ تمرين الكف</button>
                 <button class="btn secondary" onclick="resetMittsSession()">إعادة</button>
+            </div>
+        </div>
+
+        <!-- وضع الكيس الثقيل (Heavy Bag Pro Mode) -->
+        <div id="drill-view-heavybag" class="drill-sub-view">
+            <div class="panel">
+                <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px; border-color: rgba(239,68,68,0.3);">
+                    <div class="round-info">
+                        <strong id="bag-round-label">الجولة 1 / 3</strong>
+                        <span id="bag-phase-badge" style="color: #fca5a5;">🔥 POWER PHASE</span>
+                    </div>
+                    <div class="timer" id="bag-timer-display" style="font-size: 1.65rem;">03:00</div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 8px;">
+                    <div class="setting-item" style="margin-bottom:0;">
+                        <span class="setting-header"><span>أسلوب الكيس:</span></span>
+                        <select id="bag-workout-style">
+                            <option value="mixed" selected>🔥 شامل (قوة + سرعة)</option>
+                            <option value="power">💥 قوة انفجارية (Power)</option>
+                            <option value="speed">⚡ سرعة وتحمل (Speed)</option>
+                            <option value="body">🛡️ ضربات الجسم (Body)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item" style="margin-bottom:0;">
+                        <span class="setting-header"><span>تبديل الإيقاع داخل الجولة:</span></span>
+                        <select id="bag-switch-interval">
+                            <option value="30" selected>🔔 كل 30 ثانية</option>
+                            <option value="45">🔔 كل 45 ثانية</option>
+                            <option value="0">بدون تبديل</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stick-box bag-theme">
+                    <div class="stick-move-title" id="bag-combo-title">🥊 HEAVY BAG PRO</div>
+                    <div class="stick-dodge-cue" id="bag-cue-label">اضغط ابدأ لبدء جولة الكيس الثقيل المكثفة</div>
+                    <div class="stick-sub-hint" id="bag-hint-label">يهتز الهاتف ويرن الجرس عند كل تبديل للإيقاع داخل الجولة</div>
+                </div>
+
+                <div class="score-grid">
+                    <div class="score-card"><span>الكومبوهات</span><strong id="bag-combos-count" style="color: #fca5a5;">0</strong></div>
+                    <div class="score-card"><span>اللكمات</span><strong id="bag-strikes-count" style="color: var(--accent);">0</strong></div>
+                    <div class="score-card"><span>التبديلات</span><strong id="bag-switches-count" style="color: var(--neon);">0</strong></div>
+                </div>
+            </div>
+            <div class="main-btns">
+                <button class="btn bag-btn" id="bag-start-btn" onclick="toggleHeavyBagSession()">🥊 ابدأ الكيس الثقيل</button>
+                <button class="btn secondary" onclick="resetHeavyBagSession()">إعادة</button>
             </div>
         </div>
 
@@ -823,12 +885,20 @@
     let isBurnoutActiveNow = false;
     let sessionGuardViolations = 0;
 
+    // دالة إيقاف كافة الأوضاع النشطة لضمان العزل وعدم التداخل
+    function stopAllActiveModes() {
+        if (isRunning) stopSession();
+        if (isMittsRunning) stopMittsSession();
+        if (isHeavyBagRunning) stopHeavyBagSession();
+        if (isStickRunning) stopStickSession();
+        if (isCounterRunning) stopCounterSession();
+        if (isTacticsRunning) stopTacticsSession();
+    }
+
     function switchMainSection(sec) {
-        if (activeTabName === 'stick' && isStickRunning) stopStickSession();
-        if (activeTabName === 'counter' && isCounterRunning) stopCounterSession();
-        if (activeTabName === 'mitts' && isMittsRunning) stopMittsSession();
-        if (activeTabName === 'tactics' && isTacticsRunning) stopTacticsSession();
-        if (activeTabName === 'train' && sec !== 'arena' && isRunning) stopSession();
+        if ((sec !== 'arena' && isRunning) || (sec !== 'drills' && (isMittsRunning || isHeavyBagRunning || isStickRunning || isCounterRunning || isTacticsRunning))) {
+            stopAllActiveModes();
+        }
 
         currentMainSection = sec;
         document.querySelectorAll('.main-section').forEach(el => el.classList.remove('active'));
@@ -849,10 +919,9 @@
     }
 
     function selectDrillSubMode(sub) {
-        if (activeTabName === 'stick' && sub !== 'stick' && isStickRunning) stopStickSession();
-        if (activeTabName === 'counter' && sub !== 'counter' && isCounterRunning) stopCounterSession();
-        if (activeTabName === 'mitts' && sub !== 'mitts' && isMittsRunning) stopMittsSession();
-        if (activeTabName === 'tactics' && sub !== 'tactics' && isTacticsRunning) stopTacticsSession();
+        if (activeTabName !== sub) {
+            stopAllActiveModes();
+        }
 
         activeDrillSubMode = sub;
         activeTabName = sub;
@@ -994,6 +1063,19 @@
                 gain.connect(audioCtx.destination);
                 osc.start(now);
                 osc.stop(now + 0.12);
+            } else if (type === 'BAG_THUD') {
+                triggerHapticFeedback(55);
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(115, now);
+                osc.frequency.exponentialRampToValueAtTime(28, now + 0.16);
+                gain.gain.setValueAtTime(0.55, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.17);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(now);
+                osc.stop(now + 0.17);
             } else if (type === 'GUARD_WARN') {
                 triggerHapticFeedback([110, 50, 110]);
                 const osc = audioCtx.createOscillator();
@@ -1186,6 +1268,9 @@
             const acc = mittsPunchesCount > 0 ? Math.round((mittsCamHitsCount / mittsPunchesCount) * 100) : 0;
             summaryTitle = `🧤 كف: ${mittsCamHitsCount}/${mittsPunchesCount} (${acc}%)`;
             hasData = true;
+        } else if (modeKey === 'heavybag' && (bagCombosCount > 0 || bagStrikesCount > 0)) {
+            summaryTitle = `🥊 كيس ثقيل: ${bagStrikesCount} لكمة (${bagCombosCount} كومبو)`;
+            hasData = true;
         } else if (modeKey === 'stick' && (refSuccessCount > 0 || refHitCount > 0)) {
             summaryTitle = `🥢 عصا: ${refPoints} نقطة (${refSuccessCount}/${refSuccessCount + refHitCount})`;
             hasData = true;
@@ -1292,7 +1377,7 @@
         reportBox.style.display = 'block';
         reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
 
-        const promptText = `أنت مدرب ملاكمة محترف. قيّم باختصار باللغة العربية أداء الملاكم بناءً على إحصائياته: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
+        const promptText = `أنت مدرب ملاكمة محترف. قيّم باختصار باللغة العربية أداء الملاكم بناءً على إحصائياته: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكيس الثقيل ${bagStrikesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
 
         try {
             const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
@@ -1325,18 +1410,21 @@
         }
     }
 
+    // إدارة الرؤية الموحدة لجميع المجسمات ثلاثية الأبعاد
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const isMittsTab = (activeTabName === 'mitts');
+        const isHeavyBagTab = (activeTabName === 'heavybag');
         const isTacticsTab = (activeTabName === 'tactics');
         const tacMode = document.getElementById('tactics-mode-select') ? document.getElementById('tactics-mode-select').value : 'feint';
 
         const stageTag = document.getElementById('stage-mode-tag');
         const hudOverlay = document.getElementById('stage-hud-overlay');
 
-        const showBoxer = (!isStickOrCounter && !isMittsTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
+        const showBoxer = (!isStickOrCounter && !isMittsTab && !isHeavyBagTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
         const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
         const showPads = isMittsTab || (isTacticsTab && (tacMode === 'feint' || tacMode === 'pocket'));
+        const showHeavyBag = isHeavyBagTab;
 
         if (modelRoot) {
             modelRoot.visible = showBoxer;
@@ -1345,8 +1433,13 @@
         if (stickGroup) stickGroup.visible = showStick;
         if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
         if (coachPadsGroup) coachPadsGroup.visible = showPads;
+        if (heavyBagGroup) heavyBagGroup.visible = showHeavyBag;
 
-        if (isTacticsTab) {
+        if (isHeavyBagTab) {
+            stageTag.textContent = '🥊 HEAVY BAG PRO';
+            hudOverlay.style.display = 'none';
+            if (camera) { camera.position.set(0, 1.38, 2.55); camera.lookAt(0, 1.25, 0); }
+        } else if (isTacticsTab) {
             stageTag.textContent = `🎯 TACTICS: ${tacMode.toUpperCase()}`;
             hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.45); camera.lookAt(0, 1.25, 0); }
@@ -1394,7 +1487,8 @@
         const activeNow = (activeTabName === 'stick') ? isStickRunning :
                           (activeTabName === 'counter' ? isCounterRunning :
                           (activeTabName === 'mitts' ? isMittsRunning :
-                          (activeTabName === 'tactics' ? isTacticsRunning : isRunning)));
+                          (activeTabName === 'heavybag' ? isHeavyBagRunning :
+                          (activeTabName === 'tactics' ? isTacticsRunning : isRunning))));
         tvBtn.textContent = activeNow ? '⏹ إيقاف' : '▶ ابدأ';
         if (activeNow) tvBtn.classList.add('stop'); else tvBtn.classList.remove('stop');
 
@@ -1416,10 +1510,171 @@
         if (activeTabName === 'stick') toggleStickSession();
         else if (activeTabName === 'counter') toggleCounterSession();
         else if (activeTabName === 'mitts') toggleMittsSession();
+        else if (activeTabName === 'heavybag') toggleHeavyBagSession();
         else if (activeTabName === 'tactics') toggleTacticsSession();
         else { if (isRunning) stopSession(); else startSession(); }
     }
 
+    // =========================================================================
+    // 🥊 محرك الكيس الثقيل ثلاثي الأبعاد ومنبه التبديل داخل الجولة (Heavy Bag Pro)
+    // =========================================================================
+    let heavyBagGroup = null;
+    let bagMesh = null;
+    let bagSwingVelX = 0;
+    let bagSwingVelZ = 0;
+    let bagSwingAngleX = 0;
+    let bagSwingAngleZ = 0;
+
+    let isHeavyBagRunning = false;
+    let isHeavyBagBusy = false;
+    let heavyBagLoopTimer = null;
+    let heavyBagStepTimers = [];
+    let bagCombosCount = 0;
+    let bagStrikesCount = 0;
+    let bagSwitchesCount = 0;
+    let currentBagPhaseIndex = 0;
+
+    const BAG_PHASES = [
+        { name: '🔥 POWER PHASE', cue: 'قوة انفجارية (Power Strikes)', say: 'Switch! Heavy power shots!', pool: [['JAB', 'CROSS', 'L_HOOK'], ['JAB', 'R_UPPER', 'L_HOOK'], ['CROSS', 'L_HOOK', 'CROSS'], ['JAB', 'CROSS', 'R_HOOK']] },
+        { name: '⚡ SPEED FLURRY', cue: 'سرعة خاطفة متواصلة (Speed)', say: 'Switch! Fast hands non-stop!', pool: [['JAB', 'JAB', 'CROSS'], ['JAB', 'CROSS', 'JAB', 'CROSS'], ['L_HOOK', 'R_HOOK', 'L_HOOK', 'R_HOOK']] },
+        { name: '🛡️ BODY & HEAD', cue: 'تنويع الرأس والجسم (Body & Head)', say: 'Switch! Dig to the body!', pool: [['JAB', 'L_UPPER', 'CROSS'], ['JAB', 'CROSS', 'L_UPPER', 'R_UPPER'], ['L_HOOK', 'L_UPPER', 'CROSS']] }
+    ];
+
+    function build3DHeavyBag() {
+        heavyBagGroup = new THREE.Group();
+        heavyBagGroup.position.set(0, 2.35, 0.35);
+
+        // سلاسل التعليق العلوية
+        const chainMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.25 });
+        const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.55, 8), chainMat);
+        chain.position.y = -0.27;
+        heavyBagGroup.add(chain);
+
+        // جسم الكيس الثقيل الجلدي
+        const bagGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.38, 28);
+        const bagMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.45, metalness: 0.15 });
+        bagMesh = new THREE.Mesh(bagGeo, bagMat);
+        bagMesh.position.y = -1.22;
+
+        // شريط نيون أحمر/سماوي احترافي حول الكيس
+        const stripeGeo = new THREE.CylinderGeometry(0.243, 0.243, 0.16, 28);
+        const stripeMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x7f1d1d, emissiveIntensity: 0.45, roughness: 0.35 });
+        const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+        stripe.position.y = 0.22;
+        bagMesh.add(stripe);
+
+        heavyBagGroup.add(bagMesh);
+        heavyBagGroup.visible = false;
+        scene.add(heavyBagGroup);
+    }
+
+    function applyHeavyBagImpact(punchKey) {
+        if (!heavyBagGroup || !heavyBagGroup.visible) return;
+        playBoxingSFX('BAG_THUD');
+        bagStrikesCount++;
+        document.getElementById('bag-strikes-count').textContent = bagStrikesCount;
+
+        if (punchKey === 'L_HOOK') { bagSwingVelZ -= 1.8; bagSwingVelX -= 0.7; }
+        else if (punchKey === 'R_HOOK') { bagSwingVelZ += 1.8; bagSwingVelX -= 0.7; }
+        else if (punchKey === 'L_UPPER' || punchKey === 'R_UPPER') { bagSwingVelX -= 1.9; }
+        else { bagSwingVelX -= 1.5; bagSwingVelZ += (Math.random() - 0.5) * 0.6; }
+    }
+
+    function updateHeavyBagPhysics(delta) {
+        if (!heavyBagGroup || !heavyBagGroup.visible) return;
+        const stiffness = 14.0;
+        const damping = 3.8;
+        const accX = -stiffness * bagSwingAngleX - damping * bagSwingVelX;
+        const accZ = -stiffness * bagSwingAngleZ - damping * bagSwingVelZ;
+        bagSwingVelX += accX * delta;
+        bagSwingVelZ += accZ * delta;
+        bagSwingAngleX += bagSwingVelX * delta;
+        bagSwingAngleZ += bagSwingVelZ * delta;
+        heavyBagGroup.rotation.x = bagSwingAngleX;
+        heavyBagGroup.rotation.z = bagSwingAngleZ;
+    }
+
+    function executeNextHeavyBagCombo() {
+        if (!isHeavyBagRunning || isResting || isHeavyBagBusy) return;
+        const styleVal = document.getElementById('bag-workout-style').value;
+        let phaseObj = BAG_PHASES[currentBagPhaseIndex];
+        if (styleVal === 'power') phaseObj = BAG_PHASES[0];
+        else if (styleVal === 'speed') phaseObj = BAG_PHASES[1];
+        else if (styleVal === 'body') phaseObj = BAG_PHASES[2];
+
+        const seq = phaseObj.pool[Math.floor(Math.random() * phaseObj.pool.length)];
+        isHeavyBagBusy = true;
+
+        const speedBoost = isBurnoutActiveNow ? 1.4 : 1.0;
+        const comboStr = (isBurnoutActiveNow ? '🔥 ' : '') + seq.map(k => MOVES[k].en).join(' ➔ ');
+        bagCombosCount++;
+        document.getElementById('bag-combos-count').textContent = bagCombosCount;
+        document.getElementById('bag-combo-title').textContent = comboStr;
+        document.getElementById('bag-cue-label').textContent = phaseObj.cue;
+        syncComboText(comboStr);
+        speakText(seq.map(k => MOVES[k].say).join(', '));
+
+        heavyBagStepTimers.forEach(t => clearTimeout(t));
+        heavyBagStepTimers = [];
+        let delay = Math.round(180 / (voiceRate * speedBoost));
+        seq.forEach(pKey => {
+            heavyBagStepTimers.push(setTimeout(() => {
+                if (isHeavyBagRunning && !isResting) {
+                    document.getElementById('live-move-badge').textContent = pKey;
+                    applyHeavyBagImpact(pKey);
+                }
+            }, delay));
+            delay += Math.round(520 / (voiceRate * speedBoost));
+        });
+
+        heavyBagStepTimers.push(setTimeout(() => {
+            if (isHeavyBagRunning) isHeavyBagBusy = false;
+        }, delay + (isBurnoutActiveNow ? 180 : 450)));
+    }
+
+    function toggleHeavyBagSession() { if (isHeavyBagRunning) stopHeavyBagSession(); else startHeavyBagSession(); }
+    function startHeavyBagSession() {
+        isHeavyBagRunning = true; isHeavyBagBusy = false; isResting = false; sessionGuardViolations = 0;
+        currentBagPhaseIndex = 0;
+        requestScreenWakeLock();
+        updateStageEntityVisibility();
+        document.getElementById('bag-start-btn').textContent = '⏹ إيقاف الكيس';
+        document.getElementById('bag-start-btn').classList.add('danger');
+        document.getElementById('tv-start-btn').textContent = '⏹ إيقاف';
+        document.getElementById('tv-start-btn').classList.add('stop');
+
+        playBoxingSFX('BELL');
+        speakText(`Round ${currentRound}. Hit the heavy bag!`);
+        startSharedRoundClock('heavybag');
+        setTimeout(() => { if (isHeavyBagRunning && !isResting) executeNextHeavyBagCombo(); }, 800);
+        heavyBagLoopTimer = setInterval(() => {
+            if (isHeavyBagRunning && !isResting && !isHeavyBagBusy) executeNextHeavyBagCombo();
+        }, 900);
+    }
+
+    function stopHeavyBagSession() {
+        if (isHeavyBagRunning) recordCurrentActivityIfAny('heavybag');
+        isHeavyBagRunning = false; isHeavyBagBusy = false;
+        releaseScreenWakeLock();
+        stopSharedRoundClock(); clearInterval(heavyBagLoopTimer);
+        heavyBagStepTimers.forEach(t => clearTimeout(t)); heavyBagStepTimers = [];
+        document.getElementById('bag-start-btn').textContent = '🥊 ابدأ الكيس الثقيل';
+        document.getElementById('bag-start-btn').classList.remove('danger');
+        document.getElementById('tv-start-btn').textContent = '▶ ابدأ';
+        document.getElementById('tv-start-btn').classList.remove('stop');
+    }
+
+    function resetHeavyBagSession() {
+        stopHeavyBagSession(); resetSharedRoundState();
+        bagCombosCount = 0; bagStrikesCount = 0; bagSwitchesCount = 0; currentBagPhaseIndex = 0;
+        document.getElementById('bag-combos-count').textContent = '0';
+        document.getElementById('bag-strikes-count').textContent = '0';
+        document.getElementById('bag-switches-count').textContent = '0';
+    }
+
+    // =========================================================================
+    // 🎯 محرك التدريبات التكتيكية الخمسة
+    // =========================================================================
     let isTacticsRunning = false;
     let tacticsLoopTimer = null;
     let tacPoints = 0;
@@ -1499,7 +1754,7 @@
             const targetPad = isLeft ? leftPadMesh : rightPadMesh;
             setPadColor(targetPad, pick.hex);
             targetPad.position.set(isLeft ? 0.25 : -0.25, 1.52, 0.88);
-            targetPad.scale.set(1.25, 1.25, 1.25);
+            targetPad.scale.set(isLeft ? 1.25 : -1.25, 1.25, 1.25);
             padAnimState.camTargetX = isLeft ? 0.65 : 0.35;
             padAnimState.camTargetY = 0.42;
 
@@ -1678,7 +1933,7 @@
     }
 
     // =========================================================================
-    // كفوف المدرب الاحترافية (كلا الكفين بكف مدرب مفتوح وشفاف تماماً مثل الكف الأسود)
+    // كفوف المدرب الاحترافية (كلا الكفين بكف مدرب مفتوح وشفاف تماماً)
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -1737,13 +1992,12 @@
     function build3DCoachPads() {
         coachPadsGroup = new THREE.Group();
         
-        // استخدام صورة الكف الاحترافي الشفاف لكلا اليدين لضمان ظهورهما ككفوف مدرب مفتوحة وليست قفازات مغلقة
         leftPadMesh = createRealisticPadSprite('assets_images_image_fully_transparent_pad_jab.png', 0.44, 0.64);
         leftPadMesh.position.set(0.26, 1.48, 0.70);
         coachPadsGroup.add(leftPadMesh);
 
         rightPadMesh = createRealisticPadSprite('assets_images_image_fully_transparent_pad_jab.png', 0.44, 0.64);
-        rightPadMesh.scale.x = -1; // عكس الكف الأيمن أفقياً ليتناسق مع اليد الأخرى
+        rightPadMesh.scale.x = -1;
         rightPadMesh.position.set(-0.26, 1.48, 0.70);
         coachPadsGroup.add(rightPadMesh);
 
@@ -2393,7 +2647,7 @@
         if (pipTag) pipTag.textContent = gpuAccelerationActive ? 'WEBGPU + PHYS' : 'GPU + PHYS';
         updateStageEntityVisibility();
 
-        build3DSparringStick(); build3DFocusMitt(); build3DCoachPads();
+        build3DSparringStick(); build3DFocusMitt(); build3DCoachPads(); build3DHeavyBag();
         loadBoxerAndAnimations(); animate3D();
     }
 
@@ -2508,6 +2762,7 @@
         const delta = clock.getDelta();
         if (activeTabName === 'stick' || activeTabName === 'counter') updateStickAnimation(delta);
         else if (activeTabName === 'mitts') updateCoachPadsAnimation(delta);
+        else if (activeTabName === 'heavybag') updateHeavyBagPhysics(delta);
         else if (activeTabName === 'tactics') {
             updateStickAnimation(delta);
             updateCoachPadsAnimation(delta);
@@ -2518,6 +2773,9 @@
     }
     window.addEventListener('load', init3DScene);
 
+    // =========================================================================
+    // إدارة الجلسات والتوقيت والصوت ومنبه التبديل داخل الجولة
+    // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
     let timerId = null; let comboId = null; let activeClockOwner = 'train';
@@ -2527,7 +2785,7 @@
     function resetSharedRoundState() { stopSharedRoundClock(); currentRound = 1; isResting = false; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels(); }
 
     function updateBurnoutVisuals(active) {
-        ['timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
+        ['timer-display', 'mitts-timer-display', 'bag-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.classList.toggle('burnout', active);
         });
@@ -2597,6 +2855,21 @@
             timeLeft--;
             updateTimerDisplay();
 
+            // منبه تبديل الإيقاع داخل الجولة في وضع الكيس الثقيل
+            if (!isResting && activeClockOwner === 'heavybag') {
+                const switchSec = parseInt(document.getElementById('bag-switch-interval').value || '30');
+                const elapsed = roundDuration - timeLeft;
+                if (switchSec > 0 && elapsed > 0 && elapsed % switchSec === 0 && timeLeft > 15) {
+                    currentBagPhaseIndex = (currentBagPhaseIndex + 1) % BAG_PHASES.length;
+                    bagSwitchesCount++;
+                    document.getElementById('bag-switches-count').textContent = bagSwitchesCount;
+                    const p = BAG_PHASES[currentBagPhaseIndex];
+                    document.getElementById('bag-phase-badge').textContent = p.name;
+                    playBoxingSFX('CLAPPER');
+                    speakText(p.say);
+                }
+            }
+
             if (!isResting && burnoutEnabled && timeLeft === 30) {
                 isBurnoutActiveNow = true;
                 updateBurnoutVisuals(true);
@@ -2613,6 +2886,7 @@
             if (!isResting) {
                 if (currentRound >= totalRounds) {
                     if (activeClockOwner === 'mitts') stopMittsSession();
+                    else if (activeClockOwner === 'heavybag') stopHeavyBagSession();
                     else if (activeClockOwner === 'stick') stopStickSession();
                     else if (activeClockOwner === 'counter') stopCounterSession();
                     else if (activeClockOwner === 'tactics') stopTacticsSession();
@@ -2621,7 +2895,7 @@
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
                 if (aiEnabled && geminiApiKey) {
-                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Hits: ${mittsCamHitsCount}/${mittsPunchesCount}, Tactics: ${tacPoints}`);
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Hits: ${mittsCamHitsCount}/${mittsPunchesCount}, Bag Strikes: ${bagStrikesCount}`);
                     speakText(advice);
                 } else speakText("Rest time.");
             } else {
@@ -2632,7 +2906,7 @@
     }
 
     function updateRoundLabels() {
-        ['round-label', 'tv-round-label', 'mitts-round-label', 'stick-round-label', 'counter-round-label', 'tactics-round-label'].forEach(id => {
+        ['round-label', 'tv-round-label', 'mitts-round-label', 'bag-round-label', 'stick-round-label', 'counter-round-label', 'tactics-round-label'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = `الجولة ${currentRound} / ${totalRounds}`;
         });
@@ -2641,7 +2915,7 @@
     function updateTimerDisplay() {
         const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
         const s = (timeLeft % 60).toString().padStart(2, '0');
-        ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
+        ['timer-display', 'tv-timer-display', 'mitts-timer-display', 'bag-timer-display', 'stick-timer-display', 'counter-timer-display', 'tactics-timer-display'].forEach(id => {
             const el = document.getElementById(id); if (el) el.textContent = `${m}:${s}`;
         });
     }
@@ -2780,7 +3054,7 @@
 
     function updateTimeSetting() {
         roundDuration = parseInt(document.getElementById('time-select').value);
-        if (!isRunning && !isMittsRunning && !isStickRunning && !isCounterRunning && !isTacticsRunning) {
+        if (!isRunning && !isMittsRunning && !isHeavyBagRunning && !isStickRunning && !isCounterRunning && !isTacticsRunning) {
             timeLeft = roundDuration;
             updateTimerDisplay();
         }
