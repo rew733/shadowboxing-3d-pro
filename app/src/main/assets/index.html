@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Neon Arena & Heavy Bag Edition</title>
+    <title>Boxing Coach Pro • Dual 3D Engine & Cloud GLB</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -172,7 +172,6 @@
         .combo-display h2 { color: var(--neon); font-size: 1.18rem; font-weight: 900; line-height: 1.35; }
         .combo-display span { font-size: 0.74rem; color: var(--muted); margin-top: 4px; direction: rtl; }
 
-        /* بطاقات اختيار وضع التفاعل (5 بطاقات متناسقة) */
         .drill-cards-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-bottom: 8px; }
         .drill-mode-card {
             background: var(--surface); border: 1px solid var(--border); border-radius: 13px;
@@ -325,7 +324,7 @@
         <span class="badge-stance" id="stage-mode-tag">70 PRO COMBOS</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
         <div id="canvas-3d"></div>
-        <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات من المستودع...</div>
+        <div class="glb-status" id="glb-status">جاري تحميل الملاكم والحركات...</div>
 
         <div class="stage-hud-overlay" id="stage-hud-overlay">
             <div class="hud-controls-left">
@@ -401,7 +400,7 @@
         </div>
     </div>
 
-    <!-- القسم 2: التفاعل (5 أوضاع متكاملة ومعزولة) -->
+    <!-- القسم 2: التفاعل -->
     <div id="sec-drills" class="main-section">
         <div class="drill-cards-grid">
             <div class="drill-mode-card active" id="dcard-mitts" onclick="selectDrillSubMode('mitts')">
@@ -483,7 +482,7 @@
             </div>
         </div>
 
-        <!-- وضع الكيس الثقيل (Heavy Bag Pro Mode) -->
+        <!-- وضع الكيس الثقيل -->
         <div id="drill-view-heavybag" class="drill-sub-view">
             <div class="panel">
                 <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px; border-color: rgba(239,68,68,0.3);">
@@ -730,8 +729,28 @@
         </div>
     </div>
 
-    <!-- القسم 4: الأداء والضبط -->
+    <!-- القسم 4: الأداء والضبط (مع محوّل المجسم السحابي والمحلي) -->
     <div id="sec-settings" class="main-section">
+        <!-- بطاقة اختيار المجسم ثلاثي الأبعاد (محلي / سحابي CDN) -->
+        <div class="panel" style="border: 1.5px solid var(--neon); background: rgba(0, 191, 255, 0.05);">
+            <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;">
+                <span>🧍 محرك المجسم ثلاثي الأبعاد (3D Model Source):</span>
+                <span id="model-cache-badge" style="color: var(--success); font-size: 0.7rem;">● جاهز</span>
+            </div>
+            <select id="model-source-select" onchange="switch3DModelSource(this.value)">
+                <option value="local_fbx" selected>🥊 الملاكم المحلي المطور (Local FBX + فيزياء الجذع)</option>
+                <option value="cloud_glb">☁️ المقاتل السحابي عالي الدقة (Cloud GLB + Cache)</option>
+                <option value="custom_url">🔗 رابط مجسم سحابي مخصص (.glb / .fbx)</option>
+            </select>
+            <div id="custom-model-url-box" style="display: none; margin-top: 6px; gap: 6px;">
+                <input type="text" id="custom-model-url-input" class="text-input" placeholder="https://.../boxer.glb" style="direction: ltr;">
+                <button class="btn small" style="margin-top: 5px; width: 100%;" onclick="applyCustomCloudModelUrl()">⬇️ تحميل وحفظ في الذاكرة</button>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--muted); margin-top: 5px;">
+                يُخزَّن المجسم السحابي تلقائياً في ذاكرة الهاتف (Cache) ليعمل لاحقاً بدون إنترنت.
+            </div>
+        </div>
+
         <div class="panel">
             <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>📊 ملخص الأداء وسجل الجلسات:</span></div>
             <div class="score-grid">
@@ -838,7 +857,7 @@
                 <button class="btn secondary small" onclick="readAuditReportAloud()">🔊 قراءة التقرير</button>
                 <button class="btn secondary small" onclick="copyAuditReport()">📋 نسخ</button>
             </div>
-            <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة في assets...</div>
+            <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة...</div>
         </div>
     </div>
 </div>
@@ -877,6 +896,11 @@
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
     let savedGymBg = localStorage.getItem('boxing_gym_bg') || 'assets_images_bgchampionshipring.jpg';
 
+    // إعدادات محرك المجسمات (محلي / سحابي)
+    let selectedModelSource = localStorage.getItem('boxing_3d_source') || 'local_fbx';
+    let customCloudModelUrl = localStorage.getItem('boxing_custom_glb_url') || '';
+    const DEFAULT_CLOUD_GLB_URL = 'https://cdn.jsdelivr.net/gh/mrdoob/three.js@r128/examples/models/gltf/Soldier.glb';
+
     let burnoutEnabled = true;
     let adaptiveDifficultyEnabled = true;
     let sfxEnabled = true;
@@ -885,7 +909,6 @@
     let isBurnoutActiveNow = false;
     let sessionGuardViolations = 0;
 
-    // دالة إيقاف كافة الأوضاع النشطة لضمان العزل وعدم التداخل
     function stopAllActiveModes() {
         if (isRunning) stopSession();
         if (isMittsRunning) stopMittsSession();
@@ -1209,6 +1232,8 @@
         const modelSel = document.getElementById('ai-model-select');
         const customInput = document.getElementById('ai-custom-model-input');
         const bgSel = document.getElementById('gym-bg-select');
+        const modSrcSel = document.getElementById('model-source-select');
+        const customUrlInput = document.getElementById('custom-model-url-input');
 
         if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
         if (keyInput) keyInput.value = geminiApiKey;
@@ -1221,6 +1246,11 @@
             bgSel.value = savedGymBg;
             changeGymBackground(savedGymBg);
         }
+        if (modSrcSel) {
+            modSrcSel.value = selectedModelSource;
+            document.getElementById('custom-model-url-box').style.display = (selectedModelSource === 'custom_url') ? 'block' : 'none';
+        }
+        if (customUrlInput) customUrlInput.value = customCloudModelUrl;
 
         renderSavedCombosList();
         populateDrillComboDropdown();
@@ -1410,7 +1440,6 @@
         }
     }
 
-    // إدارة الرؤية الموحدة لجميع المجسمات ثلاثية الأبعاد
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const isMittsTab = (activeTabName === 'mitts');
@@ -1456,7 +1485,8 @@
             hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
-            stageTag.textContent = gpuAccelerationActive ? '⚡ WEBGPU ARENA' : '70 PRO COMBOS';
+            const srcBadge = selectedModelSource === 'local_fbx' ? 'LOCAL FBX + TORQUE' : 'CLOUD GLB ARENA';
+            stageTag.textContent = srcBadge;
             hudOverlay.style.display = 'flex';
             if (camera) {
                 if (isFPV) { camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0); }
@@ -1516,7 +1546,7 @@
     }
 
     // =========================================================================
-    // 🥊 محرك الكيس الثقيل ثلاثي الأبعاد ومنبه التبديل داخل الجولة (Heavy Bag Pro)
+    // 🥊 محرك الكيس الثقيل ثلاثي الأبعاد ومنبه التبديل داخل الجولة
     // =========================================================================
     let heavyBagGroup = null;
     let bagMesh = null;
@@ -1544,19 +1574,16 @@
         heavyBagGroup = new THREE.Group();
         heavyBagGroup.position.set(0, 2.35, 0.35);
 
-        // سلاسل التعليق العلوية
         const chainMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8, roughness: 0.25 });
         const chain = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.55, 8), chainMat);
         chain.position.y = -0.27;
         heavyBagGroup.add(chain);
 
-        // جسم الكيس الثقيل الجلدي
         const bagGeo = new THREE.CylinderGeometry(0.24, 0.24, 1.38, 28);
         const bagMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.45, metalness: 0.15 });
         bagMesh = new THREE.Mesh(bagGeo, bagMat);
         bagMesh.position.y = -1.22;
 
-        // شريط نيون أحمر/سماوي احترافي حول الكيس
         const stripeGeo = new THREE.CylinderGeometry(0.243, 0.243, 0.16, 28);
         const stripeMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x7f1d1d, emissiveIntensity: 0.45, roughness: 0.35 });
         const stripe = new THREE.Mesh(stripeGeo, stripeMat);
@@ -1765,7 +1792,7 @@
         } else if (mode === 'mirror') {
             const dirs = [
                 { x: -0.55, label: '⬅ الخصم يتحرك لليسار.. دور لليسار (PIVOT L)', say: 'Angle Left' },
-                { x:  0.55, label: '➔ الخصم يتحرك ليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
+                { x:  0.55, label: '➔ الخصم يتحرك لليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
                 { x:  0.00, label: '🎯 الخصم في المنتصف.. أطلق 1-2!', say: 'Center! One Two!' }
             ];
             const pick = dirs[Math.floor(Math.random() * dirs.length)];
@@ -1933,7 +1960,7 @@
     }
 
     // =========================================================================
-    // كفوف المدرب الاحترافية (كلا الكفين بكف مدرب مفتوح وشفاف تماماً)
+    // كفوف المدرب الاحترافية الشفافة
     // =========================================================================
     let coachPadsGroup = null;
     let leftPadMesh = null;
@@ -2542,21 +2569,24 @@
     }
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
+    // =========================================================================
+    // محرك Three.js المزدوج (Local FBX مع فيزياء الجذع + Cloud GLB مع التخزين المؤقت)
+    // =========================================================================
     const MOVES = {
-        JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx' },
-        CROSS: { en: '2 Cross', say: 'Cross', file: 'cross.fbx' },
-        L_HOOK: { en: '3 Lead Hook', say: 'Lead Hook', file: 'l_hook.fbx' },
-        R_HOOK: { en: '4 Rear Hook', say: 'Rear Hook', file: 'r_hook.fbx' },
-        L_UPPER: { en: '5 Lead Upper', say: 'Lead Uppercut', file: 'Uppercut.fbx' },
-        R_UPPER: { en: '6 Rear Upper', say: 'Rear Uppercut', file: 'Uppercut (1).fbx' },
-        SLIP_L: { en: 'Slip Left', say: 'Slip Left', file: 'Dodging (1).fbx' },
-        SLIP_R: { en: 'Slip Right', say: 'Slip Right', file: 'Dodging (2).fbx' },
-        ROLL: { en: 'Roll', say: 'Roll', file: 'Dodging (2).fbx' },
-        PULL: { en: 'Pull Back', say: 'Pull Back', file: 'Step Backward.fbx' },
-        STEP_IN: { en: 'Step In', say: 'Step In', file: 'Short Step Forward.fbx' },
-        STEP_BACK: { en: 'Step Back', say: 'Step Back', file: 'Step Backward.fbx' },
-        PIVOT_L: { en: 'Pivot Left', say: 'Pivot Left', file: 'Left Pivot.fbx' },
-        PIVOT_R: { en: 'Pivot Right', say: 'Pivot Right', file: 'Right Pivot.fbx' }
+        JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx', torqueY: -0.28, leanZ: 0.04, punchZ: 0.14 },
+        CROSS: { en: '2 Cross', say: 'Cross', file: 'cross.fbx', torqueY: 0.38, leanZ: -0.05, punchZ: 0.18 },
+        L_HOOK: { en: '3 Lead Hook', say: 'Lead Hook', file: 'l_hook.fbx', torqueY: 0.45, leanZ: -0.06, punchZ: 0.12 },
+        R_HOOK: { en: '4 Rear Hook', say: 'Rear Hook', file: 'r_hook.fbx', torqueY: -0.45, leanZ: 0.06, punchZ: 0.12 },
+        L_UPPER: { en: '5 Lead Upper', say: 'Lead Uppercut', file: 'Uppercut.fbx', torqueY: 0.25, leanZ: -0.08, punchZ: 0.10 },
+        R_UPPER: { en: '6 Rear Upper', say: 'Rear Uppercut', file: 'Uppercut (1).fbx', torqueY: -0.25, leanZ: 0.08, punchZ: 0.10 },
+        SLIP_L: { en: 'Slip Left', say: 'Slip Left', file: 'Dodging (1).fbx', torqueY: -0.18, leanZ: 0.22, punchZ: -0.05 },
+        SLIP_R: { en: 'Slip Right', say: 'Slip Right', file: 'Dodging (2).fbx', torqueY: 0.18, leanZ: -0.22, punchZ: -0.05 },
+        ROLL: { en: 'Roll', say: 'Roll', file: 'Dodging (2).fbx', torqueY: 0.22, leanZ: -0.25, punchZ: -0.08 },
+        PULL: { en: 'Pull Back', say: 'Pull Back', file: 'Step Backward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: -0.24 },
+        STEP_IN: { en: 'Step In', say: 'Step In', file: 'Short Step Forward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: 0.22 },
+        STEP_BACK: { en: 'Step Back', say: 'Step Back', file: 'Step Backward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: -0.22 },
+        PIVOT_L: { en: 'Pivot Left', say: 'Pivot Left', file: 'Left Pivot.fbx', torqueY: -0.35, leanZ: 0.08, punchZ: 0.0 },
+        PIVOT_R: { en: 'Pivot Right', say: 'Pivot Right', file: 'Right Pivot.fbx', torqueY: 0.35, leanZ: -0.08, punchZ: 0.0 }
     };
     const MASTER_COMBOS_70 = [
         ['JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'JAB', 'CROSS'], ['STEP_IN', 'JAB', 'CROSS'],
@@ -2580,6 +2610,9 @@
     let facingFlip = localStorage.getItem('boxer_facing_flip') === '1' ? Math.PI : 0; let isFPV = false;
     let gpuAccelerationActive = false;
     let gpuDevice = null;
+
+    // متغيرات فيزياء التفاف الجذع والخصر (Procedural Torque)
+    let proceduralState = { targetRotY: 0, curRotY: 0, targetLeanZ: 0, curLeanZ: 0, targetZ: 0, curZ: 0 };
 
     async function initGPUAcceleration() {
         try {
@@ -2611,6 +2644,224 @@
             camera.position.set(0.15, 1.25, 3.05); camera.lookAt(0, 0.92, 0);
             btn.textContent = '🎥 منظور الخصم'; btn.style.background = 'rgba(239, 68, 68, 0.85)';
         }
+    }
+
+    function switch3DModelSource(srcMode) {
+        selectedModelSource = srcMode;
+        localStorage.setItem('boxing_3d_source', srcMode);
+        const urlBox = document.getElementById('custom-model-url-box');
+        if (urlBox) urlBox.style.display = (srcMode === 'custom_url') ? 'block' : 'none';
+        updateStageEntityVisibility();
+        loadSelected3DModel();
+    }
+
+    function applyCustomCloudModelUrl() {
+        const val = document.getElementById('custom-model-url-input').value.trim();
+        if (!val) return;
+        customCloudModelUrl = val;
+        localStorage.setItem('boxing_custom_glb_url', val);
+        loadSelected3DModel();
+    }
+
+    async function fetchCloudModelWithCache(url) {
+        const statusEl = document.getElementById('glb-status');
+        const cacheBadge = document.getElementById('model-cache-badge');
+        try {
+            if ('caches' in window) {
+                const cache = await caches.open('boxing-3d-models-v1');
+                const cachedResp = await cache.match(url);
+                if (cachedResp) {
+                    if (cacheBadge) cacheBadge.textContent = '● محفوظ محلياً (Offline)';
+                    const blob = await cachedResp.blob();
+                    return URL.createObjectURL(blob);
+                }
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = '☁️ جاري تحميل المجسم السحابي وحفظه في ذاكرة الهاتف...';
+                }
+                const netResp = await fetch(url);
+                if (netResp.ok) {
+                    await cache.put(url, netResp.clone());
+                    if (cacheBadge) cacheBadge.textContent = '● تم الحفظ للعمل بدون نت';
+                    const blob = await netResp.blob();
+                    return URL.createObjectURL(blob);
+                }
+            }
+        } catch (e) {}
+        return url;
+    }
+
+    function clearCurrent3DModel() {
+        if (mixer) {
+            mixer.stopAllAction();
+            mixer = null;
+        }
+        actions = {};
+        activeAction = null;
+        if (modelRoot) {
+            scene.remove(modelRoot);
+            modelRoot = null;
+        }
+    }
+
+    async function loadSelected3DModel() {
+        clearCurrent3DModel();
+        const statusEl = document.getElementById('glb-status');
+        if (statusEl) {
+            statusEl.style.display = 'block';
+            statusEl.textContent = 'جاري تجهيز الملاكم وحركات القتال...';
+        }
+
+        if (selectedModelSource === 'local_fbx') {
+            loadLocalFBXBoxer();
+        } else {
+            const targetUrl = (selectedModelSource === 'custom_url' && customCloudModelUrl) ? customCloudModelUrl : DEFAULT_CLOUD_GLB_URL;
+            const resolvedUrl = await fetchCloudModelWithCache(targetUrl);
+            if (targetUrl.toLowerCase().endsWith('.fbx')) {
+                loadCloudFBXBoxer(resolvedUrl);
+            } else {
+                loadCloudGLBBoxer(resolvedUrl);
+            }
+        }
+    }
+
+    function setupNormalizedModel(obj) {
+        modelRoot = obj;
+        const box = new THREE.Box3().setFromObject(modelRoot);
+        const size = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z) || 1;
+        modelRoot.scale.setScalar(1.85 / maxDim);
+        const scaledBox = new THREE.Box3().setFromObject(modelRoot);
+        const center = scaledBox.getCenter(new THREE.Vector3());
+        modelRoot.position.set(-center.x, -scaledBox.min.y, -center.z);
+        modelRoot.rotation.y = facingFlip;
+        scene.add(modelRoot);
+        updateStageEntityVisibility();
+    }
+
+    function loadCloudGLBBoxer(glbUrl) {
+        if (typeof THREE.GLTFLoader === 'undefined') return;
+        const loader = new THREE.GLTFLoader();
+        const clipsLog = [];
+        loader.load(glbUrl, (gltf) => {
+            setupNormalizedModel(gltf.scene);
+            mixer = new THREE.AnimationMixer(modelRoot);
+            mixer.addEventListener('finished', () => {
+                if (moveQueue.length > 0) executeSingleAction(moveQueue.shift(), true);
+                else { isComboBusy = false; returnToIdle(); }
+            });
+
+            const anims = gltf.animations || [];
+            if (anims.length > 0) {
+                const idleAct = mixer.clipAction(anims[0]);
+                idleAct.setLoop(THREE.LoopRepeat);
+                idleAct.play();
+                actions['IDLE'] = idleAct;
+                activeAction = idleAct;
+                clipsLog.push(`✔ Cloud GLB Idle (${anims[0].name || 'Clip 0'})`);
+
+                Object.keys(MOVES).forEach((mKey, idx) => {
+                    const clip = anims[(idx + 1) % anims.length];
+                    const act = mixer.clipAction(clip);
+                    act.setLoop(THREE.LoopOnce, 1);
+                    act.clampWhenFinished = true;
+                    actions[mKey] = act;
+                    clipsLog.push(`✔ ${mKey} ➔ ${clip.name || 'Action ' + idx}`);
+                });
+            }
+            const listBox = document.getElementById('detected-clips-list');
+            if (listBox) listBox.textContent = clipsLog.join('\n');
+            document.getElementById('glb-status').style.display = 'none';
+        }, undefined, () => {
+            document.getElementById('glb-status').textContent = '⚠️ تعذر تحميل المجسم السحابي، تم العودة للمجسم المحلي';
+            setTimeout(() => {
+                selectedModelSource = 'local_fbx';
+                document.getElementById('model-source-select').value = 'local_fbx';
+                loadLocalFBXBoxer();
+            }, 1200);
+        });
+    }
+
+    function loadCloudFBXBoxer(fbxUrl) {
+        if (typeof THREE.FBXLoader === 'undefined') return;
+        const loader = new THREE.FBXLoader();
+        loader.load(fbxUrl, (fbxObj) => {
+            setupNormalizedModel(fbxObj);
+            mixer = new THREE.AnimationMixer(modelRoot);
+            if (fbxObj.animations && fbxObj.animations.length > 0) {
+                const idleAct = mixer.clipAction(fbxObj.animations[0]);
+                idleAct.setLoop(THREE.LoopRepeat);
+                idleAct.play();
+                actions['IDLE'] = idleAct;
+                activeAction = idleAct;
+            }
+            document.getElementById('glb-status').style.display = 'none';
+        });
+    }
+
+    function loadLocalFBXBoxer() {
+        if (typeof THREE.FBXLoader === 'undefined') return;
+        const loader = new THREE.FBXLoader();
+        const clipsLog = [];
+
+        loader.load('boxer.fbx', (fbxObj) => {
+            setupNormalizedModel(fbxObj);
+
+            mixer = new THREE.AnimationMixer(modelRoot);
+            mixer.addEventListener('finished', () => {
+                if (moveQueue.length > 0) executeSingleAction(moveQueue.shift(), true);
+                else { isComboBusy = false; returnToIdle(); }
+            });
+
+            if (fbxObj.animations && fbxObj.animations.length > 0) {
+                const idleAct = mixer.clipAction(fbxObj.animations[0].clone());
+                idleAct.setLoop(THREE.LoopRepeat); idleAct.play();
+                actions['IDLE'] = idleAct; activeAction = idleAct;
+                clipsLog.push('✔ IDLE (boxer.fbx + Physics Torque)');
+            }
+
+            const fileCache = {};
+            const moveKeys = Object.keys(MOVES);
+            let loadedCount = 0;
+
+            moveKeys.forEach(mKey => {
+                const fileName = MOVES[mKey].file;
+                const registerClip = (animClip) => {
+                    const clipClone = animClip.clone();
+                    // تصفية انتقائية: تمنع الانجراف الأفقي فقط وتحافظ على حركات الكتف والعمود الفقري
+                    clipClone.tracks = clipClone.tracks.filter(t => {
+                        if (t.name.endsWith('.position') && (t.name.includes('Hips') || t.name.includes('Root'))) return false;
+                        return true;
+                    });
+                    const act = mixer.clipAction(clipClone);
+                    act.setLoop(THREE.LoopOnce, 1);
+                    act.clampWhenFinished = true;
+                    actions[mKey] = act;
+                    clipsLog.push(`✔ ${mKey} ➔ ${fileName}`);
+                    loadedCount++;
+                    if (loadedCount === moveKeys.length) {
+                        const listBox = document.getElementById('detected-clips-list');
+                        if (listBox) listBox.textContent = clipsLog.join('\n');
+                    }
+                };
+
+                if (fileCache[fileName]) {
+                    registerClip(fileCache[fileName]);
+                } else {
+                    loader.load(fileName, (animFbx) => {
+                        if (animFbx.animations && animFbx.animations.length > 0) {
+                            fileCache[fileName] = animFbx.animations[0];
+                            registerClip(animFbx.animations[0]);
+                        }
+                    }, undefined, () => {
+                        clipsLog.push(`✖ ${mKey} (${fileName} مفقود)`);
+                        loadedCount++;
+                    });
+                }
+            });
+
+            document.getElementById('glb-status').style.display = 'none';
+        });
     }
 
     async function init3DScene() {
@@ -2648,103 +2899,49 @@
         updateStageEntityVisibility();
 
         build3DSparringStick(); build3DFocusMitt(); build3DCoachPads(); build3DHeavyBag();
-        loadBoxerAndAnimations(); animate3D();
-    }
-
-    function loadBoxerAndAnimations() {
-        if (typeof THREE.FBXLoader === 'undefined') return;
-        const loader = new THREE.FBXLoader();
-        const clipsLog = [];
-
-        loader.load('boxer.fbx', (fbxObj) => {
-            modelRoot = fbxObj;
-            const box = new THREE.Box3().setFromObject(modelRoot);
-            const size = box.getSize(new THREE.Vector3()); const maxDim = Math.max(size.x, size.y, size.z) || 1;
-            modelRoot.scale.setScalar(1.85 / maxDim);
-            const scaledBox = new THREE.Box3().setFromObject(modelRoot);
-            const center = scaledBox.getCenter(new THREE.Vector3());
-            modelRoot.position.set(-center.x, -scaledBox.min.y, -center.z);
-            modelRoot.rotation.y = facingFlip; scene.add(modelRoot);
-
-            mixer = new THREE.AnimationMixer(modelRoot);
-            mixer.addEventListener('finished', () => {
-                if (moveQueue.length > 0) executeSingleAction(moveQueue.shift(), true);
-                else { isComboBusy = false; returnToIdle(); }
-            });
-
-            if (fbxObj.animations && fbxObj.animations.length > 0) {
-                const idleAct = mixer.clipAction(fbxObj.animations[0].clone());
-                idleAct.setLoop(THREE.LoopRepeat); idleAct.play();
-                actions['IDLE'] = idleAct; activeAction = idleAct;
-                clipsLog.push('✔ IDLE (boxer.fbx)');
-            }
-
-            const fileCache = {};
-            const moveKeys = Object.keys(MOVES);
-            let loadedCount = 0;
-
-            moveKeys.forEach(mKey => {
-                const fileName = MOVES[mKey].file;
-                const registerClip = (animClip) => {
-                    const clipClone = animClip.clone();
-                    clipClone.tracks = clipClone.tracks.filter(t => !t.name.endsWith('.position'));
-                    const act = mixer.clipAction(clipClone);
-                    act.setLoop(THREE.LoopOnce, 1);
-                    act.clampWhenFinished = true;
-                    actions[mKey] = act;
-                    clipsLog.push(`✔ ${mKey} ➔ ${fileName}`);
-                    loadedCount++;
-                    if (loadedCount === moveKeys.length) {
-                        const listBox = document.getElementById('detected-clips-list');
-                        if (listBox) listBox.textContent = clipsLog.join('\n');
-                    }
-                };
-
-                if (fileCache[fileName]) {
-                    registerClip(fileCache[fileName]);
-                } else {
-                    loader.load(fileName, (animFbx) => {
-                        if (animFbx.animations && animFbx.animations.length > 0) {
-                            fileCache[fileName] = animFbx.animations[0];
-                            registerClip(animFbx.animations[0]);
-                        }
-                    }, undefined, () => {
-                        clipsLog.push(`✖ ${mKey} (${fileName} مفقود)`);
-                        loadedCount++;
-                    });
-                }
-            });
-
-            document.getElementById('glb-status').style.display = 'none';
-        });
+        loadSelected3DModel(); animate3D();
     }
 
     function returnToIdle() {
-        const idleAct = actions['IDLE']; if (!idleAct) return;
+        const idleAct = actions['IDLE'];
         document.getElementById('live-move-badge').textContent = 'IDLE';
-        if (activeAction && activeAction !== idleAct) {
+        proceduralState.targetRotY = 0;
+        proceduralState.targetLeanZ = 0;
+        proceduralState.targetZ = 0;
+
+        if (idleAct && activeAction && activeAction !== idleAct) {
             idleAct.reset().play();
-            activeAction.fadeOut(0.16);
+            activeAction.fadeOut(0.10);
             activeAction = idleAct;
         }
     }
 
     function executeSingleAction(moveKey, withSpeech = false) {
-        if (withSpeech && MOVES[moveKey]) speakText(MOVES[moveKey].say);
+        const moveCfg = MOVES[moveKey];
+        if (withSpeech && moveCfg) speakText(moveCfg.say);
+
+        // تطبيق عزم دوران الجذع والكتف الفيزيائي مع كل ضربة أو تفادي
+        if (moveCfg) {
+            proceduralState.targetRotY = moveCfg.torqueY || 0;
+            proceduralState.targetLeanZ = moveCfg.leanZ || 0;
+            proceduralState.targetZ = moveCfg.punchZ || 0;
+        }
+
         if (!mixer || !actions[moveKey]) {
             if (moveQueue.length > 0) {
-                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(550 / voiceRate));
+                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(520 / voiceRate));
             } else {
-                isComboBusy = false;
+                setTimeout(() => { isComboBusy = false; returnToIdle(); }, Math.round(350 / voiceRate));
             }
             return;
         }
-        document.getElementById('live-move-badge').textContent = MOVES[moveKey].en.toUpperCase();
+        document.getElementById('live-move-badge').textContent = moveCfg.en.toUpperCase();
         const act = actions[moveKey];
         const burnoutBoost = isBurnoutActiveNow ? 1.35 : 1.0;
-        act.timeScale = Math.max(0.5, voiceRate * 1.25 * burnoutBoost);
+        act.timeScale = Math.max(0.55, voiceRate * 1.30 * burnoutBoost);
         act.reset().play();
-        if (activeAction && activeAction !== act) activeAction.fadeOut(0.08);
+        // تقليل زمن التلاشي إلى 0.04 ثانية لمنع ابتلاع اللكمات المتتالية السريعة
+        if (activeAction && activeAction !== act) activeAction.fadeOut(0.04);
         activeAction = act;
     }
 
@@ -2754,6 +2951,20 @@
             moveQueue = seq.slice(1);
             executeSingleAction(seq[0], true);
         }
+    }
+
+    function updateProceduralBoxerPhysics(delta) {
+        if (!modelRoot || !modelRoot.visible) return;
+        const lerpSpeed = Math.min(1, delta * 14);
+        proceduralState.curRotY += (proceduralState.targetRotY - proceduralState.curRotY) * lerpSpeed;
+        proceduralState.curLeanZ += (proceduralState.targetLeanZ - proceduralState.curLeanZ) * lerpSpeed;
+        proceduralState.curZ += (proceduralState.targetZ - proceduralState.curZ) * lerpSpeed;
+
+        if (activeTabName !== 'tactics') {
+            modelRoot.rotation.y = facingFlip + proceduralState.curRotY;
+        }
+        modelRoot.rotation.z = proceduralState.curLeanZ;
+        modelRoot.position.z = proceduralState.curZ;
     }
 
     function animate3D() {
@@ -2766,15 +2977,19 @@
         else if (activeTabName === 'tactics') {
             updateStickAnimation(delta);
             updateCoachPadsAnimation(delta);
+            updateProceduralBoxerPhysics(delta);
             if (mixer) mixer.update(delta);
         }
-        else if (mixer) mixer.update(delta);
+        else {
+            updateProceduralBoxerPhysics(delta);
+            if (mixer) mixer.update(delta);
+        }
         if (renderer && scene && camera) renderer.render(scene, camera);
     }
     window.addEventListener('load', init3DScene);
 
     // =========================================================================
-    // إدارة الجلسات والتوقيت والصوت ومنبه التبديل داخل الجولة
+    // إدارة الجلسات والتوقيت والصوت
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
@@ -2855,7 +3070,6 @@
             timeLeft--;
             updateTimerDisplay();
 
-            // منبه تبديل الإيقاع داخل الجولة في وضع الكيس الثقيل
             if (!isResting && activeClockOwner === 'heavybag') {
                 const switchSec = parseInt(document.getElementById('bag-switch-interval').value || '30');
                 const elapsed = roundDuration - timeLeft;
