@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Dynamic Sparring & Real Tactics</title>
+    <title>Boxing Coach Pro • Pro Kinematic 3D Boxer Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
@@ -321,10 +321,10 @@
     </div>
 
     <div class="stage-box has-gym-bg" id="stage-box">
-        <span class="badge-stance" id="stage-mode-tag">DYNAMIC DYNAMIC BOXER</span>
+        <span class="badge-stance" id="stage-mode-tag">PRO KINEMATIC BOXER</span>
         <span class="badge-action" id="live-move-badge">IDLE</span>
         <div id="canvas-3d"></div>
-        <div class="glb-status" id="glb-status">جاري تجهيز الملاكم الحركي الحقيقي...</div>
+        <div class="glb-status" id="glb-status">جاري تجهيز الملاكم وحركات القتال...</div>
 
         <div class="stage-hud-overlay" id="stage-hud-overlay">
             <div class="hud-controls-left">
@@ -384,13 +384,13 @@
             <div class="timer-hero">
                 <div class="round-info">
                     <strong id="round-label">الجولة 1 / 3</strong>
-                    <span id="mode-badge">كومبو عشوائي متغير</span>
+                    <span id="mode-badge">70 كومبو عشوائي</span>
                 </div>
                 <div class="timer" id="timer-display">03:00</div>
             </div>
             <div class="combo-display">
                 <h2 id="combo-text">READY</h2>
-                <span id="combo-sub">اضغط ابدأ لبدء كومبو عشوائي جديد تماماً وغير متكرر</span>
+                <span id="combo-sub">اضغط ابدأ للتدريب أو انتقل إلى 🧤 التفاعل للكفوف والكيس الثقيل</span>
             </div>
         </div>
 
@@ -457,8 +457,17 @@
 
                 <div class="stick-box">
                     <div class="stick-move-title" id="mitts-combo-title">🧤 FOCUS MITTS</div>
-                    <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة العشوائية على الكفوف</div>
-                    <div class="stick-sub-hint">يتغير الكومبو عشوائياً في كل مرة تبدأ فيها الجلسة</div>
+                    <div class="stick-dodge-cue" id="mitts-current-punch">اضغط ابدأ لبدء الجولة على كفوف المدرب</div>
+                    <div class="stick-sub-hint">يتم احتساب الإصابة عند مد الذراع وتسديد لكمة فعلية</div>
+                </div>
+
+                <div class="move-chips" style="margin-top: 8px; justify-content: center;">
+                    <button class="chip" onclick="previewSinglePad('JAB')">1 Jab</button>
+                    <button class="chip" onclick="previewSinglePad('CROSS')">2 Cross</button>
+                    <button class="chip" onclick="previewSinglePad('L_HOOK')">3 L-Hook</button>
+                    <button class="chip" onclick="previewSinglePad('R_HOOK')">4 R-Hook</button>
+                    <button class="chip" onclick="previewSinglePad('L_UPPER')">5 L-Upper</button>
+                    <button class="chip" onclick="previewSinglePad('R_UPPER')">6 R-Upper</button>
                 </div>
 
                 <div class="score-grid">
@@ -506,8 +515,8 @@
 
                 <div class="stick-box bag-theme">
                     <div class="stick-move-title" id="bag-combo-title">🥊 HEAVY BAG PRO</div>
-                    <div class="stick-dodge-cue" id="bag-cue-label">اضغط ابدأ لبدء جولة الكيس الثقيل العشوائية</div>
-                    <div class="stick-sub-hint" id="bag-hint-label">كومبوهات متنوعة وغير متكررة في كل جولة</div>
+                    <div class="stick-dodge-cue" id="bag-cue-label">اضغط ابدأ لبدء جولة الكيس الثقيل المكثفة</div>
+                    <div class="stick-sub-hint" id="bag-hint-label">يهتز الهاتف ويرن الجرس عند كل تبديل للإيقاع داخل الجولة</div>
                 </div>
 
                 <div class="score-grid">
@@ -608,7 +617,7 @@
             </div>
         </div>
 
-        <!-- وضع التكتيك (تم إصلاح تكرار الألوان وحركة الكف الحركي) -->
+        <!-- وضع التكتيك -->
         <div id="drill-view-tactics" class="drill-sub-view">
             <div class="panel">
                 <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px;">
@@ -639,8 +648,8 @@
 
                 <div class="stick-box tactics-theme">
                     <div class="stick-move-title" id="tactics-title-label">🎯 FEINT & DECISION</div>
-                    <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب الكف الحركي | أحمر = تفادَ | أصفر = تراجع</div>
-                    <div class="stick-sub-hint" id="tactics-hint-label">لا يتكرر اللون أكثر من مرتين، وعند الأخضر يتحرك الكف لمكانه الصحيح</div>
+                    <div class="stick-dodge-cue" id="tactics-cue-label">أخضر = اضرب | أحمر = تفادَ | أصفر = تراجع</div>
+                    <div class="stick-sub-hint" id="tactics-hint-label">اضغط ابدأ لبدء التحدي التكتيكي</div>
                 </div>
 
                 <div class="score-grid">
@@ -662,7 +671,7 @@
             <div class="setting-header" style="color: var(--neon);"><span>🔁 وضع التكرار للإتقان (Drill Mode):</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
                 <select id="drill-enabled" onchange="updateModeBadge()">
-                    <option value="off">متوقف (تنوع تلقائي عشوائي)</option>
+                    <option value="off">متوقف (تنوع تلقائي)</option>
                     <option value="on">مُفعّل (تكرار الكومبو)</option>
                 </select>
                 <select id="drill-reps-target" onchange="updateDrillTarget()">
@@ -720,17 +729,25 @@
         </div>
     </div>
 
-    <!-- القسم 4: الأداء والضبط -->
+    <!-- القسم 4: الأداء والضبط (مع محوّل المجسم الحركي والمحلي والسحابي) -->
     <div id="sec-settings" class="main-section">
         <div class="panel" style="border: 1.5px solid var(--neon); background: rgba(0, 191, 255, 0.05);">
             <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;">
-                <span>🧍 محرك المجسم ثلاثي الأبعاد:</span>
-                <span id="model-cache-badge" style="color: var(--success); font-size: 0.7rem;">● نشط</span>
+                <span>🧍 محرك المجسم ثلاثي الأبعاد (3D Model Source):</span>
+                <span id="model-cache-badge" style="color: var(--success); font-size: 0.7rem;">● جاهز</span>
             </div>
             <select id="model-source-select" onchange="switch3DModelSource(this.value)">
                 <option value="kinematic_boxer" selected>🥊 الملاكم الحركي الاحترافي (Pro Kinematic Boxer)</option>
-                <option value="local_fbx">📦 الملاكم المحلي (boxer.fbx)</option>
+                <option value="local_fbx">📦 الملاكم المحلي المطور (Local boxer.fbx + فيزياء)</option>
+                <option value="custom_url">🔗 رابط مجسم ملاكم خارجي مخصص (.glb / .fbx)</option>
             </select>
+            <div id="custom-model-url-box" style="display: none; margin-top: 6px; gap: 6px;">
+                <input type="text" id="custom-model-url-input" class="text-input" placeholder="https://.../boxer.glb" style="direction: ltr;">
+                <button class="btn small" style="margin-top: 5px; width: 100%;" onclick="applyCustomCloudModelUrl()">⬇️ تحميل وحفظ في الذاكرة</button>
+            </div>
+            <div style="font-size: 0.68rem; color: var(--muted); margin-top: 5px;">
+                الملاكم الحركي الاحترافي يرتدي قفازات ملاكمة حمراء ويؤدي جميع اللكمات بمسارات تشريحية دقيقة 100% دون الحاجة للإنترنت.
+            </div>
         </div>
 
         <div class="panel">
@@ -816,6 +833,31 @@
                 <option value="audio">🔋 وضع الصوت فقط (توفير البطارية)</option>
             </select>
         </div>
+
+        <div class="panel">
+            <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>🤖 مساعد المدرب الذكي (Gemini AI):</span></div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+                <select id="ai-mode-select" onchange="updateAiSettings()">
+                    <option value="off">مغلق</option>
+                    <option value="on">مفعل</option>
+                </select>
+                <select id="ai-model-select" onchange="onAiModelSelectChange()">
+                    <option value="gemini-2.0-flash" selected>gemini-2.0-flash</option>
+                    <option value="gemini-1.5-flash">gemini-1.5-flash</option>
+                    <option value="gemini-1.5-pro">gemini-1.5-pro</option>
+                    <option value="custom">نموذج مخصص...</option>
+                </select>
+            </div>
+            <input type="text" id="ai-custom-model-input" class="text-input" placeholder="اسم النموذج المخصص" oninput="updateAiSettings()" style="display: none; margin-bottom: 6px; direction: ltr;">
+            <input type="password" id="gemini-api-key" class="text-input" placeholder="مفتاح AIzaSy..." oninput="updateAiSettings()" style="direction: ltr; margin-bottom: 6px;">
+            <button class="btn secondary small" id="ai-audit-btn" style="width: 100%; border-color: var(--neon); color: var(--neon);" onclick="runAiAppAudit()">🔍 فحص الأداء واقتراح التحسينات</button>
+            <div class="ai-audit-report" id="ai-audit-report"></div>
+            <div id="ai-audit-actions" style="display: none; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px;">
+                <button class="btn secondary small" onclick="readAuditReportAloud()">🔊 قراءة التقرير</button>
+                <button class="btn secondary small" onclick="copyAuditReport()">📋 نسخ</button>
+            </div>
+            <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة...</div>
+        </div>
     </div>
 </div>
 
@@ -849,10 +891,14 @@
     let geminiApiKey = localStorage.getItem('boxing_gemini_key') || '';
     let selectedAiModel = localStorage.getItem('boxing_ai_model') || 'gemini-2.0-flash';
     let customAiModelName = localStorage.getItem('boxing_ai_custom_model') || '';
+    let lastAuditText = '';
     let sessionHistory = JSON.parse(localStorage.getItem('boxing_session_history') || '[]');
     let savedGymBg = localStorage.getItem('boxing_gym_bg') || 'assets_images_bgchampionshipring.jpg';
 
+    // إعدادات محرك المجسمات (الملاكم الحركي الاحترافي كافتراضي + المحلي + الرابط المخصص)
     let selectedModelSource = localStorage.getItem('boxing_3d_source') || 'kinematic_boxer';
+    let customCloudModelUrl = localStorage.getItem('boxing_custom_glb_url') || '';
+
     let burnoutEnabled = true;
     let adaptiveDifficultyEnabled = true;
     let sfxEnabled = true;
@@ -1068,6 +1114,28 @@
         } catch (e) {}
     }
 
+    function getActiveAiModelName() {
+        if (selectedAiModel === 'custom') return customAiModelName || 'gemini-2.0-flash';
+        return selectedAiModel || 'gemini-2.0-flash';
+    }
+
+    function buildGeminiEndpointUrl(modelName, apiKey) {
+        return `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(modelName.trim())}:generateContent?key=${encodeURIComponent(apiKey.trim())}`;
+    }
+
+    async function fetchWithTimeout(url, options, timeoutMs = 15000) {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+            const response = await fetch(url, { ...options, signal: controller.signal });
+            clearTimeout(timer);
+            return response;
+        } catch (err) {
+            clearTimeout(timer);
+            throw err;
+        }
+    }
+
     let poseWorker = null;
     let predictedLeftWrist = null;
     let predictedRightWrist = null;
@@ -1157,22 +1225,56 @@
 
     window.addEventListener('DOMContentLoaded', () => {
         initPoseWorker();
+        const aiSel = document.getElementById('ai-mode-select');
+        const keyInput = document.getElementById('gemini-api-key');
+        const modelSel = document.getElementById('ai-model-select');
+        const customInput = document.getElementById('ai-custom-model-input');
         const bgSel = document.getElementById('gym-bg-select');
         const modSrcSel = document.getElementById('model-source-select');
+        const customUrlInput = document.getElementById('custom-model-url-input');
 
+        if (aiSel) aiSel.value = aiEnabled ? 'on' : 'off';
+        if (keyInput) keyInput.value = geminiApiKey;
+        if (modelSel) {
+            modelSel.value = selectedAiModel;
+            customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
+        }
+        if (customInput) customInput.value = customAiModelName;
         if (bgSel) {
             bgSel.value = savedGymBg;
             changeGymBackground(savedGymBg);
         }
         if (modSrcSel) {
             modSrcSel.value = selectedModelSource;
+            document.getElementById('custom-model-url-box').style.display = (selectedModelSource === 'custom_url') ? 'block' : 'none';
         }
+        if (customUrlInput) customUrlInput.value = customCloudModelUrl;
 
         renderSavedCombosList();
         populateDrillComboDropdown();
         populateMittsRepeatDropdown();
         renderAnalyticsDashboard();
     });
+
+    function onAiModelSelectChange() {
+        const sel = document.getElementById('ai-model-select');
+        const customInput = document.getElementById('ai-custom-model-input');
+        selectedAiModel = sel.value;
+        customInput.style.display = (selectedAiModel === 'custom') ? 'block' : 'none';
+        updateAiSettings();
+    }
+
+    function updateAiSettings() {
+        aiEnabled = document.getElementById('ai-mode-select').value === 'on';
+        geminiApiKey = document.getElementById('gemini-api-key').value.trim();
+        selectedAiModel = document.getElementById('ai-model-select').value;
+        customAiModelName = document.getElementById('ai-custom-model-input').value.trim();
+
+        localStorage.setItem('boxing_ai_enabled', aiEnabled ? 'on' : 'off');
+        localStorage.setItem('boxing_gemini_key', geminiApiKey);
+        localStorage.setItem('boxing_ai_model', selectedAiModel);
+        localStorage.setItem('boxing_ai_custom_model', customAiModelName);
+    }
 
     function saveSessionRecord(modeName, scoreStats) {
         const record = {
@@ -1265,6 +1367,77 @@
         renderAnalyticsDashboard();
     }
 
+    async function getAiCornermanAdvice(statsText) {
+        if (!aiEnabled || !geminiApiKey || !navigator.onLine) {
+            return "Great round! Keep your guard up and stay sharp.";
+        }
+        const modelName = getActiveAiModelName();
+        try {
+            const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
+            const response = await fetchWithTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ role: 'user', parts: [{ text: "Give a very short 1-sentence tactical boxing cornerman tip in English based on these stats: " + statsText }] }]
+                })
+            }, 12000);
+            const data = await response.json();
+            if (data.candidates && data.candidates[0].content.parts[0].text) {
+                return data.candidates[0].content.parts[0].text;
+            }
+        } catch (e) {}
+        return "Good work! Keep your hands high in the next round.";
+    }
+
+    async function runAiAppAudit() {
+        const reportBox = document.getElementById('ai-audit-report');
+        const actionsBox = document.getElementById('ai-audit-actions');
+        const btn = document.getElementById('ai-audit-btn');
+        const modelName = getActiveAiModelName();
+
+        if (!geminiApiKey) {
+            reportBox.style.display = 'block';
+            reportBox.textContent = '⚠️ الرجاء إدخال مفتاح API Key في الحقل أعلاه أولاً.';
+            return;
+        }
+        btn.textContent = `⏳ جاري الفحص...`;
+        btn.disabled = true;
+        reportBox.style.display = 'block';
+        reportBox.textContent = `جاري الفحص عبر (${modelName})...`;
+
+        const promptText = `أنت مدرب ملاكمة محترف. قيّم باختصار باللغة العربية أداء الملاكم بناءً على إحصائياته: كف المدرب ${mittsCamHitsCount} إصابة من ${mittsPunchesCount} لكمة، الكيس الثقيل ${bagStrikesCount} لكمة، الكاونتر ${cntHitsCount} رد (${cntBestMs || '--'} ms)، التكتيك ${tacPoints} نقطة.`;
+
+        try {
+            const url = buildGeminiEndpointUrl(modelName, geminiApiKey);
+            const response = await fetchWithTimeout(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ role: 'user', parts: [{ text: promptText }] }] })
+            }, 15000);
+            const data = await response.json();
+            if (data.candidates && data.candidates[0]) {
+                lastAuditText = data.candidates[0].content.parts[0].text.replace(/\*\*/g, '');
+                reportBox.textContent = lastAuditText;
+                actionsBox.style.display = 'grid';
+            } else if (data.error) {
+                reportBox.textContent = `❌ خطأ: ${data.error.message}`;
+            }
+        } catch (err) {
+            reportBox.textContent = `❌ تعذر الاتصال: ${err.message}`;
+        } finally {
+            btn.textContent = '🔍 فحص الأداء واقتراح التحسينات';
+            btn.disabled = false;
+        }
+    }
+
+    function readAuditReportAloud() { if (lastAuditText) speakText(lastAuditText.slice(0, 400)); }
+    function copyAuditReport() {
+        if (lastAuditText && navigator.clipboard) {
+            navigator.clipboard.writeText(lastAuditText);
+            alert('تم نسخ التقرير!');
+        }
+    }
+
     function updateStageEntityVisibility() {
         const isStickOrCounter = (activeTabName === 'stick' || activeTabName === 'counter');
         const isMittsTab = (activeTabName === 'mitts');
@@ -1310,7 +1483,9 @@
             hudOverlay.style.display = 'none';
             if (camera) { camera.position.set(0, 1.35, 2.35); camera.lookAt(0, 1.25, 0); }
         } else {
-            stageTag.textContent = 'PRO KINEMATIC BOXER';
+            const srcBadge = selectedModelSource === 'local_fbx' ? 'LOCAL FBX + TORQUE' :
+                             (selectedModelSource === 'custom_url' ? 'CUSTOM CLOUD 3D' : 'PRO KINEMATIC BOXER');
+            stageTag.textContent = srcBadge;
             hudOverlay.style.display = 'flex';
             if (camera) {
                 if (isFPV) { camera.position.set(0, 1.30, 2.45); camera.lookAt(0, 0.85, 0); }
@@ -1370,7 +1545,7 @@
     }
 
     // =========================================================================
-    // 🥊 محرك الكيس الثقيل ثلاثي الأبعاد
+    // 🥊 محرك الكيس الثقيل ثلاثي الأبعاد ومنبه التبديل داخل الجولة
     // =========================================================================
     let heavyBagGroup = null;
     let bagMesh = null;
@@ -1453,9 +1628,7 @@
         else if (styleVal === 'speed') phaseObj = BAG_PHASES[1];
         else if (styleVal === 'body') phaseObj = BAG_PHASES[2];
 
-        // اختيار عشوائي بحت لضمان عدم التكرار
-        const pool = phaseObj.pool;
-        const seq = pool[Math.floor(Math.random() * pool.length)];
+        const seq = phaseObj.pool[Math.floor(Math.random() * phaseObj.pool.length)];
         isHeavyBagBusy = true;
 
         const speedBoost = isBurnoutActiveNow ? 1.4 : 1.0;
@@ -1526,14 +1699,13 @@
     }
 
     // =========================================================================
-    // 🎯 محرك التدريبات التكتيكية (مع منع تكرار الألوان وتوجيه الكف الحركي)
+    // 🎯 محرك التدريبات التكتيكية الخمسة
     // =========================================================================
     let isTacticsRunning = false;
     let tacticsLoopTimer = null;
     let tacPoints = 0;
     let tacStreak = 0;
     let tacCorrect = 0;
-    let lastTacticsColor = null; // لمنع التكرار المتتالي للون أكثر من مرتين
 
     let tacticsChallengeState = {
         active: false, mode: 'feint', signalColor: 'GREEN',
@@ -1552,8 +1724,8 @@
 
         if (mode === 'feint') {
             titleEl.textContent = '1️⃣ FEINT & SPLIT-SECOND DECISION';
-            cueEl.textContent = 'أخضر = اضرب الكف الحركي | أحمر = خدعة (تفادَ) | أصفر = تراجع';
-            hintEl.textContent = 'لا يتكرر اللون أكثر من مرتين، وعند الأخضر يتحرك الكف لمكانه الصحيح';
+            cueEl.textContent = 'أخضر = اضرب الكف | أحمر = خدعة (تفادَ) | أصفر = تراجع';
+            hintEl.textContent = 'يختبر سرعة اتخاذ القرار ومنع الاندفاع العشوائي';
         } else if (mode === 'mirror') {
             titleEl.textContent = '2️⃣ MIRROR SHADOWBOXING & ANGLE CUT';
             cueEl.textContent = 'يتحرك الخصم يميناً ويساراً.. در بكتفيك لمواجهته!';
@@ -1597,34 +1769,19 @@
 
         if (mode === 'feint') {
             const colors = [
-                { code: 'GREEN', hex: 0x34d399, label: '🟢 أخضر: اضرب الكف الحركي! (HIT)', say: 'Hit!' },
+                { code: 'GREEN', hex: 0x34d399, label: '🟢 أخضر: اضرب الآن! (HIT)', say: 'Hit!' },
                 { code: 'RED', hex: 0xf87171, label: '🔴 أحمر: خدعة! تفادَ برأسك (SLIP)', say: 'Feint! Slip!' },
                 { code: 'YELLOW', hex: 0xfbbf24, label: '🟡 أصفر: تراجع للخلف (PULL BACK)', say: 'Pull back!' }
             ];
-
-            // تصفية لمنع تكرار نفس اللون لأكثر من مرتين متتاليتين
-            let pick;
-            do {
-                pick = colors[Math.floor(Math.random() * colors.length)];
-            } while (pick.code === lastTacticsColor && Math.random() < 0.7);
-            lastTacticsColor = pick.code;
-
+            const pick = colors[Math.floor(Math.random() * colors.length)];
             tacticsChallengeState.signalColor = pick.code;
             const isLeft = Math.random() < 0.5;
             resetPadsToGuardPosition();
-            
-            // التوجيه الحركي للكف: عندما يكون أخضر يتم تحريك الكف ليكون هدفاً صحيحاً للكمة
             const targetPad = isLeft ? leftPadMesh : rightPadMesh;
             setPadColor(targetPad, pick.hex);
-            
-            // ضبط الموضع الحركي للكف بناءً على نوع اللون (إذا كان أخضر يظهر كهدف بارز)
-            const targetX = isLeft ? 0.28 : -0.28;
-            const targetY = pick.code === 'GREEN' ? 1.52 : 1.48;
-            const targetZ = pick.code === 'GREEN' ? 0.88 : 0.75;
-            
-            targetPad.position.set(targetX, targetY, targetZ);
-            targetPad.scale.set(isLeft ? 1.3 : -1.3, 1.3, 1.3);
-            padAnimState.camTargetX = isLeft ? 0.68 : 0.32;
+            targetPad.position.set(isLeft ? 0.25 : -0.25, 1.52, 0.88);
+            targetPad.scale.set(isLeft ? 1.25 : -1.25, 1.25, 1.25);
+            padAnimState.camTargetX = isLeft ? 0.65 : 0.35;
             padAnimState.camTargetY = 0.42;
 
             document.getElementById('tactics-cue-label').textContent = pick.label;
@@ -1634,7 +1791,7 @@
         } else if (mode === 'mirror') {
             const dirs = [
                 { x: -0.55, label: '⬅ الخصم يتحرك لليسار.. دور لليسار (PIVOT L)', say: 'Angle Left' },
-                { x:  0.55, label: '➔ الخصم يتحرك ليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
+                { x:  0.55, label: '➔ الخصم يتحرك لليمين.. دور لليمين (PIVOT R)', say: 'Angle Right' },
                 { x:  0.00, label: '🎯 الخصم في المنتصف.. أطلق 1-2!', say: 'Center! One Two!' }
             ];
             const pick = dirs[Math.floor(Math.random() * dirs.length)];
@@ -1715,7 +1872,7 @@
                 tacticsChallengeState.resolved = true;
                 tacPoints += 15; tacStreak++; tacCorrect++;
                 playBoxingSFX('PAD_HIT');
-                document.getElementById('tactics-cue-label').textContent = '✅ قرار صائب! ضربة الكف الحركي ناجحة (+15)';
+                document.getElementById('tactics-cue-label').textContent = '✅ قرار صائب! ضربة خاطفة (+15)';
                 updateTacticsScoreboard();
             } else if (tacticsChallengeState.signalColor === 'RED') {
                 if (didPunch) {
@@ -1728,7 +1885,7 @@
                     tacticsChallengeState.resolved = true;
                     tacPoints += 20; tacStreak++; tacCorrect++;
                     triggerHapticFeedback(35);
-                    document.getElementById('tactics-cue-label').textContent = '✅ تفادي ذكي للخدعة الحمراء! (+20)';
+                    document.getElementById('tactics-cue-label').textContent = '✅ تفادي ذكي للخدعة! (+20)';
                     updateTacticsScoreboard();
                 }
             } else if (tacticsChallengeState.signalColor === 'YELLOW' && dy < -0.04) {
@@ -1959,9 +2116,14 @@
         if (isBurnoutActiveNow) {
             return BURNOUT_MITT_COMBOS[Math.floor(Math.random() * BURNOUT_MITT_COMBOS.length)];
         }
-        // خلط عشوائي كامل لضمان عدم التكرار عند فتح التطبيق
-        const randomIndex = Math.floor(Math.random() * MITT_COMBOS.length);
-        return MITT_COMBOS[randomIndex];
+        if (mittsBag.length === 0) {
+            mittsBag = [...MITT_COMBOS];
+            for (let i = mittsBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [mittsBag[i], mittsBag[j]] = [mittsBag[j], mittsBag[i]];
+            }
+        }
+        return mittsBag.shift();
     }
 
     function executeNextMittCombo() {
@@ -2407,23 +2569,23 @@
     function resetCounterSession() { stopCounterSession(); resetSharedRoundState(); cntPoints = 0; cntHitsCount = 0; cntBestMs = null; updateCounterScoreboard(); }
 
     // =========================================================================
-    // محرك Three.js المتقدم (محاكاة ملاكم حقيقي ذو عضلات بارزة وقفازات وقفة حماية Guard)
+    // محرك Three.js المزدوج (Pro Kinematic Boxer + Local FBX + Custom Cloud URL)
     // =========================================================================
     const MOVES = {
-        JAB: { en: '1 Jab', say: 'Jab', torqueY: -0.32, leanZ: 0.05, punchZ: 0.16 },
-        CROSS: { en: '2 Cross', say: 'Cross', torqueY: 0.42, leanZ: -0.06, punchZ: 0.22 },
-        L_HOOK: { en: '3 Lead Hook', say: 'Lead Hook', torqueY: 0.52, leanZ: -0.08, punchZ: 0.14 },
-        R_HOOK: { en: '4 Rear Hook', say: 'Rear Hook', torqueY: -0.52, leanZ: 0.08, punchZ: 0.14 },
-        L_UPPER: { en: '5 Lead Upper', say: 'Lead Uppercut', torqueY: 0.28, leanZ: -0.10, punchZ: 0.12 },
-        R_UPPER: { en: '6 Rear Upper', say: 'Rear Uppercut', torqueY: -0.28, leanZ: 0.10, punchZ: 0.12 },
-        SLIP_L: { en: 'Slip Left', say: 'Slip Left', torqueY: -0.22, leanZ: 0.28, punchZ: -0.06 },
-        SLIP_R: { en: 'Slip Right', say: 'Slip Right', torqueY: 0.22, leanZ: -0.28, punchZ: -0.06 },
-        ROLL: { en: 'Roll', say: 'Roll', torqueY: 0.25, leanZ: -0.30, punchZ: -0.10 },
-        PULL: { en: 'Pull Back', say: 'Pull Back', torqueY: 0.0, leanZ: 0.0, punchZ: -0.28 },
-        STEP_IN: { en: 'Step In', say: 'Step In', torqueY: 0.0, leanZ: 0.0, punchZ: 0.25 },
-        STEP_BACK: { en: 'Step Back', say: 'Step Back', torqueY: 0.0, leanZ: 0.0, punchZ: -0.25 },
-        PIVOT_L: { en: 'Pivot Left', say: 'Pivot Left', torqueY: -0.40, leanZ: 0.10, punchZ: 0.0 },
-        PIVOT_R: { en: 'Pivot Right', say: 'Pivot Right', torqueY: 0.40, leanZ: -0.10, punchZ: 0.0 }
+        JAB: { en: '1 Jab', say: 'Jab', file: 'jab.fbx', torqueY: -0.28, leanZ: 0.04, punchZ: 0.14 },
+        CROSS: { en: '2 Cross', say: 'Cross', file: 'cross.fbx', torqueY: 0.38, leanZ: -0.05, punchZ: 0.18 },
+        L_HOOK: { en: '3 Lead Hook', say: 'Lead Hook', file: 'l_hook.fbx', torqueY: 0.45, leanZ: -0.06, punchZ: 0.12 },
+        R_HOOK: { en: '4 Rear Hook', say: 'Rear Hook', file: 'r_hook.fbx', torqueY: -0.45, leanZ: 0.06, punchZ: 0.12 },
+        L_UPPER: { en: '5 Lead Upper', say: 'Lead Uppercut', file: 'Uppercut.fbx', torqueY: 0.25, leanZ: -0.08, punchZ: 0.10 },
+        R_UPPER: { en: '6 Rear Upper', say: 'Rear Uppercut', file: 'Uppercut (1).fbx', torqueY: -0.25, leanZ: 0.08, punchZ: 0.10 },
+        SLIP_L: { en: 'Slip Left', say: 'Slip Left', file: 'Dodging (1).fbx', torqueY: -0.18, leanZ: 0.22, punchZ: -0.05 },
+        SLIP_R: { en: 'Slip Right', say: 'Slip Right', file: 'Dodging (2).fbx', torqueY: 0.18, leanZ: -0.22, punchZ: -0.05 },
+        ROLL: { en: 'Roll', say: 'Roll', file: 'Dodging (2).fbx', torqueY: 0.22, leanZ: -0.25, punchZ: -0.08 },
+        PULL: { en: 'Pull Back', say: 'Pull Back', file: 'Step Backward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: -0.24 },
+        STEP_IN: { en: 'Step In', say: 'Step In', file: 'Short Step Forward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: 0.22 },
+        STEP_BACK: { en: 'Step Back', say: 'Step Back', file: 'Step Backward.fbx', torqueY: 0.0, leanZ: 0.0, punchZ: -0.22 },
+        PIVOT_L: { en: 'Pivot Left', say: 'Pivot Left', file: 'Left Pivot.fbx', torqueY: -0.35, leanZ: 0.08, punchZ: 0.0 },
+        PIVOT_R: { en: 'Pivot Right', say: 'Pivot Right', file: 'Right Pivot.fbx', torqueY: 0.35, leanZ: -0.08, punchZ: 0.0 }
     };
     const MASTER_COMBOS_70 = [
         ['JAB', 'CROSS', 'STEP_BACK'], ['JAB', 'JAB', 'CROSS'], ['STEP_IN', 'JAB', 'CROSS'],
@@ -2483,104 +2645,149 @@
         }
     }
 
-    function clearCurrent3DModel() {
-        if (mixer) { mixer.stopAllAction(); mixer = null; }
-        actions = {}; activeAction = null;
-        boxerRig = { head: null, torso: null, lArm: null, rArm: null, lForearm: null, rForearm: null };
-        if (modelRoot) { scene.remove(modelRoot); modelRoot = null; }
+    function switch3DModelSource(srcMode) {
+        selectedModelSource = srcMode;
+        localStorage.setItem('boxing_3d_source', srcMode);
+        const urlBox = document.getElementById('custom-model-url-box');
+        if (urlBox) urlBox.style.display = (srcMode === 'custom_url') ? 'block' : 'none';
+        updateStageEntityVisibility();
+        loadSelected3DModel();
     }
 
-    // تصميم ملاكم احترافي مجسم بجسم متناسق وعضلات وصدر وعمليات حركية دقيقة للقفازات وحماية الذقن
-    function buildProBoxerCharacter() {
-        const group = new THREE.Group();
-        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd99b78, roughness: 0.5 });
-        const shortsMat = new THREE.MeshStandardMaterial({ color: 0x0b0f17, roughness: 0.35 });
-        const trimMat = new THREE.MeshStandardMaterial({ color: 0x00BFFF, emissive: 0x006699, emissiveIntensity: 0.4 });
-        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.25, metalness: 0.15 });
+    function applyCustomCloudModelUrl() {
+        const val = document.getElementById('custom-model-url-input').value.trim();
+        if (!val) return;
+        customCloudModelUrl = val;
+        localStorage.setItem('boxing_custom_glb_url', val);
+        loadSelected3DModel();
+    }
 
-        // الحوض والخصر
-        const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.16, 0.26, 20), shortsMat);
-        hips.position.y = 0.90;
+    async function fetchCloudModelWithCache(url) {
+        const statusEl = document.getElementById('glb-status');
+        const cacheBadge = document.getElementById('model-cache-badge');
+        try {
+            if ('caches' in window) {
+                const cache = await caches.open('boxing-3d-models-v1');
+                const cachedResp = await cache.match(url);
+                if (cachedResp) {
+                    if (cacheBadge) cacheBadge.textContent = '● محفوظ محلياً (Offline)';
+                    const blob = await cachedResp.blob();
+                    return URL.createObjectURL(blob);
+                }
+                if (statusEl) {
+                    statusEl.style.display = 'block';
+                    statusEl.textContent = '☁️ جاري تحميل المجسم وحفظه في ذاكرة الهاتف...';
+                }
+                const netResp = await fetch(url);
+                if (netResp.ok) {
+                    await cache.put(url, netResp.clone());
+                    if (cacheBadge) cacheBadge.textContent = '● تم الحفظ للعمل بدون نت';
+                    const blob = await netResp.blob();
+                    return URL.createObjectURL(blob);
+                }
+            }
+        } catch (e) {}
+        return url;
+    }
+
+    function clearCurrent3DModel() {
+        if (mixer) {
+            mixer.stopAllAction();
+            mixer = null;
+        }
+        actions = {};
+        activeAction = null;
+        boxerRig = { head: null, torso: null, lArm: null, rArm: null, lForearm: null, rForearm: null };
+        if (modelRoot) {
+            scene.remove(modelRoot);
+            modelRoot = null;
+        }
+    }
+
+    function buildProceduralBoxerCharacter() {
+        const group = new THREE.Group();
+        const skinMat = new THREE.MeshStandardMaterial({ color: 0xd99b78, roughness: 0.52 });
+        const shortsMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.4 });
+        const trimMat = new THREE.MeshStandardMaterial({ color: 0x00BFFF, emissive: 0x006699, emissiveIntensity: 0.35 });
+        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.28, metalness: 0.1 });
+
+        const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.24, 16), shortsMat);
+        hips.position.y = 0.92;
         group.add(hips);
 
-        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.175, 0.175, 0.06, 20), trimMat);
-        belt.position.y = 1.02;
+        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.05, 16), trimMat);
+        belt.position.y = 1.03;
         group.add(belt);
 
-        // الساقان
-        [-0.10, 0.10].forEach((xPos, i) => {
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.055, 0.88, 14), skinMat);
-            leg.position.set(xPos, 0.44, i === 0 ? 0.08 : -0.08);
+        [-0.09, 0.09].forEach((xPos, i) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.05, 0.85, 12), skinMat);
+            leg.position.set(xPos, 0.45, i === 0 ? 0.08 : -0.08);
             group.add(leg);
         });
 
-        // الجذع العلوي عريض وقوي
         const torso = new THREE.Group();
-        torso.position.y = 1.03;
-        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.17, 0.48, 20), skinMat);
-        chest.position.y = 0.24;
+        torso.position.y = 1.04;
+        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.44, 16), skinMat);
+        chest.position.y = 0.22;
         torso.add(chest);
 
-        // الرأس والرقبة
-        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.065, 0.12, 12), skinMat);
-        neck.position.y = 0.51;
-        const head = new THREE.Mesh(new THREE.SphereGeometry(0.13, 20, 20), skinMat);
-        head.position.y = 0.64;
-        torso.add(neck, head);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.125, 16, 16), skinMat);
+        head.position.y = 0.54;
+        torso.add(head);
 
         // الذراع اليسرى والقفاز (Lead Hand)
         const lArm = new THREE.Group();
-        lArm.position.set(0.26, 0.42, 0);
-        const lUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.32, 14), skinMat);
-        lUpper.position.y = -0.15;
+        lArm.position.set(0.24, 0.38, 0);
+        const lUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
+        lUpper.position.y = -0.14;
         lArm.add(lUpper);
 
         const lForearm = new THREE.Group();
-        lForearm.position.set(0, -0.30, 0);
-        const lForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.04, 0.28, 14), skinMat);
-        lForeMesh.position.y = -0.14;
-        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.10, 20, 20), gloveMat);
-        lGlove.scale.set(0.95, 1.2, 1.15);
-        lGlove.position.y = -0.29;
+        lForearm.position.set(0, -0.28, 0);
+        const lForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.26, 12), skinMat);
+        lForeMesh.position.y = -0.13;
+        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.092, 16, 16), gloveMat);
+        lGlove.scale.set(0.95, 1.15, 1.1);
+        lGlove.position.y = -0.27;
         lForearm.add(lForeMesh, lGlove);
         lArm.add(lForearm);
 
         // الذراع اليمنى والقفاز (Rear Hand)
         const rArm = new THREE.Group();
-        rArm.position.set(-0.26, 0.42, 0);
-        const rUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.048, 0.32, 14), skinMat);
-        rUpper.position.y = -0.15;
+        rArm.position.set(-0.24, 0.38, 0);
+        const rUpper = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.045, 0.28, 12), skinMat);
+        rUpper.position.y = -0.14;
         rArm.add(rUpper);
 
         const rForearm = new THREE.Group();
-        rForearm.position.set(0, -0.30, 0);
-        const rForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.04, 0.28, 14), skinMat);
-        rForeMesh.position.y = -0.14;
-        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.10, 20, 20), gloveMat);
-        rGlove.scale.set(0.95, 1.2, 1.15);
-        rGlove.position.y = -0.29;
+        rForearm.position.set(0, -0.28, 0);
+        const rForeMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.26, 12), skinMat);
+        rForeMesh.position.y = -0.13;
+        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.092, 16, 16), gloveMat);
+        rGlove.scale.set(0.95, 1.15, 1.1);
+        rGlove.position.y = -0.27;
         rForearm.add(rForeMesh, rGlove);
         rArm.add(rForearm);
 
         torso.add(lArm, rArm);
         group.add(torso);
 
-        // وضعية الحماية المحترفة (Guard Stance)
-        lArm.rotation.set(-0.70, 0.25, -0.18);
-        lForearm.rotation.set(-1.75, 0, 0.3);
-        rArm.rotation.set(-0.60, -0.25, 0.18);
-        rForearm.rotation.set(-1.95, 0, -0.3);
+        // وضعية الحماية (Guard Stance)
+        lArm.rotation.set(-0.65, 0.2, -0.15);
+        lForearm.rotation.set(-1.65, 0, 0.25);
+        rArm.rotation.set(-0.55, -0.2, 0.15);
+        rForearm.rotation.set(-1.85, 0, -0.25);
 
         boxerRig = { head, torso, lArm, rArm, lForearm, rForearm };
         return group;
     }
 
     function loadKinematicBoxer() {
-        const boxerGroup = buildProBoxerCharacter();
+        const boxerGroup = buildProceduralBoxerCharacter();
         setupNormalizedModel(boxerGroup);
         document.getElementById('glb-status').style.display = 'none';
         const listBox = document.getElementById('detected-clips-list');
-        if (listBox) listBox.textContent = '✔ Pro Kinematic Boxer Rig Active (Full Torso & Guard Stance)';
+        if (listBox) listBox.textContent = '✔ Pro Boxing Kinematic Rig Active (Jab, Cross, Hooks, Uppercuts, Slips)';
     }
 
     async function loadSelected3DModel() {
@@ -2588,9 +2795,23 @@
         const statusEl = document.getElementById('glb-status');
         if (statusEl) {
             statusEl.style.display = 'block';
-            statusEl.textContent = 'جاري تجهيز الملاكم الحركي الحقيقي...';
+            statusEl.textContent = 'جاري تجهيز الملاكم وحركات القتال...';
         }
-        loadKinematicBoxer();
+
+        if (selectedModelSource === 'kinematic_boxer') {
+            loadKinematicBoxer();
+        } else if (selectedModelSource === 'local_fbx') {
+            loadLocalFBXBoxer();
+        } else if (selectedModelSource === 'custom_url' && customCloudModelUrl) {
+            const resolvedUrl = await fetchCloudModelWithCache(customCloudModelUrl);
+            if (customCloudModelUrl.toLowerCase().endsWith('.fbx')) {
+                loadCloudFBXBoxer(resolvedUrl);
+            } else {
+                loadCloudGLBBoxer(resolvedUrl);
+            }
+        } else {
+            loadKinematicBoxer();
+        }
     }
 
     function setupNormalizedModel(obj) {
@@ -2605,6 +2826,130 @@
         modelRoot.rotation.y = facingFlip;
         scene.add(modelRoot);
         updateStageEntityVisibility();
+    }
+
+    function loadCloudGLBBoxer(glbUrl) {
+        if (typeof THREE.GLTFLoader === 'undefined') return;
+        const loader = new THREE.GLTFLoader();
+        const clipsLog = [];
+        loader.load(glbUrl, (gltf) => {
+            setupNormalizedModel(gltf.scene);
+            mixer = new THREE.AnimationMixer(modelRoot);
+            mixer.addEventListener('finished', () => {
+                if (moveQueue.length > 0) executeSingleAction(moveQueue.shift(), true);
+                else { isComboBusy = false; returnToIdle(); }
+            });
+
+            const anims = gltf.animations || [];
+            if (anims.length > 0) {
+                const idleAct = mixer.clipAction(anims[0]);
+                idleAct.setLoop(THREE.LoopRepeat);
+                idleAct.play();
+                actions['IDLE'] = idleAct;
+                activeAction = idleAct;
+                clipsLog.push(`✔ Cloud GLB Idle (${anims[0].name || 'Clip 0'})`);
+
+                Object.keys(MOVES).forEach((mKey, idx) => {
+                    const clip = anims[(idx + 1) % anims.length];
+                    const act = mixer.clipAction(clip);
+                    act.setLoop(THREE.LoopOnce, 1);
+                    act.clampWhenFinished = true;
+                    actions[mKey] = act;
+                    clipsLog.push(`✔ ${mKey} ➔ ${clip.name || 'Action ' + idx}`);
+                });
+            }
+            const listBox = document.getElementById('detected-clips-list');
+            if (listBox) listBox.textContent = clipsLog.join('\n');
+            document.getElementById('glb-status').style.display = 'none';
+        }, undefined, () => {
+            document.getElementById('glb-status').textContent = '⚠️ تعذر تحميل الرابط، تم تفعيل الملاكم الحركي الاحترافي';
+            setTimeout(() => {
+                selectedModelSource = 'kinematic_boxer';
+                document.getElementById('model-source-select').value = 'kinematic_boxer';
+                loadKinematicBoxer();
+            }, 1200);
+        });
+    }
+
+    function loadCloudFBXBoxer(fbxUrl) {
+        if (typeof THREE.FBXLoader === 'undefined') return;
+        const loader = new THREE.FBXLoader();
+        loader.load(fbxUrl, (fbxObj) => {
+            setupNormalizedModel(fbxObj);
+            mixer = new THREE.AnimationMixer(modelRoot);
+            if (fbxObj.animations && fbxObj.animations.length > 0) {
+                const idleAct = mixer.clipAction(fbxObj.animations[0]);
+                idleAct.setLoop(THREE.LoopRepeat);
+                idleAct.play();
+                actions['IDLE'] = idleAct;
+                activeAction = idleAct;
+            }
+            document.getElementById('glb-status').style.display = 'none';
+        });
+    }
+
+    function loadLocalFBXBoxer() {
+        if (typeof THREE.FBXLoader === 'undefined') return;
+        const loader = new THREE.FBXLoader();
+        const clipsLog = [];
+
+        loader.load('boxer.fbx', (fbxObj) => {
+            setupNormalizedModel(fbxObj);
+
+            mixer = new THREE.AnimationMixer(modelRoot);
+            mixer.addEventListener('finished', () => {
+                if (moveQueue.length > 0) executeSingleAction(moveQueue.shift(), true);
+                else { isComboBusy = false; returnToIdle(); }
+            });
+
+            if (fbxObj.animations && fbxObj.animations.length > 0) {
+                const idleAct = mixer.clipAction(fbxObj.animations[0].clone());
+                idleAct.setLoop(THREE.LoopRepeat); idleAct.play();
+                actions['IDLE'] = idleAct; activeAction = idleAct;
+                clipsLog.push('✔ IDLE (boxer.fbx + Physics Torque)');
+            }
+
+            const fileCache = {};
+            const moveKeys = Object.keys(MOVES);
+            let loadedCount = 0;
+
+            moveKeys.forEach(mKey => {
+                const fileName = MOVES[mKey].file;
+                const registerClip = (animClip) => {
+                    const clipClone = animClip.clone();
+                    clipClone.tracks = clipClone.tracks.filter(t => {
+                        if (t.name.endsWith('.position') && (t.name.includes('Hips') || t.name.includes('Root'))) return false;
+                        return true;
+                    });
+                    const act = mixer.clipAction(clipClone);
+                    act.setLoop(THREE.LoopOnce, 1);
+                    act.clampWhenFinished = true;
+                    actions[mKey] = act;
+                    clipsLog.push(`✔ ${mKey} ➔ ${fileName}`);
+                    loadedCount++;
+                    if (loadedCount === moveKeys.length) {
+                        const listBox = document.getElementById('detected-clips-list');
+                        if (listBox) listBox.textContent = clipsLog.join('\n');
+                    }
+                };
+
+                if (fileCache[fileName]) {
+                    registerClip(fileCache[fileName]);
+                } else {
+                    loader.load(fileName, (animFbx) => {
+                        if (animFbx.animations && animFbx.animations.length > 0) {
+                            fileCache[fileName] = animFbx.animations[0];
+                            registerClip(animFbx.animations[0]);
+                        }
+                    }, undefined, () => {
+                        clipsLog.push(`✖ ${mKey} (${fileName} مفقود)`);
+                        loadedCount++;
+                    });
+                }
+            });
+
+            document.getElementById('glb-status').style.display = 'none';
+        });
     }
 
     async function init3DScene() {
@@ -2669,12 +3014,22 @@
             proceduralState.targetZ = moveCfg.punchZ || 0;
         }
 
-        document.getElementById('live-move-badge').textContent = moveCfg ? moveCfg.en.toUpperCase() : moveKey;
-        if (moveQueue.length > 0) {
-            setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(480 / voiceRate));
-        } else {
-            setTimeout(() => { isComboBusy = false; returnToIdle(); }, Math.round(360 / voiceRate));
+        if (!mixer || !actions[moveKey]) {
+            document.getElementById('live-move-badge').textContent = moveCfg ? moveCfg.en.toUpperCase() : moveKey;
+            if (moveQueue.length > 0) {
+                setTimeout(() => executeSingleAction(moveQueue.shift(), true), Math.round(480 / voiceRate));
+            } else {
+                setTimeout(() => { isComboBusy = false; returnToIdle(); }, Math.round(360 / voiceRate));
+            }
+            return;
         }
+        document.getElementById('live-move-badge').textContent = moveCfg.en.toUpperCase();
+        const act = actions[moveKey];
+        const burnoutBoost = isBurnoutActiveNow ? 1.35 : 1.0;
+        act.timeScale = Math.max(0.55, voiceRate * 1.30 * burnoutBoost);
+        act.reset().play();
+        if (activeAction && activeAction !== act) activeAction.fadeOut(0.04);
+        activeAction = act;
     }
 
     function playComboSequence(seq) {
@@ -2698,18 +3053,18 @@
         modelRoot.rotation.z = proceduralState.curLeanZ;
         modelRoot.position.z = proceduralState.curZ;
 
-        // محاكاة حركات الملاكمة الاحترافية الحقيقية (التفاف الورك، الجذع، واللكمات السريعة)
-        if (boxerRig.torso) {
+        // تحريك الذراعين والقفازين بدقة تشريحية في وضع الملاكم الحركي
+        if (boxerRig.torso && selectedModelSource === 'kinematic_boxer') {
             const move = document.getElementById('live-move-badge').textContent;
-            let lArmX = -0.70, lArmY = 0.25, lArmZ = -0.18, lForeX = -1.75;
-            let rArmX = -0.60, rArmY = -0.25, rArmZ = 0.18, rForeX = -1.95;
+            let lArmX = -0.65, lArmY = 0.2, lArmZ = -0.15, lForeX = -1.65;
+            let rArmX = -0.55, rArmY = -0.2, rArmZ = 0.15, rForeX = -1.85;
 
-            if (move.includes('JAB')) { lArmX = -1.60; lForeX = -0.05; lArmY = -0.10; }
-            else if (move.includes('CROSS')) { rArmX = -1.60; rForeX = -0.05; rArmY = 0.10; }
-            else if (move.includes('LEAD HOOK')) { lArmX = -1.50; lArmY = -1.0; lForeX = -1.30; }
-            else if (move.includes('REAR HOOK')) { rArmX = -1.50; rArmY = 1.0; rForeX = -1.30; }
-            else if (move.includes('LEAD UPPER')) { lArmX = -1.20; lForeX = -1.40; lArmZ = -0.4; }
-            else if (move.includes('REAR UPPER')) { rArmX = -1.20; rForeX = -1.40; rArmZ = 0.4; }
+            if (move.includes('JAB')) { lArmX = -1.55; lForeX = -0.08; lArmY = -0.15; }
+            else if (move.includes('CROSS')) { rArmX = -1.55; rForeX = -0.08; rArmY = 0.15; }
+            else if (move.includes('LEAD HOOK')) { lArmX = -1.45; lArmY = -0.95; lForeX = -1.35; }
+            else if (move.includes('REAR HOOK')) { rArmX = -1.45; rArmY = 0.95; rForeX = -1.35; }
+            else if (move.includes('LEAD UPPER')) { lArmX = -1.15; lForeX = -1.45; lArmZ = -0.35; }
+            else if (move.includes('REAR UPPER')) { rArmX = -1.15; rForeX = -1.45; rArmZ = 0.35; }
 
             boxerRig.lArm.rotation.x += (lArmX - boxerRig.lArm.rotation.x) * lerpSpeed;
             boxerRig.lArm.rotation.y += (lArmY - boxerRig.lArm.rotation.y) * lerpSpeed;
@@ -2745,7 +3100,7 @@
     window.addEventListener('load', init3DScene);
 
     // =========================================================================
-    // إدارة الجلسات والتوقيت والصوت (تم إصلاح بدء الكومبوهات عشوائياً في كل مرة)
+    // إدارة الجلسات والتوقيت والصوت
     // =========================================================================
     let voiceRate = 0.75; let comboIntervalMs = 5000; let totalRounds = 3; let roundDuration = 180;
     let currentRound = 1; let timeLeft = roundDuration; let isRunning = false; let isResting = false;
@@ -2864,6 +3219,10 @@
                     resetSharedRoundState(); speakText("Workout complete!"); return;
                 }
                 isResting = true; timeLeft = 60; updateTimerDisplay(); syncComboText('REST (60s)'); returnToIdle();
+                if (aiEnabled && geminiApiKey) {
+                    const advice = await getAiCornermanAdvice(`Round ${currentRound} finished. Hits: ${mittsCamHitsCount}/${mittsPunchesCount}, Bag Strikes: ${bagStrikesCount}`);
+                    speakText(advice);
+                } else speakText("Rest time.");
             } else {
                 isResting = false; currentRound++; timeLeft = roundDuration; updateTimerDisplay(); updateRoundLabels();
                 speakText(`Round ${currentRound}. Let's go!`);
@@ -2890,7 +3249,6 @@
     let currentBuilderSeq = [];
     let drillDoneCount = 0;
 
-    // تم تعديل اختيار الكمبو ليبدأ عشوائياً تماماً وغير متكرر في كل فتحة تطبيق أو جلسة
     function executeNextCombo() {
         if (!isRunning || isResting || isComboBusy) return;
 
@@ -2911,7 +3269,7 @@
                 speakText("Drill complete!");
                 return;
             }
-            syncComboText(seq.map(k => MOVES[k] ? MOVES[k].en : k).join(' ➔ '));
+            syncComboText(seq.map(k => MOVES[k].en).join(' ➔ '));
             playComboSequence(seq);
             return;
         }
@@ -2919,23 +3277,22 @@
         let pool = MASTER_COMBOS_70;
         if (isBurnoutActiveNow) {
             pool = BURNOUT_TRAIN_COMBOS;
+        } else if (adaptiveDifficultyEnabled && sessionGuardViolations >= 2) {
+            pool = DEFENSIVE_CORRECTION_COMBOS;
         } else {
             const source = document.getElementById('combo-source').value;
             if (source === 'custom' && customCombos.length > 0) pool = customCombos;
             else if (source === 'both' && customCombos.length > 0) pool = [...MASTER_COMBOS_70, ...customCombos];
         }
 
-        // اختيار عشوائي بحت عبر Math.random() لمنع التكرار الملل
-        const randomIndex = Math.floor(Math.random() * pool.length);
-        const seq = pool[randomIndex];
-        
-        syncComboText((isBurnoutActiveNow ? '🔥 ' : '') + seq.map(k => MOVES[k] ? MOVES[k].en : k).join(' ➔ '));
+        const seq = pool[Math.floor(Math.random() * pool.length)];
+        syncComboText((isBurnoutActiveNow ? '🔥 ' : '') + seq.map(k => MOVES[k].en).join(' ➔ '));
         playComboSequence(seq);
     }
 
     function addAndPreview(k) {
         currentBuilderSeq.push(k);
-        document.getElementById('builder-preview').textContent = currentBuilderSeq.map(m => MOVES[m] ? MOVES[m].en : m).join(' ➔ ');
+        document.getElementById('builder-preview').textContent = currentBuilderSeq.map(m => MOVES[m].en).join(' ➔ ');
         executeSingleAction(k, true);
     }
 
@@ -2972,7 +3329,7 @@
         customCombos.forEach((combo, idx) => {
             const div = document.createElement('div');
             div.className = 'saved-item';
-            div.innerHTML = `<span>${combo.map(k => MOVES[k] ? MOVES[k].en : k).join(' ➔ ')}</span>
+            div.innerHTML = `<span>${combo.map(k => MOVES[k].en).join(' ➔ ')}</span>
                 <div>
                     <button class="drill-pick-btn" onclick='playComboSequence(${JSON.stringify(combo)})'>▶</button>
                     <button class="del-btn" onclick="deleteCustomCombo(${idx})">✕</button>
@@ -2988,18 +3345,21 @@
         customCombos.forEach(c => {
             const opt = document.createElement('option');
             opt.value = JSON.stringify(c);
-            opt.textContent = '★ ' + c.map(k => MOVES[k] ? MOVES[k].en : k).join(' ➔ ');
+            opt.textContent = '★ ' + c.map(k => MOVES[k].en).join(' ➔ ');
             sel.appendChild(opt);
         });
         MASTER_COMBOS_70.forEach((c, i) => {
             const opt = document.createElement('option');
             opt.value = JSON.stringify(c);
-            opt.textContent = `#${i + 1}: ` + c.map(k => MOVES[k] ? MOVES[k].en : k).join(' ➔ ');
+            opt.textContent = `#${i + 1}: ` + c.map(k => MOVES[k].en).join(' ➔ ');
             sel.appendChild(opt);
         });
     }
 
-    function updateDrillTarget() { resetDrillCounter(); }
+    function updateDrillTarget() {
+        resetDrillCounter();
+    }
+
     function resetDrillCounter() {
         drillDoneCount = 0;
         const target = parseInt(document.getElementById('drill-reps-target').value);
@@ -3009,7 +3369,7 @@
     function updateModeBadge() {
         const isDrill = document.getElementById('drill-enabled').value === 'on';
         const badge = document.getElementById('mode-badge');
-        if (badge) badge.textContent = isDrill ? 'وضع الإتقان (تكرار)' : 'كومبو عشوائي متغير';
+        if (badge) badge.textContent = isDrill ? 'وضع الإتقان (تكرار)' : '70 كومبو عشوائي';
     }
 
     function updateRoundsSetting() {
