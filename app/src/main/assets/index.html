@@ -859,41 +859,65 @@
             <div class="clips-box" id="detected-clips-list">جاري فحص ملفات الحركة...</div>
         </div>
     </div>
-    <!-- القسم 5: الاسبارنج التفاعلي المعزول -->
+    <!-- القسم 5: الاسبارنج التفاعلي المعزول (نزال حقيقي متبادل) -->
     <div id="sec-sparring" class="main-section">
-        <div class="panel" style="border-color: rgba(245, 158, 11, 0.35);">
+        <div class="panel" style="border-color: rgba(245, 158, 11, 0.4);">
             <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px; border-color: rgba(245, 158, 11, 0.25);">
                 <div class="round-info">
-                    <strong id="sparring-round-label">اسبارنج تفاعلي</strong>
-                    <span id="sparring-phase-badge" style="color: var(--accent);">IDLE STANCE</span>
+                    <strong id="sparring-round-label">اسبارنج تفاعلي حي</strong>
+                    <span id="sparring-phase-badge" style="color: var(--accent);">READY TO SPAR</span>
                 </div>
                 <div class="timer" id="sparring-timer-display" style="font-size: 1.65rem;">03:00</div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 6px; margin-bottom: 8px;">
-                <button class="btn secondary small" id="sparring-cam-btn" style="border-color: var(--neon); color: var(--neon);" onclick="toggleSparringCamera()">📷 كاميرا الاسبارنج</button>
+            <!-- شريط طاقة الملاكم والخصم -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+                <div style="background: #05080f; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(16,185,129,0.3);">
+                    <div style="display:flex; justify-content:space-between; font-size:0.66rem; font-weight:800; color:var(--success); margin-bottom:3px;">
+                        <span>طاقتك (YOU)</span><span id="spar-player-hp-txt">100%</span>
+                    </div>
+                    <div style="height:6px; background:#1e293b; border-radius:4px; overflow:hidden;">
+                        <div id="spar-player-hp-bar" style="width:100%; height:100%; background:var(--success); transition:width 0.25s;"></div>
+                    </div>
+                </div>
+                <div style="background: #05080f; padding: 6px 8px; border-radius: 10px; border: 1px solid rgba(245,158,11,0.3);">
+                    <div style="display:flex; justify-content:space-between; font-size:0.66rem; font-weight:800; color:var(--accent); margin-bottom:3px;">
+                        <span>الخصم (AI BOXER)</span><span id="spar-opp-hp-txt">100%</span>
+                    </div>
+                    <div style="height:6px; background:#1e293b; border-radius:4px; overflow:hidden;">
+                        <div id="spar-opp-hp-bar" style="width:100%; height:100%; background:var(--accent); transition:width 0.25s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 5px; margin-bottom: 8px;">
+                <button class="btn secondary small" id="sparring-cam-btn" style="border-color: var(--neon); color: var(--neon);" onclick="toggleSparringCamera()">📷 الكاميرا</button>
                 <button class="btn secondary small" onclick="calibrateSparringStance()">🎯 معايرة</button>
+                <select id="sparring-ai-level" style="padding: 4px 6px; font-size: 0.72rem;">
+                    <option value="rookie">مبتدئ</option>
+                    <option value="pro" selected>محترف</option>
+                    <option value="elite">بطل عالم</option>
+                </select>
             </div>
 
             <div class="stick-box" id="sparring-cue-box" style="border-color: var(--accent); background: rgba(245, 158, 11, 0.07);">
-                <div class="stick-move-title" id="sparring-opp-action" style="color: #fcd34d;">⚔️ INTERACTIVE SPARRING</div>
-                <div class="stick-dodge-cue" id="sparring-player-cue">اضغط ابدأ لمواجهة الخصم عبر الكاميرا</div>
-                <div class="stick-sub-hint" id="sparring-sub-hint">تفادَ هجوم الخصم أولاً ثم سدد الكاونتر في نافذة الرد</div>
+                <div class="stick-move-title" id="sparring-opp-action" style="color: #fcd34d;">⚔️ LIVE SPARRING AI</div>
+                <div class="stick-dodge-cue" id="sparring-player-cue">اضغط ابدأ.. الخصم يرى لكماتك ويتفاداها ويرد عليك!</div>
+                <div class="stick-sub-hint" id="sparring-sub-hint">هاجم بلكماتك أو تفادَ هجمات الخصم وسدد كاونتر</div>
             </div>
 
             <div class="score-grid">
                 <div class="score-card"><span>نقاطك</span><strong id="sparring-score" style="color: var(--success);">0</strong></div>
-                <div class="score-card"><span>تفادي / كاونتر</span><strong id="sparring-player-hits" style="color: var(--neon);">0</strong></div>
+                <div class="score-card"><span>إصاباتك / تفادي</span><strong id="sparring-player-hits" style="color: var(--neon);">0</strong></div>
                 <div class="score-card"><span>إصابات الخصم</span><strong id="sparring-opp-hits" style="color: var(--danger);">0</strong></div>
             </div>
         </div>
 
         <div class="main-btns">
-            <button class="btn" id="sparring-start-btn" style="background: var(--accent); color: #000;" onclick="toggleSparringSession()">⚔️ ابدأ الاسبارنج</button>
+            <button class="btn" id="sparring-start-btn" style="background: var(--accent); color: #000;" onclick="toggleSparringSession()">⚔️ ابدأ النزال</button>
             <button class="btn secondary" onclick="resetSparringSession()">إعادة</button>
         </div>
-    </div>
-</div>
+    </div></div>
 
 <nav class="bottom-nav">
     <div class="bottom-nav-inner">
@@ -1485,7 +1509,8 @@
         const stageTag = document.getElementById('stage-mode-tag');
         const hudOverlay = document.getElementById('stage-hud-overlay');
 
-        const showBoxer = (!isStickOrCounter && !isMittsTab && !isHeavyBagTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
+        const isSparringTab = (activeTabName === 'sparring');
+        const showBoxer = (!isSparringTab && !isStickOrCounter && !isMittsTab && !isHeavyBagTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
         const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
         const showPads = isMittsTab || (isTacticsTab && (tacMode === 'feint' || tacMode === 'pocket'));
         const showHeavyBag = isHeavyBagTab;
@@ -1498,6 +1523,9 @@
         if (mittGroup && activeTabName !== 'counter') mittGroup.visible = false;
         if (coachPadsGroup) coachPadsGroup.visible = showPads;
         if (heavyBagGroup) heavyBagGroup.visible = showHeavyBag;
+        if (typeof sparringOpponentGroup !== 'undefined' && sparringOpponentGroup) {
+            sparringOpponentGroup.visible = isSparringTab;
+        }
 
         if (isHeavyBagTab) {
             stageTag.textContent = '🥊 HEAVY BAG PRO';
@@ -3451,102 +3479,190 @@
     }
 
     // =========================================================================
-    // ⚔️ وحدة الاسبارنج التفاعلي المعزولة (Sparring Mini-Game Module)
+    // ⚔️ وحدة الاسبارنج التفاعلي الحي (Real-Time Interactive Sparring AI Engine)
     // =========================================================================
     let sparringOpponentGroup = null;
-    let sparTorso = null, sparHead = null, sparLArm = null, sparRArm = null;
+    let sparMixer = null;
+    let sparActions = {};
+    let sparActiveAction = null;
+    let sparUsesFbx = false;
+    let sparTorso = null, sparLArm = null, sparRArm = null, sparLFore = null, sparRFore = null;
+    let sparAnimClock = new THREE.Clock();
+
     let isSparringActive = false;
     let sparringTimerInterval = null;
-    let sparringLoopTimer = null;
+    let sparringAiLoopTimer = null;
     let sparringTimeLeft = 180;
 
-    let sparStats = { score: 0, playerActions: 0, oppHits: 0 };
+    let sparStats = { score: 0, playerActions: 0, oppHits: 0, playerHp: 100, oppHp: 100 };
     let sparTurn = {
-        phase: 'IDLE',
-        attackType: 'STRAIGHT',
+        phase: 'IDLE', // 'GUARD_MOVE' | 'OPP_EVADING' | 'OPP_ATTACK' | 'COUNTER_OPEN' | 'OPP_STUNNED'
+        attackType: 'JAB',
         expiresAt: 0,
         resolved: false,
         baseNoseX: 0.5,
-        baseNoseY: 0.45
+        baseNoseY: 0.45,
+        lastPlayerPunchAt: 0,
+        lastGuardPunishAt: 0,
+        oppOffsetX: 0,
+        oppOffsetZ: 0
     };
 
     function buildSparringOpponent3D() {
         if (!scene || sparringOpponentGroup) return;
         sparringOpponentGroup = new THREE.Group();
+        scene.add(sparringOpponentGroup);
 
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
-        const accentMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x78350f, emissiveIntensity: 0.35, roughness: 0.35 });
-        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.1 });
+        if (typeof THREE.FBXLoader !== 'undefined') {
+            const loader = new THREE.FBXLoader();
+            loader.load('boxer.fbx', (fbxObj) => {
+                fbxObj.traverse((child) => {
+                    if (child.isMesh && child.material) {
+                        const mats = Array.isArray(child.material) ? child.material : [child.material];
+                        mats.forEach(m => {
+                            if (m.color) m.color.offsetHSL(0.05, 0.08, -0.04);
+                        });
+                    }
+                });
+
+                const box = new THREE.Box3().setFromObject(fbxObj);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z) || 1;
+                fbxObj.scale.setScalar(1.85 / maxDim);
+                const scaledBox = new THREE.Box3().setFromObject(fbxObj);
+                const center = scaledBox.getCenter(new THREE.Vector3());
+                fbxObj.position.set(-center.x, -scaledBox.min.y, -center.z);
+
+                sparringOpponentGroup.add(fbxObj);
+                sparUsesFbx = true;
+                sparMixer = new THREE.AnimationMixer(fbxObj);
+                sparMixer.addEventListener('finished', () => {
+                    playSparOpponentAnim('IDLE');
+                });
+
+                if (fbxObj.animations && fbxObj.animations.length > 0) {
+                    const idleClip = fbxObj.animations[0].clone();
+                    const idleAct = sparMixer.clipAction(idleClip);
+                    idleAct.setLoop(THREE.LoopRepeat);
+                    idleAct.play();
+                    sparActions['IDLE'] = idleAct;
+                    sparActiveAction = idleAct;
+                }
+
+                const sparAnimFiles = {
+                    JAB: 'jab.fbx',
+                    CROSS: 'cross.fbx',
+                    L_HOOK: 'l_hook.fbx',
+                    R_HOOK: 'r_hook.fbx',
+                    SLIP_L: 'Dodging (1).fbx',
+                    SLIP_R: 'Dodging (2).fbx',
+                    STEP_BACK: 'Step Backward.fbx'
+                };
+                const cache = {};
+                Object.keys(sparAnimFiles).forEach(key => {
+                    const fname = sparAnimFiles[key];
+                    const reg = (clip) => {
+                        const c = clip.clone();
+                        c.tracks = c.tracks.filter(t => !(t.name.endsWith('.position') && (t.name.includes('Hips') || t.name.includes('Root'))));
+                        const act = sparMixer.clipAction(c);
+                        act.setLoop(THREE.LoopOnce, 1);
+                        act.clampWhenFinished = true;
+                        sparActions[key] = act;
+                    };
+                    if (cache[fname]) reg(cache[fname]);
+                    else {
+                        loader.load(fname, (animFbx) => {
+                            if (animFbx.animations && animFbx.animations.length > 0) {
+                                cache[fname] = animFbx.animations[0];
+                                reg(animFbx.animations[0]);
+                            }
+                        });
+                    }
+                });
+            }, undefined, () => {
+                buildFallbackSparringRig();
+            });
+        } else {
+            buildFallbackSparringRig();
+        }
+
+        sparringOpponentGroup.visible = (activeTabName === 'sparring');
+    }
+
+    function buildFallbackSparringRig() {
+        if (!sparringOpponentGroup || sparUsesFbx) return;
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45 });
+        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 });
 
         const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.22, 16), bodyMat);
         hips.position.y = 0.92;
         sparringOpponentGroup.add(hips);
 
-        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.05, 16), accentMat);
-        belt.position.y = 1.03;
-        sparringOpponentGroup.add(belt);
-
-        [-0.10, 0.10].forEach((xPos, idx) => {
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.048, 0.84, 12), bodyMat);
-            leg.position.set(xPos, 0.45, idx === 0 ? 0.07 : -0.07);
+        [-0.09, 0.09].forEach((xPos, i) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.048, 0.84, 12), bodyMat);
+            leg.position.set(xPos, 0.45, i === 0 ? 0.07 : -0.07);
             sparringOpponentGroup.add(leg);
         });
 
         sparTorso = new THREE.Group();
         sparTorso.position.y = 1.04;
-
         const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.44, 16), bodyMat);
         chest.position.y = 0.22;
-        sparTorso.add(chest);
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), bodyMat);
+        head.position.y = 0.54;
+        sparTorso.add(chest, head);
 
-        sparHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), bodyMat);
-        sparHead.position.y = 0.54;
-        sparTorso.add(sparHead);
+        sparLArm = new THREE.Group(); sparLArm.position.set(0.23, 0.36, 0);
+        sparLFore = new THREE.Group(); sparLFore.position.set(0, -0.26, 0);
+        const lG = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat); lG.position.y = -0.22;
+        sparLFore.add(lG); sparLArm.add(sparLFore);
 
-        sparLArm = new THREE.Group();
-        sparLArm.position.set(0.23, 0.36, 0);
-        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
-        lGlove.position.set(0, -0.22, 0.14);
-        sparLArm.add(lGlove);
-        sparLArm.rotation.set(-0.7, 0.15, -0.2);
-
-        sparRArm = new THREE.Group();
-        sparRArm.position.set(-0.23, 0.36, 0);
-        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
-        rGlove.position.set(0, -0.22, 0.14);
-        sparRArm.add(rGlove);
-        sparRArm.rotation.set(-0.7, -0.15, 0.2);
+        sparRArm = new THREE.Group(); sparRArm.position.set(-0.23, 0.36, 0);
+        sparRFore = new THREE.Group(); sparRFore.position.set(0, -0.26, 0);
+        const rG = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat); rG.position.y = -0.22;
+        sparRFore.add(rG); sparRArm.add(sparRFore);
 
         sparTorso.add(sparLArm, sparRArm);
         sparringOpponentGroup.add(sparTorso);
-        sparringOpponentGroup.visible = false;
-        scene.add(sparringOpponentGroup);
+        resetFallbackSparPose();
     }
 
-    function setSparringOpponentPose(poseMode) {
-        if (!sparringOpponentGroup || !sparTorso || !sparLArm || !sparRArm) return;
+    function resetFallbackSparPose() {
+        if (!sparTorso) return;
         sparTorso.rotation.set(0, 0, 0);
-        sparLArm.rotation.set(-0.7, 0.15, -0.2);
-        sparRArm.rotation.set(-0.7, -0.15, 0.2);
-        sparringOpponentGroup.position.z = 0;
-
-        if (poseMode === 'ATTACK_STRAIGHT') {
-            sparTorso.rotation.y = -0.25;
-            sparLArm.rotation.set(-1.45, -0.1, 0);
-            sparringOpponentGroup.position.z = 0.16;
-        } else if (poseMode === 'ATTACK_HOOK') {
-            sparTorso.rotation.y = 0.35;
-            sparRArm.rotation.set(-1.35, 0.85, 0);
-            sparringOpponentGroup.position.z = 0.14;
-        } else if (poseMode === 'OPEN_GUARD') {
-            sparLArm.rotation.set(-0.2, 0.5, -0.6);
-            sparRArm.rotation.set(-0.2, -0.5, 0.6);
-        } else if (poseMode === 'HIT_STUN') {
-            sparTorso.rotation.x = -0.28;
-            sparTorso.rotation.y = 0.3;
-            sparringOpponentGroup.position.z = -0.12;
-        }
+        sparLArm.rotation.set(-0.65, 0.2, -0.15); sparLFore.rotation.set(-1.65, 0, 0.25);
+        sparRArm.rotation.set(-0.55, -0.2, 0.15); sparRFore.rotation.set(-1.85, 0, -0.25);
     }
+
+    function playSparOpponentAnim(animKey, speedMult = 1.15) {
+        if (sparUsesFbx && sparMixer && sparActions[animKey]) {
+            const act = sparActions[animKey];
+            act.timeScale = speedMult;
+            act.reset().play();
+            if (sparActiveAction && sparActiveAction !== act) sparActiveAction.fadeOut(0.06);
+            sparActiveAction = act;
+            return;
+        }
+        if (!sparTorso) return;
+        resetFallbackSparPose();
+        if (animKey === 'JAB') { sparLArm.rotation.x = -1.55; sparLFore.rotation.x = -0.08; sparTorso.rotation.y = -0.25; }
+        else if (animKey === 'CROSS') { sparRArm.rotation.x = -1.55; sparRFore.rotation.x = -0.08; sparTorso.rotation.y = 0.35; }
+        else if (animKey === 'L_HOOK') { sparLArm.rotation.set(-1.45, -0.95, 0); sparLFore.rotation.x = -1.35; sparTorso.rotation.y = 0.42; }
+        else if (animKey === 'R_HOOK') { sparRArm.rotation.set(-1.45, 0.95, 0); sparRFore.rotation.x = -1.35; sparTorso.rotation.y = -0.42; }
+        else if (animKey === 'SLIP_L') { sparTorso.rotation.z = 0.28; sparTorso.rotation.y = -0.2; }
+        else if (animKey === 'SLIP_R') { sparTorso.rotation.z = -0.28; sparTorso.rotation.y = 0.2; }
+        else if (animKey === 'STEP_BACK') { sparTurn.oppOffsetZ = -0.25; }
+    }
+
+    function updateSparring3DLoop() {
+        requestAnimationFrame(updateSparring3DLoop);
+        if (!sparringOpponentGroup || !sparringOpponentGroup.visible) return;
+        const dt = sparAnimClock.getDelta();
+        if (sparMixer) sparMixer.update(dt);
+        sparringOpponentGroup.position.x += (sparTurn.oppOffsetX - sparringOpponentGroup.position.x) * Math.min(1, dt * 10);
+        sparringOpponentGroup.position.z += (sparTurn.oppOffsetZ - sparringOpponentGroup.position.z) * Math.min(1, dt * 10);
+    }
+    window.addEventListener('load', updateSparring3DLoop);
 
     function switchSparringSection() {
         if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
@@ -3558,22 +3674,17 @@
         document.getElementById('sec-sparring').classList.add('active');
         document.getElementById('nav-sparring').classList.add('active');
 
+        buildSparringOpponent3D();
+        if (typeof updateStageEntityVisibility === 'function') updateStageEntityVisibility();
+
         const hudOverlay = document.getElementById('stage-hud-overlay');
         if (hudOverlay) hudOverlay.style.display = 'none';
         const stageTag = document.getElementById('stage-mode-tag');
-        if (stageTag) stageTag.textContent = '⚔️ INTERACTIVE SPARRING';
+        if (stageTag) stageTag.textContent = '⚔️ LIVE SPARRING AI';
 
-        if (typeof modelRoot !== 'undefined' && modelRoot) modelRoot.visible = false;
-        if (typeof stickGroup !== 'undefined' && stickGroup) stickGroup.visible = false;
-        if (typeof mittGroup !== 'undefined' && mittGroup) mittGroup.visible = false;
-        if (typeof coachPadsGroup !== 'undefined' && coachPadsGroup) coachPadsGroup.visible = false;
-        if (typeof heavyBagGroup !== 'undefined' && heavyBagGroup) heavyBagGroup.visible = false;
-
-        buildSparringOpponent3D();
-        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
         if (typeof camera !== 'undefined' && camera) {
-            camera.position.set(0, 1.35, 2.55);
-            camera.lookAt(0, 1.15, 0);
+            camera.position.set(0, 1.32, 2.55);
+            camera.lookAt(0, 1.12, 0);
         }
         if (typeof resize3DRenderer === 'function') resize3DRenderer();
     }
@@ -3593,10 +3704,10 @@
     async function toggleSparringCamera() {
         if (typeof isCamRefActive !== 'undefined' && isCamRefActive) {
             if (typeof stopCameraReferee === 'function') stopCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '📷 كاميرا الاسبارنج';
+            document.getElementById('sparring-cam-btn').textContent = '📷 الكاميرا';
         } else {
             if (typeof startCameraReferee === 'function') await startCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
+            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف';
         }
     }
 
@@ -3607,7 +3718,7 @@
             if (typeof strikeStartX !== 'undefined') strikeStartX = curNoseX;
             if (typeof strikeStartY !== 'undefined') strikeStartY = curNoseY;
             if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
-            document.getElementById('sparring-player-cue').textContent = '🎯 تمت معايرة وقفة الاسبارنج';
+            document.getElementById('sparring-player-cue').textContent = '🎯 تمت معايرة وقفة النزال بنجاح';
         }
     }
 
@@ -3616,96 +3727,192 @@
         document.getElementById('sparring-player-hits').textContent = sparStats.playerActions;
         document.getElementById('sparring-opp-hits').textContent = sparStats.oppHits;
 
+        const pHp = Math.max(0, Math.min(100, sparStats.playerHp));
+        const oHp = Math.max(0, Math.min(100, sparStats.oppHp));
+        document.getElementById('spar-player-hp-txt').textContent = `${pHp}%`;
+        document.getElementById('spar-player-hp-bar').style.width = `${pHp}%`;
+        document.getElementById('spar-opp-hp-txt').textContent = `${oHp}%`;
+        document.getElementById('spar-opp-hp-bar').style.width = `${oHp}%`;
+
         const m = Math.floor(sparringTimeLeft / 60).toString().padStart(2, '0');
         const s = (sparringTimeLeft % 60).toString().padStart(2, '0');
         document.getElementById('sparring-timer-display').textContent = `${m}:${s}`;
     }
 
-    function runSparringCycle() {
+    function getSparringAiSkill() {
+        const lvl = document.getElementById('sparring-ai-level') ? document.getElementById('sparring-ai-level').value : 'pro';
+        if (lvl === 'rookie') return { evadeChance: 0.30, counterChance: 0.35, speed: 0.95 };
+        if (lvl === 'elite') return { evadeChance: 0.68, counterChance: 0.80, speed: 1.35 };
+        return { evadeChance: 0.50, counterChance: 0.60, speed: 1.15 };
+    }
+
+    function triggerOpponentAttack(isCounter = false) {
+        if (!isSparringActive) return;
+        const skill = getSparringAiSkill();
+        const attacks = [
+            { type: 'STRAIGHT', anim: 'JAB', name: isCounter ? '⚡ كاونتر جاب من الخصم!' : '👊 جاب مستقيم من الخصم!', cue: '⬅➔ تفادَ جانبياً (Slip) فوراً!', say: 'Slip!' },
+            { type: 'STRAIGHT', anim: 'CROSS', name: isCounter ? '⚡ كاونتر كروس قوي من الخصم!' : '💥 كروس يميني من الخصم!', cue: '⬅➔ تفادَ جانبياً (Slip) الآن!', say: 'Slip!' },
+            { type: 'HOOK', anim: 'L_HOOK', name: isCounter ? '⚡ كاونتر هوك خاطف!' : '🌀 هوك يساري دائري من الخصم!', cue: '⤵ انحنِ للأسفل (Roll) لتفادي الهوك!', say: 'Roll!' }
+        ];
+        const atk = attacks[Math.floor(Math.random() * attacks.length)];
+        sparTurn.phase = 'OPP_ATTACK';
+        sparTurn.resolved = false;
+        sparTurn.attackType = atk.type;
+        sparTurn.expiresAt = performance.now() + Math.round(2200 / skill.speed);
+        sparTurn.oppOffsetX = 0;
+        sparTurn.oppOffsetZ = 0.22;
+
+        playSparOpponentAnim(atk.anim, skill.speed);
+        document.getElementById('sparring-phase-badge').textContent = isCounter ? '⚡ AI COUNTER' : '👊 OPPONENT ATTACK';
+        document.getElementById('sparring-opp-action').textContent = atk.name;
+        document.getElementById('sparring-player-cue').textContent = atk.cue;
+        if (typeof speakText === 'function') speakText(atk.say);
+    }
+
+    function runSparringAiTurn() {
         if (!isSparringActive) return;
 
-        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
+        if (sparTurn.phase === 'OPP_ATTACK' && !sparTurn.resolved) {
             sparTurn.resolved = true;
             sparStats.oppHits++;
+            sparStats.playerHp = Math.max(0, sparStats.playerHp - 10);
             updateSparringHUD();
             if (typeof playBoxingSFX === 'function') playBoxingSFX('GUARD_WARN');
-            document.getElementById('sparring-phase-badge').textContent = '💥 OPPONENT HIT';
-            document.getElementById('sparring-player-cue').textContent = 'أصابك الخصم! ارفع حمايتك وتفادَ بسرعة';
+            document.getElementById('sparring-phase-badge').textContent = '💥 YOU GOT HIT';
+            document.getElementById('sparring-player-cue').textContent = 'أصابك الخصم! ارفع يديك وتفادَ الهجمة القادمة';
+            if (sparStats.playerHp <= 0) {
+                stopSparringSession();
+                document.getElementById('sparring-opp-action').textContent = '🏆 انتهى النزال بفوز الخصم!';
+                if (typeof speakText === 'function') speakText('Knockout! Round over.');
+                return;
+            }
         }
 
-        const roll = Math.random();
-        if (roll < 0.30) {
-            sparTurn.phase = 'FOOTWORK';
+        if (Math.random() < 0.35) {
+            sparTurn.phase = 'GUARD_MOVE';
             sparTurn.resolved = true;
-            setSparringOpponentPose('GUARD');
-            if (sparringOpponentGroup) sparringOpponentGroup.position.x = (Math.random() - 0.5) * 0.45;
-            document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK';
-            document.getElementById('sparring-opp-action').textContent = 'الخصم يغير زاويته ويراقب حركتك';
-            document.getElementById('sparring-player-cue').textContent = 'حافظ على وضعية الحماية واستعد للهجوم';
+            sparTurn.oppOffsetX = (Math.random() - 0.5) * 0.55;
+            sparTurn.oppOffsetZ = (Math.random() - 0.5) * 0.20;
+            playSparOpponentAnim('IDLE');
+            document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK & GUARD';
+            document.getElementById('sparring-opp-action').textContent = 'الخصم يتحرك في الحلبة.. بادر بالهجوم!';
+            document.getElementById('sparring-player-cue').textContent = 'سدد لكمة الآن لاختبار دفاع الخصم!';
         } else {
-            sparTurn.phase = 'ATTACK';
-            sparTurn.resolved = false;
-            sparTurn.expiresAt = performance.now() + 2400;
-            sparTurn.attackType = Math.random() < 0.55 ? 'STRAIGHT' : 'HOOK';
-            if (sparringOpponentGroup) sparringOpponentGroup.position.x = 0;
-
-            if (sparTurn.attackType === 'STRAIGHT') {
-                setSparringOpponentPose('ATTACK_STRAIGHT');
-                document.getElementById('sparring-phase-badge').textContent = '⚡ STRAIGHT ATTACK';
-                document.getElementById('sparring-opp-action').textContent = 'هجمة مستقيمة من الخصم!';
-                document.getElementById('sparring-player-cue').textContent = '⬅➔ تفادَ جانبياً (Slip) لفتح نافذة الرد';
-                if (typeof speakText === 'function') speakText('Slip!');
-            } else {
-                setSparringOpponentPose('ATTACK_HOOK');
-                document.getElementById('sparring-phase-badge').textContent = '🌀 HOOK ATTACK';
-                document.getElementById('sparring-opp-action').textContent = 'هجمة خطافية من الخصم!';
-                document.getElementById('sparring-player-cue').textContent = '⤵ انحنِ للأسفل (Roll) لتفادي الهوك';
-                if (typeof speakText === 'function') speakText('Roll!');
-            }
+            triggerOpponentAttack(false);
         }
     }
 
     setInterval(() => {
         if (!isSparringActive || typeof hasPoseFrame === 'undefined' || !hasPoseFrame) return;
 
+        const now = performance.now();
         const dx = curNoseX - (sparTurn.baseNoseX || strikeStartX || 0.5);
         const dy = curNoseY - (sparTurn.baseNoseY || strikeStartY || 0.45);
 
-        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
-            const dodgedStraight = (sparTurn.attackType === 'STRAIGHT' && Math.abs(dx) > 0.08);
-            const dodgedHook = (sparTurn.attackType === 'HOOK' && dy > 0.07);
+        // 1. رصد هجوم اللاعب المباشر عبر الكاميرا
+        const playerThrewLeft = curLeftWrist && curLeftWrist.vis > 0.55 && curLeftWrist.speed > 0.022 && curLeftWrist.ext > 0.16;
+        const playerThrewRight = curRightWrist && curRightWrist.vis > 0.55 && curRightWrist.speed > 0.022 && curRightWrist.ext > 0.16;
+        const playerAttacked = (playerThrewLeft || playerThrewRight) && (now - sparTurn.lastPlayerPunchAt > 750);
+
+        if (playerAttacked) {
+            sparTurn.lastPlayerPunchAt = now;
+            const skill = getSparringAiSkill();
+
+            if (sparTurn.phase === 'COUNTER_OPEN' && now <= sparTurn.expiresAt) {
+                sparTurn.phase = 'OPP_STUNNED';
+                sparTurn.oppOffsetZ = -0.22;
+                sparStats.score += 25;
+                sparStats.playerActions++;
+                sparStats.oppHp = Math.max(0, sparStats.oppHp - 14);
+                updateSparringHUD();
+                playSparOpponentAnim('STEP_BACK', 1.2);
+                if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
+                document.getElementById('sparring-phase-badge').textContent = '🔥 CLEAN COUNTER!';
+                document.getElementById('sparring-opp-action').textContent = '💥 كاونتر مباشر أصاب الخصم بقوة!';
+                document.getElementById('sparring-player-cue').textContent = 'أحسنت! (+25 نقطة)';
+                if (sparStats.oppHp <= 0) {
+                    stopSparringSession();
+                    document.getElementById('sparring-opp-action').textContent = '🏆 فوز بالضربة القاضية (KO)!';
+                    if (typeof speakText === 'function') speakText('Knockout! You win!');
+                }
+                return;
+            }
+
+            if (sparTurn.phase === 'GUARD_MOVE') {
+                if (Math.random() < skill.evadeChance) {
+                    const evadeMoves = [
+                        { anim: 'SLIP_L', txt: '🛡️ الخصم تفادى لكمتك بانزلاق جانبي (Slip)!' },
+                        { anim: 'SLIP_R', txt: '🛡️ الخصم تفادى لكمتك لليمين (Slip Right)!' },
+                        { anim: 'STEP_BACK', txt: '👣 الخصم تراجع خطوة للخلف وتفادى الضربة!' }
+                    ];
+                    const ev = evadeMoves[Math.floor(Math.random() * evadeMoves.length)];
+                    sparTurn.phase = 'OPP_EVADING';
+                    playSparOpponentAnim(ev.anim, skill.speed);
+                    document.getElementById('sparring-phase-badge').textContent = '🛡️ AI EVADED';
+                    document.getElementById('sparring-opp-action').textContent = ev.txt;
+
+                    if (Math.random() < skill.counterChance) {
+                        document.getElementById('sparring-player-cue').textContent = '⚠️ احذر! الخصم يستعد لرد كاونتر عليك!';
+                        setTimeout(() => {
+                            if (isSparringActive && sparTurn.phase === 'OPP_EVADING') triggerOpponentAttack(true);
+                        }, 550);
+                    } else {
+                        document.getElementById('sparring-player-cue').textContent = 'تابع الضغط بكومبو متتالي (1-2)!';
+                        sparTurn.phase = 'GUARD_MOVE';
+                    }
+                } else {
+                    sparStats.score += 15;
+                    sparStats.playerActions++;
+                    sparStats.oppHp = Math.max(0, sparStats.oppHp - 9);
+                    sparTurn.oppOffsetZ = -0.15;
+                    updateSparringHUD();
+                    playSparOpponentAnim('STEP_BACK', 1.1);
+                    if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
+                    document.getElementById('sparring-phase-badge').textContent = '🥊 CLEAN HIT!';
+                    document.getElementById('sparring-opp-action').textContent = '💥 لكمتك أصابت الخصم بنجاح!';
+                    document.getElementById('sparring-player-cue').textContent = 'ممتاز! ارفع حمايتك بعد اللكمة (+15)';
+                    if (sparStats.oppHp <= 0) {
+                        stopSparringSession();
+                        document.getElementById('sparring-opp-action').textContent = '🏆 فوز بالضربة القاضية (KO)!';
+                        if (typeof speakText === 'function') speakText('Knockout! You win!');
+                    }
+                }
+                return;
+            }
+        }
+
+        // 2. رصد تفادي اللاعب لهجوم الخصم
+        if (sparTurn.phase === 'OPP_ATTACK' && !sparTurn.resolved) {
+            const dodgedStraight = (sparTurn.attackType === 'STRAIGHT' && Math.abs(dx) > 0.075);
+            const dodgedHook = (sparTurn.attackType === 'HOOK' && dy > 0.065);
 
             if (dodgedStraight || dodgedHook) {
                 sparTurn.resolved = true;
-                sparTurn.phase = 'COUNTER_WINDOW';
-                sparTurn.expiresAt = performance.now() + 2200;
+                sparTurn.phase = 'COUNTER_OPEN';
+                sparTurn.expiresAt = now + 2100;
+                sparTurn.oppOffsetZ = 0.05;
                 sparStats.score += 10;
                 sparStats.playerActions++;
                 updateSparringHUD();
-                setSparringOpponentPose('OPEN_GUARD');
+                playSparOpponentAnim('IDLE');
                 if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
-                document.getElementById('sparring-phase-badge').textContent = '🥊 COUNTER WINDOW';
-                document.getElementById('sparring-opp-action').textContent = 'الخصم فتح ثغرة دفاعية!';
-                document.getElementById('sparring-player-cue').textContent = '💥 سدد لكمة رد الآن قبل إغلاق الحماية!';
+                document.getElementById('sparring-phase-badge').textContent = '⚡ COUNTER WINDOW';
+                document.getElementById('sparring-opp-action').textContent = '✅ تفادي رائع! الخصم مكشوف الآن!';
+                document.getElementById('sparring-player-cue').textContent = '💥 اضرب الكاونتر الآن قبل إغلاق دفاعه!';
                 if (typeof speakText === 'function') speakText('Counter!');
             }
-        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() <= sparTurn.expiresAt) {
-            const leftHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curLeftWrist, predictedLeftWrist, 0.5, 0.42);
-            const rightHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curRightWrist, predictedRightWrist, 0.5, 0.42);
+        } else if (sparTurn.phase === 'COUNTER_OPEN' && now > sparTurn.expiresAt) {
+            sparTurn.phase = 'GUARD_MOVE';
+            sparTurn.oppOffsetZ = 0;
+            document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK & GUARD';
+            document.getElementById('sparring-player-cue').textContent = 'أغلق الخصم دفاعه.. استعد للجولة التالية';
+        }
 
-            if (leftHit || rightHit) {
-                sparTurn.phase = 'HIT_REACTION';
-                sparStats.score += 20;
-                sparStats.playerActions++;
-                updateSparringHUD();
-                setSparringOpponentPose('HIT_STUN');
-                if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
-                document.getElementById('sparring-phase-badge').textContent = '✅ COUNTER LANDED';
-                document.getElementById('sparring-player-cue').textContent = 'كاونتر ناجح! تراجع الخصم (+20)';
-            }
-        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() > sparTurn.expiresAt) {
-            sparTurn.phase = 'FOOTWORK';
-            setSparringOpponentPose('GUARD');
+        // 3. معاقبة إنزال الحماية بهجمة مباغتة من الخصم
+        if (typeof guardViolationCount !== 'undefined' && guardViolationCount >= 40 && sparTurn.phase === 'GUARD_MOVE' && (now - sparTurn.lastGuardPunishAt > 4000)) {
+            sparTurn.lastGuardPunishAt = now;
+            document.getElementById('sparring-opp-action').textContent = '⚠️ الخصم لاحظ انخفاض يديك ويهاجمك!';
+            triggerOpponentAttack(true);
         }
     }, 100);
 
@@ -3718,21 +3925,26 @@
         if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
         isSparringActive = true;
         buildSparringOpponent3D();
-        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
+        if (typeof updateStageEntityVisibility === 'function') updateStageEntityVisibility();
 
         if (typeof isCamRefActive !== 'undefined' && !isCamRefActive && typeof startCameraReferee === 'function') {
             await startCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
+            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف';
         }
         if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
             sparTurn.baseNoseX = curNoseX;
             sparTurn.baseNoseY = curNoseY;
         }
 
-        document.getElementById('sparring-start-btn').textContent = '⏹ إيقاف الاسبارنج';
+        sparTurn.phase = 'GUARD_MOVE';
+        sparTurn.oppOffsetX = 0;
+        sparTurn.oppOffsetZ = 0;
+        playSparOpponentAnim('IDLE');
+
+        document.getElementById('sparring-start-btn').textContent = '⏹ إيقاف النزال';
         document.getElementById('sparring-start-btn').classList.add('danger');
         if (typeof playBoxingSFX === 'function') playBoxingSFX('BELL');
-        if (typeof speakText === 'function') speakText('Sparring start!');
+        if (typeof speakText === 'function') speakText('Box! Protect yourself at all times.');
 
         clearInterval(sparringTimerInterval);
         sparringTimerInterval = setInterval(() => {
@@ -3742,23 +3954,26 @@
                 updateSparringHUD();
             } else {
                 stopSparringSession();
+                if (typeof speakText === 'function') speakText('Time! End of sparring round.');
             }
         }, 1000);
 
-        clearInterval(sparringLoopTimer);
-        setTimeout(runSparringCycle, 700);
-        sparringLoopTimer = setInterval(runSparringCycle, 2700);
+        clearInterval(sparringAiLoopTimer);
+        setTimeout(runSparringAiTurn, 1200);
+        sparringAiLoopTimer = setInterval(runSparringAiTurn, 2900);
     }
 
     function stopSparringSession() {
         isSparringActive = false;
         clearInterval(sparringTimerInterval);
-        clearInterval(sparringLoopTimer);
+        clearInterval(sparringAiLoopTimer);
         sparringTimerInterval = null;
-        sparringLoopTimer = null;
+        sparringAiLoopTimer = null;
         sparTurn.phase = 'IDLE';
-        setSparringOpponentPose('GUARD');
-        document.getElementById('sparring-start-btn').textContent = '⚔️ ابدأ الاسبارنج';
+        sparTurn.oppOffsetX = 0;
+        sparTurn.oppOffsetZ = 0;
+        playSparOpponentAnim('IDLE');
+        document.getElementById('sparring-start-btn').textContent = '⚔️ ابدأ النزال';
         document.getElementById('sparring-start-btn').classList.remove('danger');
         document.getElementById('sparring-phase-badge').textContent = 'IDLE STANCE';
     }
@@ -3766,9 +3981,10 @@
     function resetSparringSession() {
         stopSparringSession();
         sparringTimeLeft = 180;
-        sparStats = { score: 0, playerActions: 0, oppHits: 0 };
+        sparStats = { score: 0, playerActions: 0, oppHits: 0, playerHp: 100, oppHp: 100 };
         updateSparringHUD();
-        document.getElementById('sparring-player-cue').textContent = 'اضغط ابدأ لمواجهة الخصم عبر الكاميرا';
+        document.getElementById('sparring-opp-action').textContent = '⚔️ LIVE SPARRING AI';
+        document.getElementById('sparring-player-cue').textContent = 'اضغط ابدأ.. الخصم يرى لكماتك ويتفاداها ويرد عليك!';
     }
 </script>
 </body>
