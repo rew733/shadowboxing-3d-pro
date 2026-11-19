@@ -3,329 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Boxing Coach Pro • Optimized Tactical Edition</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
-    // =========================================================================
-    // ⚔️ وحدة الاسبارنج التفاعلي المعزولة (Sparring Mini-Game Module)
-    // =========================================================================
-    let sparringOpponentGroup = null;
-    let sparTorso = null, sparHead = null, sparLArm = null, sparRArm = null;
-    let isSparringActive = false;
-    let sparringTimerInterval = null;
-    let sparringLoopTimer = null;
-    let sparringTimeLeft = 180;
-
-    let sparStats = { score: 0, playerActions: 0, oppHits: 0 };
-    let sparTurn = {
-        phase: 'IDLE',
-        attackType: 'STRAIGHT',
-        expiresAt: 0,
-        resolved: false,
-        baseNoseX: 0.5,
-        baseNoseY: 0.45
-    };
-
-    function buildSparringOpponent3D() {
-        if (!scene || sparringOpponentGroup) return;
-        sparringOpponentGroup = new THREE.Group();
-
-        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
-        const accentMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x78350f, emissiveIntensity: 0.35, roughness: 0.35 });
-        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.1 });
-
-        const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.22, 16), bodyMat);
-        hips.position.y = 0.92;
-        sparringOpponentGroup.add(hips);
-
-        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.05, 16), accentMat);
-        belt.position.y = 1.03;
-        sparringOpponentGroup.add(belt);
-
-        [-0.10, 0.10].forEach((xPos, idx) => {
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.048, 0.84, 12), bodyMat);
-            leg.position.set(xPos, 0.45, idx === 0 ? 0.07 : -0.07);
-            sparringOpponentGroup.add(leg);
-        });
-
-        sparTorso = new THREE.Group();
-        sparTorso.position.y = 1.04;
-
-        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.44, 16), bodyMat);
-        chest.position.y = 0.22;
-        sparTorso.add(chest);
-
-        sparHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), bodyMat);
-        sparHead.position.y = 0.54;
-        sparTorso.add(sparHead);
-
-        sparLArm = new THREE.Group();
-        sparLArm.position.set(0.23, 0.36, 0);
-        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
-        lGlove.position.set(0, -0.22, 0.14);
-        sparLArm.add(lGlove);
-        sparLArm.rotation.set(-0.7, 0.15, -0.2);
-
-        sparRArm = new THREE.Group();
-        sparRArm.position.set(-0.23, 0.36, 0);
-        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
-        rGlove.position.set(0, -0.22, 0.14);
-        sparRArm.add(rGlove);
-        sparRArm.rotation.set(-0.7, -0.15, 0.2);
-
-        sparTorso.add(sparLArm, sparRArm);
-        sparringOpponentGroup.add(sparTorso);
-        sparringOpponentGroup.visible = false;
-        scene.add(sparringOpponentGroup);
-    }
-
-    function setSparringOpponentPose(poseMode) {
-        if (!sparringOpponentGroup || !sparTorso || !sparLArm || !sparRArm) return;
-        sparTorso.rotation.set(0, 0, 0);
-        sparLArm.rotation.set(-0.7, 0.15, -0.2);
-        sparRArm.rotation.set(-0.7, -0.15, 0.2);
-        sparringOpponentGroup.position.z = 0;
-
-        if (poseMode === 'ATTACK_STRAIGHT') {
-            sparTorso.rotation.y = -0.25;
-            sparLArm.rotation.set(-1.45, -0.1, 0);
-            sparringOpponentGroup.position.z = 0.16;
-        } else if (poseMode === 'ATTACK_HOOK') {
-            sparTorso.rotation.y = 0.35;
-            sparRArm.rotation.set(-1.35, 0.85, 0);
-            sparringOpponentGroup.position.z = 0.14;
-        } else if (poseMode === 'OPEN_GUARD') {
-            sparLArm.rotation.set(-0.2, 0.5, -0.6);
-            sparRArm.rotation.set(-0.2, -0.5, 0.6);
-        } else if (poseMode === 'HIT_STUN') {
-            sparTorso.rotation.x = -0.28;
-            sparTorso.rotation.y = 0.3;
-            sparringOpponentGroup.position.z = -0.12;
-        }
-    }
-
-    function switchSparringSection() {
-        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
-        if (typeof currentMainSection !== 'undefined') currentMainSection = 'sparring';
-        if (typeof activeTabName !== 'undefined') activeTabName = 'sparring';
-
-        document.querySelectorAll('.main-section').forEach(el => el.classList.remove('active'));
-        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-        document.getElementById('sec-sparring').classList.add('active');
-        document.getElementById('nav-sparring').classList.add('active');
-
-        const hudOverlay = document.getElementById('stage-hud-overlay');
-        if (hudOverlay) hudOverlay.style.display = 'none';
-        const stageTag = document.getElementById('stage-mode-tag');
-        if (stageTag) stageTag.textContent = '⚔️ INTERACTIVE SPARRING';
-
-        if (typeof modelRoot !== 'undefined' && modelRoot) modelRoot.visible = false;
-        if (typeof stickGroup !== 'undefined' && stickGroup) stickGroup.visible = false;
-        if (typeof mittGroup !== 'undefined' && mittGroup) mittGroup.visible = false;
-        if (typeof coachPadsGroup !== 'undefined' && coachPadsGroup) coachPadsGroup.visible = false;
-        if (typeof heavyBagGroup !== 'undefined' && heavyBagGroup) heavyBagGroup.visible = false;
-
-        buildSparringOpponent3D();
-        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
-        if (typeof camera !== 'undefined' && camera) {
-            camera.position.set(0, 1.35, 2.55);
-            camera.lookAt(0, 1.15, 0);
-        }
-        if (typeof resize3DRenderer === 'function') resize3DRenderer();
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        ['nav-arena', 'nav-drills', 'nav-lab', 'nav-settings'].forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            if (btn) {
-                btn.addEventListener('click', () => {
-                    if (isSparringActive) stopSparringSession();
-                    if (sparringOpponentGroup) sparringOpponentGroup.visible = false;
-                });
-            }
-        });
-    });
-
-    async function toggleSparringCamera() {
-        if (typeof isCamRefActive !== 'undefined' && isCamRefActive) {
-            if (typeof stopCameraReferee === 'function') stopCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '📷 كاميرا الاسبارنج';
-        } else {
-            if (typeof startCameraReferee === 'function') await startCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
-        }
-    }
-
-    function calibrateSparringStance() {
-        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
-            sparTurn.baseNoseX = curNoseX;
-            sparTurn.baseNoseY = curNoseY;
-            if (typeof strikeStartX !== 'undefined') strikeStartX = curNoseX;
-            if (typeof strikeStartY !== 'undefined') strikeStartY = curNoseY;
-            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
-            document.getElementById('sparring-player-cue').textContent = '🎯 تمت معايرة وقفة الاسبارنج';
-        }
-    }
-
-    function updateSparringHUD() {
-        document.getElementById('sparring-score').textContent = sparStats.score;
-        document.getElementById('sparring-player-hits').textContent = sparStats.playerActions;
-        document.getElementById('sparring-opp-hits').textContent = sparStats.oppHits;
-
-        const m = Math.floor(sparringTimeLeft / 60).toString().padStart(2, '0');
-        const s = (sparringTimeLeft % 60).toString().padStart(2, '0');
-        document.getElementById('sparring-timer-display').textContent = `${m}:${s}`;
-    }
-
-    function runSparringCycle() {
-        if (!isSparringActive) return;
-
-        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
-            sparTurn.resolved = true;
-            sparStats.oppHits++;
-            updateSparringHUD();
-            if (typeof playBoxingSFX === 'function') playBoxingSFX('GUARD_WARN');
-            document.getElementById('sparring-phase-badge').textContent = '💥 OPPONENT HIT';
-            document.getElementById('sparring-player-cue').textContent = 'أصابك الخصم! ارفع حمايتك وتفادَ بسرعة';
-        }
-
-        const roll = Math.random();
-        if (roll < 0.30) {
-            sparTurn.phase = 'FOOTWORK';
-            sparTurn.resolved = true;
-            setSparringOpponentPose('GUARD');
-            if (sparringOpponentGroup) sparringOpponentGroup.position.x = (Math.random() - 0.5) * 0.45;
-            document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK';
-            document.getElementById('sparring-opp-action').textContent = 'الخصم يغير زاويته ويراقب حركتك';
-            document.getElementById('sparring-player-cue').textContent = 'حافظ على وضعية الحماية واستعد للهجوم';
-        } else {
-            sparTurn.phase = 'ATTACK';
-            sparTurn.resolved = false;
-            sparTurn.expiresAt = performance.now() + 2400;
-            sparTurn.attackType = Math.random() < 0.55 ? 'STRAIGHT' : 'HOOK';
-            if (sparringOpponentGroup) sparringOpponentGroup.position.x = 0;
-
-            if (sparTurn.attackType === 'STRAIGHT') {
-                setSparringOpponentPose('ATTACK_STRAIGHT');
-                document.getElementById('sparring-phase-badge').textContent = '⚡ STRAIGHT ATTACK';
-                document.getElementById('sparring-opp-action').textContent = 'هجمة مستقيمة من الخصم!';
-                document.getElementById('sparring-player-cue').textContent = '⬅➔ تفادَ جانبياً (Slip) لفتح نافذة الرد';
-                if (typeof speakText === 'function') speakText('Slip!');
-            } else {
-                setSparringOpponentPose('ATTACK_HOOK');
-                document.getElementById('sparring-phase-badge').textContent = '🌀 HOOK ATTACK';
-                document.getElementById('sparring-opp-action').textContent = 'هجمة خطافية من الخصم!';
-                document.getElementById('sparring-player-cue').textContent = '⤵ انحنِ للأسفل (Roll) لتفادي الهوك';
-                if (typeof speakText === 'function') speakText('Roll!');
-            }
-        }
-    }
-
-    setInterval(() => {
-        if (!isSparringActive || typeof hasPoseFrame === 'undefined' || !hasPoseFrame) return;
-
-        const dx = curNoseX - (sparTurn.baseNoseX || strikeStartX || 0.5);
-        const dy = curNoseY - (sparTurn.baseNoseY || strikeStartY || 0.45);
-
-        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
-            const dodgedStraight = (sparTurn.attackType === 'STRAIGHT' && Math.abs(dx) > 0.08);
-            const dodgedHook = (sparTurn.attackType === 'HOOK' && dy > 0.07);
-
-            if (dodgedStraight || dodgedHook) {
-                sparTurn.resolved = true;
-                sparTurn.phase = 'COUNTER_WINDOW';
-                sparTurn.expiresAt = performance.now() + 2200;
-                sparStats.score += 10;
-                sparStats.playerActions++;
-                updateSparringHUD();
-                setSparringOpponentPose('OPEN_GUARD');
-                if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
-                document.getElementById('sparring-phase-badge').textContent = '🥊 COUNTER WINDOW';
-                document.getElementById('sparring-opp-action').textContent = 'الخصم فتح ثغرة دفاعية!';
-                document.getElementById('sparring-player-cue').textContent = '💥 سدد لكمة رد الآن قبل إغلاق الحماية!';
-                if (typeof speakText === 'function') speakText('Counter!');
-            }
-        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() <= sparTurn.expiresAt) {
-            const leftHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curLeftWrist, predictedLeftWrist, 0.5, 0.42);
-            const rightHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curRightWrist, predictedRightWrist, 0.5, 0.42);
-
-            if (leftHit || rightHit) {
-                sparTurn.phase = 'HIT_REACTION';
-                sparStats.score += 20;
-                sparStats.playerActions++;
-                updateSparringHUD();
-                setSparringOpponentPose('HIT_STUN');
-                if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
-                document.getElementById('sparring-phase-badge').textContent = '✅ COUNTER LANDED';
-                document.getElementById('sparring-player-cue').textContent = 'كاونتر ناجح! تراجع الخصم (+20)';
-            }
-        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() > sparTurn.expiresAt) {
-            sparTurn.phase = 'FOOTWORK';
-            setSparringOpponentPose('GUARD');
-        }
-    }, 100);
-
-    function toggleSparringSession() {
-        if (isSparringActive) stopSparringSession();
-        else startSparringSession();
-    }
-
-    async function startSparringSession() {
-        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
-        isSparringActive = true;
-        buildSparringOpponent3D();
-        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
-
-        if (typeof isCamRefActive !== 'undefined' && !isCamRefActive && typeof startCameraReferee === 'function') {
-            await startCameraReferee();
-            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
-        }
-        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
-            sparTurn.baseNoseX = curNoseX;
-            sparTurn.baseNoseY = curNoseY;
-        }
-
-        document.getElementById('sparring-start-btn').textContent = '⏹ إيقاف الاسبارنج';
-        document.getElementById('sparring-start-btn').classList.add('danger');
-        if (typeof playBoxingSFX === 'function') playBoxingSFX('BELL');
-        if (typeof speakText === 'function') speakText('Sparring start!');
-
-        clearInterval(sparringTimerInterval);
-        sparringTimerInterval = setInterval(() => {
-            if (!isSparringActive) return;
-            if (sparringTimeLeft > 0) {
-                sparringTimeLeft--;
-                updateSparringHUD();
-            } else {
-                stopSparringSession();
-            }
-        }, 1000);
-
-        clearInterval(sparringLoopTimer);
-        setTimeout(runSparringCycle, 700);
-        sparringLoopTimer = setInterval(runSparringCycle, 2700);
-    }
-
-    function stopSparringSession() {
-        isSparringActive = false;
-        clearInterval(sparringTimerInterval);
-        clearInterval(sparringLoopTimer);
-        sparringTimerInterval = null;
-        sparringLoopTimer = null;
-        sparTurn.phase = 'IDLE';
-        setSparringOpponentPose('GUARD');
-        document.getElementById('sparring-start-btn').textContent = '⚔️ ابدأ الاسبارنج';
-        document.getElementById('sparring-start-btn').classList.remove('danger');
-        document.getElementById('sparring-phase-badge').textContent = 'IDLE STANCE';
-    }
-
-    function resetSparringSession() {
-        stopSparringSession();
-        sparringTimeLeft = 180;
-        sparStats = { score: 0, playerActions: 0, oppHits: 0 };
-        updateSparringHUD();
-        document.getElementById('sparring-player-cue').textContent = 'اضغط ابدأ لمواجهة الخصم عبر الكاميرا';
-    }
-</script>
+    <title>Boxing Coach Pro • Interactive Sparring Edition</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
@@ -3769,6 +3448,327 @@
             timeLeft = roundDuration;
             updateTimerDisplay();
         }
+    }
+
+    // =========================================================================
+    // ⚔️ وحدة الاسبارنج التفاعلي المعزولة (Sparring Mini-Game Module)
+    // =========================================================================
+    let sparringOpponentGroup = null;
+    let sparTorso = null, sparHead = null, sparLArm = null, sparRArm = null;
+    let isSparringActive = false;
+    let sparringTimerInterval = null;
+    let sparringLoopTimer = null;
+    let sparringTimeLeft = 180;
+
+    let sparStats = { score: 0, playerActions: 0, oppHits: 0 };
+    let sparTurn = {
+        phase: 'IDLE',
+        attackType: 'STRAIGHT',
+        expiresAt: 0,
+        resolved: false,
+        baseNoseX: 0.5,
+        baseNoseY: 0.45
+    };
+
+    function buildSparringOpponent3D() {
+        if (!scene || sparringOpponentGroup) return;
+        sparringOpponentGroup = new THREE.Group();
+
+        const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+        const accentMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x78350f, emissiveIntensity: 0.35, roughness: 0.35 });
+        const gloveMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.1 });
+
+        const hips = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.15, 0.22, 16), bodyMat);
+        hips.position.y = 0.92;
+        sparringOpponentGroup.add(hips);
+
+        const belt = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.165, 0.05, 16), accentMat);
+        belt.position.y = 1.03;
+        sparringOpponentGroup.add(belt);
+
+        [-0.10, 0.10].forEach((xPos, idx) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.062, 0.048, 0.84, 12), bodyMat);
+            leg.position.set(xPos, 0.45, idx === 0 ? 0.07 : -0.07);
+            sparringOpponentGroup.add(leg);
+        });
+
+        sparTorso = new THREE.Group();
+        sparTorso.position.y = 1.04;
+
+        const chest = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.15, 0.44, 16), bodyMat);
+        chest.position.y = 0.22;
+        sparTorso.add(chest);
+
+        sparHead = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 16), bodyMat);
+        sparHead.position.y = 0.54;
+        sparTorso.add(sparHead);
+
+        sparLArm = new THREE.Group();
+        sparLArm.position.set(0.23, 0.36, 0);
+        const lGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
+        lGlove.position.set(0, -0.22, 0.14);
+        sparLArm.add(lGlove);
+        sparLArm.rotation.set(-0.7, 0.15, -0.2);
+
+        sparRArm = new THREE.Group();
+        sparRArm.position.set(-0.23, 0.36, 0);
+        const rGlove = new THREE.Mesh(new THREE.SphereGeometry(0.09, 16, 16), gloveMat);
+        rGlove.position.set(0, -0.22, 0.14);
+        sparRArm.add(rGlove);
+        sparRArm.rotation.set(-0.7, -0.15, 0.2);
+
+        sparTorso.add(sparLArm, sparRArm);
+        sparringOpponentGroup.add(sparTorso);
+        sparringOpponentGroup.visible = false;
+        scene.add(sparringOpponentGroup);
+    }
+
+    function setSparringOpponentPose(poseMode) {
+        if (!sparringOpponentGroup || !sparTorso || !sparLArm || !sparRArm) return;
+        sparTorso.rotation.set(0, 0, 0);
+        sparLArm.rotation.set(-0.7, 0.15, -0.2);
+        sparRArm.rotation.set(-0.7, -0.15, 0.2);
+        sparringOpponentGroup.position.z = 0;
+
+        if (poseMode === 'ATTACK_STRAIGHT') {
+            sparTorso.rotation.y = -0.25;
+            sparLArm.rotation.set(-1.45, -0.1, 0);
+            sparringOpponentGroup.position.z = 0.16;
+        } else if (poseMode === 'ATTACK_HOOK') {
+            sparTorso.rotation.y = 0.35;
+            sparRArm.rotation.set(-1.35, 0.85, 0);
+            sparringOpponentGroup.position.z = 0.14;
+        } else if (poseMode === 'OPEN_GUARD') {
+            sparLArm.rotation.set(-0.2, 0.5, -0.6);
+            sparRArm.rotation.set(-0.2, -0.5, 0.6);
+        } else if (poseMode === 'HIT_STUN') {
+            sparTorso.rotation.x = -0.28;
+            sparTorso.rotation.y = 0.3;
+            sparringOpponentGroup.position.z = -0.12;
+        }
+    }
+
+    function switchSparringSection() {
+        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
+        if (typeof currentMainSection !== 'undefined') currentMainSection = 'sparring';
+        if (typeof activeTabName !== 'undefined') activeTabName = 'sparring';
+
+        document.querySelectorAll('.main-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('sec-sparring').classList.add('active');
+        document.getElementById('nav-sparring').classList.add('active');
+
+        const hudOverlay = document.getElementById('stage-hud-overlay');
+        if (hudOverlay) hudOverlay.style.display = 'none';
+        const stageTag = document.getElementById('stage-mode-tag');
+        if (stageTag) stageTag.textContent = '⚔️ INTERACTIVE SPARRING';
+
+        if (typeof modelRoot !== 'undefined' && modelRoot) modelRoot.visible = false;
+        if (typeof stickGroup !== 'undefined' && stickGroup) stickGroup.visible = false;
+        if (typeof mittGroup !== 'undefined' && mittGroup) mittGroup.visible = false;
+        if (typeof coachPadsGroup !== 'undefined' && coachPadsGroup) coachPadsGroup.visible = false;
+        if (typeof heavyBagGroup !== 'undefined' && heavyBagGroup) heavyBagGroup.visible = false;
+
+        buildSparringOpponent3D();
+        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
+        if (typeof camera !== 'undefined' && camera) {
+            camera.position.set(0, 1.35, 2.55);
+            camera.lookAt(0, 1.15, 0);
+        }
+        if (typeof resize3DRenderer === 'function') resize3DRenderer();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ['nav-arena', 'nav-drills', 'nav-lab', 'nav-settings'].forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    if (isSparringActive) stopSparringSession();
+                    if (sparringOpponentGroup) sparringOpponentGroup.visible = false;
+                });
+            }
+        });
+    });
+
+    async function toggleSparringCamera() {
+        if (typeof isCamRefActive !== 'undefined' && isCamRefActive) {
+            if (typeof stopCameraReferee === 'function') stopCameraReferee();
+            document.getElementById('sparring-cam-btn').textContent = '📷 كاميرا الاسبارنج';
+        } else {
+            if (typeof startCameraReferee === 'function') await startCameraReferee();
+            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
+        }
+    }
+
+    function calibrateSparringStance() {
+        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
+            sparTurn.baseNoseX = curNoseX;
+            sparTurn.baseNoseY = curNoseY;
+            if (typeof strikeStartX !== 'undefined') strikeStartX = curNoseX;
+            if (typeof strikeStartY !== 'undefined') strikeStartY = curNoseY;
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
+            document.getElementById('sparring-player-cue').textContent = '🎯 تمت معايرة وقفة الاسبارنج';
+        }
+    }
+
+    function updateSparringHUD() {
+        document.getElementById('sparring-score').textContent = sparStats.score;
+        document.getElementById('sparring-player-hits').textContent = sparStats.playerActions;
+        document.getElementById('sparring-opp-hits').textContent = sparStats.oppHits;
+
+        const m = Math.floor(sparringTimeLeft / 60).toString().padStart(2, '0');
+        const s = (sparringTimeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('sparring-timer-display').textContent = `${m}:${s}`;
+    }
+
+    function runSparringCycle() {
+        if (!isSparringActive) return;
+
+        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
+            sparTurn.resolved = true;
+            sparStats.oppHits++;
+            updateSparringHUD();
+            if (typeof playBoxingSFX === 'function') playBoxingSFX('GUARD_WARN');
+            document.getElementById('sparring-phase-badge').textContent = '💥 OPPONENT HIT';
+            document.getElementById('sparring-player-cue').textContent = 'أصابك الخصم! ارفع حمايتك وتفادَ بسرعة';
+        }
+
+        const roll = Math.random();
+        if (roll < 0.30) {
+            sparTurn.phase = 'FOOTWORK';
+            sparTurn.resolved = true;
+            setSparringOpponentPose('GUARD');
+            if (sparringOpponentGroup) sparringOpponentGroup.position.x = (Math.random() - 0.5) * 0.45;
+            document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK';
+            document.getElementById('sparring-opp-action').textContent = 'الخصم يغير زاويته ويراقب حركتك';
+            document.getElementById('sparring-player-cue').textContent = 'حافظ على وضعية الحماية واستعد للهجوم';
+        } else {
+            sparTurn.phase = 'ATTACK';
+            sparTurn.resolved = false;
+            sparTurn.expiresAt = performance.now() + 2400;
+            sparTurn.attackType = Math.random() < 0.55 ? 'STRAIGHT' : 'HOOK';
+            if (sparringOpponentGroup) sparringOpponentGroup.position.x = 0;
+
+            if (sparTurn.attackType === 'STRAIGHT') {
+                setSparringOpponentPose('ATTACK_STRAIGHT');
+                document.getElementById('sparring-phase-badge').textContent = '⚡ STRAIGHT ATTACK';
+                document.getElementById('sparring-opp-action').textContent = 'هجمة مستقيمة من الخصم!';
+                document.getElementById('sparring-player-cue').textContent = '⬅➔ تفادَ جانبياً (Slip) لفتح نافذة الرد';
+                if (typeof speakText === 'function') speakText('Slip!');
+            } else {
+                setSparringOpponentPose('ATTACK_HOOK');
+                document.getElementById('sparring-phase-badge').textContent = '🌀 HOOK ATTACK';
+                document.getElementById('sparring-opp-action').textContent = 'هجمة خطافية من الخصم!';
+                document.getElementById('sparring-player-cue').textContent = '⤵ انحنِ للأسفل (Roll) لتفادي الهوك';
+                if (typeof speakText === 'function') speakText('Roll!');
+            }
+        }
+    }
+
+    setInterval(() => {
+        if (!isSparringActive || typeof hasPoseFrame === 'undefined' || !hasPoseFrame) return;
+
+        const dx = curNoseX - (sparTurn.baseNoseX || strikeStartX || 0.5);
+        const dy = curNoseY - (sparTurn.baseNoseY || strikeStartY || 0.45);
+
+        if (sparTurn.phase === 'ATTACK' && !sparTurn.resolved) {
+            const dodgedStraight = (sparTurn.attackType === 'STRAIGHT' && Math.abs(dx) > 0.08);
+            const dodgedHook = (sparTurn.attackType === 'HOOK' && dy > 0.07);
+
+            if (dodgedStraight || dodgedHook) {
+                sparTurn.resolved = true;
+                sparTurn.phase = 'COUNTER_WINDOW';
+                sparTurn.expiresAt = performance.now() + 2200;
+                sparStats.score += 10;
+                sparStats.playerActions++;
+                updateSparringHUD();
+                setSparringOpponentPose('OPEN_GUARD');
+                if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
+                document.getElementById('sparring-phase-badge').textContent = '🥊 COUNTER WINDOW';
+                document.getElementById('sparring-opp-action').textContent = 'الخصم فتح ثغرة دفاعية!';
+                document.getElementById('sparring-player-cue').textContent = '💥 سدد لكمة رد الآن قبل إغلاق الحماية!';
+                if (typeof speakText === 'function') speakText('Counter!');
+            }
+        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() <= sparTurn.expiresAt) {
+            const leftHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curLeftWrist, predictedLeftWrist, 0.5, 0.42);
+            const rightHit = typeof isRealPunchStrike === 'function' && isRealPunchStrike(curRightWrist, predictedRightWrist, 0.5, 0.42);
+
+            if (leftHit || rightHit) {
+                sparTurn.phase = 'HIT_REACTION';
+                sparStats.score += 20;
+                sparStats.playerActions++;
+                updateSparringHUD();
+                setSparringOpponentPose('HIT_STUN');
+                if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
+                document.getElementById('sparring-phase-badge').textContent = '✅ COUNTER LANDED';
+                document.getElementById('sparring-player-cue').textContent = 'كاونتر ناجح! تراجع الخصم (+20)';
+            }
+        } else if (sparTurn.phase === 'COUNTER_WINDOW' && performance.now() > sparTurn.expiresAt) {
+            sparTurn.phase = 'FOOTWORK';
+            setSparringOpponentPose('GUARD');
+        }
+    }, 100);
+
+    function toggleSparringSession() {
+        if (isSparringActive) stopSparringSession();
+        else startSparringSession();
+    }
+
+    async function startSparringSession() {
+        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
+        isSparringActive = true;
+        buildSparringOpponent3D();
+        if (sparringOpponentGroup) sparringOpponentGroup.visible = true;
+
+        if (typeof isCamRefActive !== 'undefined' && !isCamRefActive && typeof startCameraReferee === 'function') {
+            await startCameraReferee();
+            document.getElementById('sparring-cam-btn').textContent = '⏹ إيقاف الكاميرا';
+        }
+        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
+            sparTurn.baseNoseX = curNoseX;
+            sparTurn.baseNoseY = curNoseY;
+        }
+
+        document.getElementById('sparring-start-btn').textContent = '⏹ إيقاف الاسبارنج';
+        document.getElementById('sparring-start-btn').classList.add('danger');
+        if (typeof playBoxingSFX === 'function') playBoxingSFX('BELL');
+        if (typeof speakText === 'function') speakText('Sparring start!');
+
+        clearInterval(sparringTimerInterval);
+        sparringTimerInterval = setInterval(() => {
+            if (!isSparringActive) return;
+            if (sparringTimeLeft > 0) {
+                sparringTimeLeft--;
+                updateSparringHUD();
+            } else {
+                stopSparringSession();
+            }
+        }, 1000);
+
+        clearInterval(sparringLoopTimer);
+        setTimeout(runSparringCycle, 700);
+        sparringLoopTimer = setInterval(runSparringCycle, 2700);
+    }
+
+    function stopSparringSession() {
+        isSparringActive = false;
+        clearInterval(sparringTimerInterval);
+        clearInterval(sparringLoopTimer);
+        sparringTimerInterval = null;
+        sparringLoopTimer = null;
+        sparTurn.phase = 'IDLE';
+        setSparringOpponentPose('GUARD');
+        document.getElementById('sparring-start-btn').textContent = '⚔️ ابدأ الاسبارنج';
+        document.getElementById('sparring-start-btn').classList.remove('danger');
+        document.getElementById('sparring-phase-badge').textContent = 'IDLE STANCE';
+    }
+
+    function resetSparringSession() {
+        stopSparringSession();
+        sparringTimeLeft = 180;
+        sparStats = { score: 0, playerActions: 0, oppHits: 0 };
+        updateSparringHUD();
+        document.getElementById('sparring-player-cue').textContent = 'اضغط ابدأ لمواجهة الخصم عبر الكاميرا';
     }
 </script>
 </body>
