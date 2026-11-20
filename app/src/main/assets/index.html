@@ -890,14 +890,12 @@
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 5px; margin-bottom: 8px;">
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1.1fr; gap: 5px; margin-bottom: 8px;">
                 <button class="btn secondary small" id="sparring-cam-btn" style="border-color: var(--neon); color: var(--neon);" onclick="toggleSparringCamera()">📷 الكاميرا</button>
                 <button class="btn secondary small" onclick="calibrateSparringStance()">🎯 معايرة</button>
-                <select id="sparring-ai-level" style="padding: 4px 6px; font-size: 0.72rem;">
-                    <option value="rookie">مبتدئ</option>
-                    <option value="pro" selected>محترف</option>
-                    <option value="elite">بطل عالم</option>
-                </select>
+                <div style="background: var(--card); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 0.72rem; font-weight: 800; color: var(--neon);">
+                    ⚡ السرعة: <span id="sparring-speed-badge" style="margin-right:3px;">0.75x</span>
+                </div>
             </div>
 
             <div class="stick-box" id="sparring-cue-box" style="border-color: var(--accent); background: rgba(245, 158, 11, 0.07);">
@@ -2539,24 +2537,59 @@
     }
 
     let stickGroup = null;
-    let stickState = { active: false, evaluated: false, type: 'IDLE', progress: 0, duration: 1.0 };
+    let leftStickMesh = null;
+    let rightStickMesh = null;
+    let stickState = { active: false, evaluated: false, type: 'IDLE', hand: 'LEFT', progress: 0, duration: 1.0 };
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT', name: 'JAB THRUST', dodge: '➔ SLIP RIGHT', say: 'Slip Right', x: -0.22, rotZ: 0 },
-        { type: 'THRUST_RIGHT', name: 'CROSS THRUST', dodge: '⬅ SLIP LEFT', say: 'Slip Left', x: 0.22, rotZ: 0 },
-        { type: 'SWEEP_FROM_LEFT', name: 'HOOK SWEEP L', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', x: 0, rotZ: 0.45 },
-        { type: 'SWEEP_FROM_RIGHT', name: 'HOOK SWEEP R', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', x: 0, rotZ: -0.45 }
+        { type: 'THRUST_LEFT', hand: 'LEFT', name: 'JAB STICK (LEFT)', dodge: '➔ SLIP RIGHT', say: 'Slip Right', rotZ: 0.12 },
+        { type: 'THRUST_RIGHT', hand: 'RIGHT', name: 'CROSS STICK (RIGHT)', dodge: '⬅ SLIP LEFT', say: 'Slip Left', rotZ: -0.12 },
+        { type: 'SWEEP_FROM_LEFT', hand: 'LEFT', name: 'LEFT HOOK STICK', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', rotZ: 0.45 },
+        { type: 'SWEEP_FROM_RIGHT', hand: 'RIGHT', name: 'RIGHT HOOK STICK', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', rotZ: -0.45 }
     ];
     let isStickRunning = false; let stickLoopTimer = null; let stickBag = [];
 
-    function build3DSparringStick() {
-        stickGroup = new THREE.Group();
-        const foam = new THREE.Mesh(new THREE.CylinderGeometry(0.048, 0.055, 1.35, 24), new THREE.MeshStandardMaterial({ color: 0xf43f5e, emissive: 0x9f1239, emissiveIntensity: 0.4 }));
+    function createSingleFoamStick(hexColor, emissiveHex) {
+        const g = new THREE.Group();
+        const foam = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.044, 0.052, 1.32, 24),
+            new THREE.MeshStandardMaterial({ color: hexColor, emissive: emissiveHex, emissiveIntensity: 0.42, roughness: 0.35 })
+        );
         foam.rotation.x = Math.PI / 2;
         foam.position.z = 0.35;
-        stickGroup.add(foam);
-        stickGroup.position.set(0, 1.32, 0.1);
+        g.add(foam);
+
+        const tip = new THREE.Mesh(
+            new THREE.SphereGeometry(0.046, 16, 16),
+            new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0x38bdf8, emissiveIntensity: 0.3 })
+        );
+        tip.position.z = 1.01;
+        g.add(tip);
+        return g;
+    }
+
+    function build3DSparringStick() {
+        stickGroup = new THREE.Group();
+        // عصا اليسار (تمثل اليد الأمامية / Jab & Lead Hook)
+        leftStickMesh = createSingleFoamStick(0xf43f5e, 0x9f1239);
+        leftStickMesh.position.set(0.28, 1.34, 0.05);
+        leftStickMesh.rotation.set(0.12, -0.12, 0.12);
+
+        // عصا اليمين (تمثل اليد الخلفية / Cross & Rear Hook)
+        rightStickMesh = createSingleFoamStick(0x00BFFF, 0x0369a1);
+        rightStickMesh.position.set(-0.28, 1.34, 0.05);
+        rightStickMesh.rotation.set(0.12, 0.12, -0.12);
+
+        stickGroup.add(leftStickMesh, rightStickMesh);
         stickGroup.visible = false;
         scene.add(stickGroup);
+    }
+
+    function resetDualSticksToGuard() {
+        if (!leftStickMesh || !rightStickMesh) return;
+        leftStickMesh.position.set(0.28, 1.34, 0.05);
+        leftStickMesh.rotation.set(0.12, -0.12, 0.12);
+        rightStickMesh.position.set(-0.28, 1.34, 0.05);
+        rightStickMesh.rotation.set(0.12, 0.12, -0.12);
     }
 
     function updateStickAnimation(delta) {
@@ -2569,22 +2602,45 @@
                 updateRefereeScoreboard();
             }
             stickState.active = false;
-            stickGroup.position.set(0, 1.32, 0.05);
-            stickGroup.rotation.set(0, 0, 0);
+            resetDualSticksToGuard();
             return;
         }
         const c = Math.sin(stickState.progress * Math.PI);
-        stickGroup.position.z = 0.05 + 1.35 * c;
-        if (stickState.type === 'SWEEP_FROM_LEFT') stickGroup.rotation.y = -0.8 + 1.6 * stickState.progress;
-        else if (stickState.type === 'SWEEP_FROM_RIGHT') stickGroup.rotation.y = 0.8 - 1.6 * stickState.progress;
-        else stickGroup.rotation.y = 0;
+        const activeStick = (stickState.hand === 'LEFT') ? leftStickMesh : rightStickMesh;
+        const idleStick = (stickState.hand === 'LEFT') ? rightStickMesh : leftStickMesh;
+        if (!activeStick || !idleStick) return;
+
+        // إبقاء العصا الأخرى في وضع الحماية مع حركة تنفس خفيفة
+        idleStick.position.z = 0.05 - 0.06 * c;
+
+        // اندفاع العصا المهاجمة نحو رأس اللاعب
+        activeStick.position.z = 0.05 + 1.38 * c;
+        if (stickState.type === 'SWEEP_FROM_LEFT') {
+            activeStick.position.x = 0.36 - 0.55 * c;
+            activeStick.rotation.y = -0.85 + 1.7 * stickState.progress;
+        } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
+            activeStick.position.x = -0.36 + 0.55 * c;
+            activeStick.rotation.y = 0.85 - 1.7 * stickState.progress;
+        } else if (stickState.type === 'THRUST_LEFT') {
+            activeStick.position.x = 0.24 - 0.08 * c;
+            activeStick.rotation.y = -0.05;
+        } else {
+            activeStick.position.x = -0.24 + 0.08 * c;
+            activeStick.rotation.y = 0.05;
+        }
     }
 
     function triggerStickStrike() {
         const activeInMode = (activeTabName === 'stick' && isStickRunning) || (activeTabName === 'counter' && isCounterRunning);
         if (!activeInMode || isResting || stickState.active) return;
 
-        if (stickBag.length === 0) stickBag = [...STICK_PATTERNS];
+        if (stickBag.length === 0) {
+            stickBag = [...STICK_PATTERNS];
+            for (let i = stickBag.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [stickBag[i], stickBag[j]] = [stickBag[j], stickBag[i]];
+            }
+        }
         const pat = stickBag.shift();
         const speedEl = document.getElementById(activeTabName === 'counter' ? 'counter-speed' : 'stick-speed');
         let speedMult = speedEl ? parseFloat(speedEl.value) : 1.0;
@@ -2593,16 +2649,16 @@
             speedMult *= 1.15;
         }
 
+        resetDualSticksToGuard();
         stickState.type = pat.type;
+        stickState.hand = pat.hand;
         stickState.progress = 0;
         stickState.evaluated = false;
         stickState.duration = 1.05 / speedMult;
         stickState.active = true;
 
-        if (stickGroup) {
-            stickGroup.position.x = pat.x;
-            stickGroup.rotation.z = pat.rotZ;
-        }
+        const targetStick = (pat.hand === 'LEFT') ? leftStickMesh : rightStickMesh;
+        if (targetStick) targetStick.rotation.z = pat.rotZ;
 
         document.getElementById('live-move-badge').textContent = pat.name;
         syncComboText(pat.dodge);
@@ -3213,6 +3269,8 @@
     function changeVoiceRate(val) {
         voiceRate = parseFloat(val);
         document.getElementById('voice-rate-val').textContent = `${voiceRate.toFixed(2)}x`;
+        const sparBadge = document.getElementById('sparring-speed-badge');
+        if (sparBadge) sparBadge.textContent = `${voiceRate.toFixed(2)}x`;
         if (window.AndroidTTS && window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
     }
     function changeInterval(val) {
@@ -3739,30 +3797,30 @@
         document.getElementById('sparring-timer-display').textContent = `${m}:${s}`;
     }
 
-    function getSparringAiSkill() {
-        const lvl = document.getElementById('sparring-ai-level') ? document.getElementById('sparring-ai-level').value : 'pro';
-        if (lvl === 'rookie') return { evadeChance: 0.30, counterChance: 0.35, speed: 0.95 };
-        if (lvl === 'elite') return { evadeChance: 0.68, counterChance: 0.80, speed: 1.35 };
-        return { evadeChance: 0.50, counterChance: 0.60, speed: 1.15 };
+    function getSparringSpeedFactor() {
+        // ربط سرعة الاسبارنج مباشرة بسرعة المدرب والنطق من تبويب الضبط
+        const rate = (typeof voiceRate === 'number' && voiceRate > 0) ? voiceRate : 0.75;
+        return Math.max(0.35, rate / 0.75);
     }
 
     function triggerOpponentAttack(isCounter = false) {
         if (!isSparringActive) return;
-        const skill = getSparringAiSkill();
+        const spd = getSparringSpeedFactor();
         const attacks = [
-            { type: 'STRAIGHT', anim: 'JAB', name: isCounter ? '⚡ كاونتر جاب من الخصم!' : '👊 جاب مستقيم من الخصم!', cue: '⬅➔ تفادَ جانبياً (Slip) فوراً!', say: 'Slip!' },
-            { type: 'STRAIGHT', anim: 'CROSS', name: isCounter ? '⚡ كاونتر كروس قوي من الخصم!' : '💥 كروس يميني من الخصم!', cue: '⬅➔ تفادَ جانبياً (Slip) الآن!', say: 'Slip!' },
-            { type: 'HOOK', anim: 'L_HOOK', name: isCounter ? '⚡ كاونتر هوك خاطف!' : '🌀 هوك يساري دائري من الخصم!', cue: '⤵ انحنِ للأسفل (Roll) لتفادي الهوك!', say: 'Roll!' }
+            { type: 'STRAIGHT', anim: 'JAB', name: isCounter ? '⚡ كاونتر جاب خاطف!' : '👊 جاب مستقيم سريع!', cue: '⬅➔ تفادَ جانبياً (Slip) فوراً!', say: 'Slip!' },
+            { type: 'STRAIGHT', anim: 'CROSS', name: isCounter ? '⚡ كاونتر كروس يميني!' : '💥 كروس يميني قوي!', cue: '⬅➔ تفادَ جانبياً (Slip) الآن!', say: 'Slip!' },
+            { type: 'HOOK', anim: 'L_HOOK', name: isCounter ? '⚡ كاونتر هوك دائري!' : '🌀 هوك يساري دائري!', cue: '⤵ انحنِ للأسفل (Roll) لتفادي الهوك!', say: 'Roll!' },
+            { type: 'HOOK', anim: 'R_HOOK', name: isCounter ? '⚡ كاونتر هوك يميني!' : '🌀 هوك يميني خاطف!', cue: '⤵ انحنِ للأسفل (Roll) الآن!', say: 'Roll!' }
         ];
         const atk = attacks[Math.floor(Math.random() * attacks.length)];
         sparTurn.phase = 'OPP_ATTACK';
         sparTurn.resolved = false;
         sparTurn.attackType = atk.type;
-        sparTurn.expiresAt = performance.now() + Math.round(2200 / skill.speed);
+        sparTurn.expiresAt = performance.now() + Math.round(2300 / spd);
         sparTurn.oppOffsetX = 0;
-        sparTurn.oppOffsetZ = 0.22;
+        sparTurn.oppOffsetZ = 0.24;
 
-        playSparOpponentAnim(atk.anim, skill.speed);
+        playSparOpponentAnim(atk.anim, Math.max(0.45, spd * 1.1));
         document.getElementById('sparring-phase-badge').textContent = isCounter ? '⚡ AI COUNTER' : '👊 OPPONENT ATTACK';
         document.getElementById('sparring-opp-action').textContent = atk.name;
         document.getElementById('sparring-player-cue').textContent = atk.cue;
@@ -3771,6 +3829,7 @@
 
     function runSparringAiTurn() {
         if (!isSparringActive) return;
+        const spd = getSparringSpeedFactor();
 
         if (sparTurn.phase === 'OPP_ATTACK' && !sparTurn.resolved) {
             sparTurn.resolved = true;
@@ -3788,15 +3847,15 @@
             }
         }
 
-        if (Math.random() < 0.35) {
+        if (Math.random() < 0.38) {
             sparTurn.phase = 'GUARD_MOVE';
             sparTurn.resolved = true;
             sparTurn.oppOffsetX = (Math.random() - 0.5) * 0.55;
             sparTurn.oppOffsetZ = (Math.random() - 0.5) * 0.20;
-            playSparOpponentAnim('IDLE');
+            playSparOpponentAnim('IDLE', spd);
             document.getElementById('sparring-phase-badge').textContent = '👣 FOOTWORK & GUARD';
-            document.getElementById('sparring-opp-action').textContent = 'الخصم يتحرك في الحلبة.. بادر بالهجوم!';
-            document.getElementById('sparring-player-cue').textContent = 'سدد لكمة الآن لاختبار دفاع الخصم!';
+            document.getElementById('sparring-opp-action').textContent = 'الخصم يتحرك ويراقب.. هاجم بلكماتك!';
+            document.getElementById('sparring-player-cue').textContent = 'سدد لكمة الآن (الخصم سيتفادى أو يصد ويرد عليك)';
         } else {
             triggerOpponentAttack(false);
         }
@@ -3806,29 +3865,31 @@
         if (!isSparringActive || typeof hasPoseFrame === 'undefined' || !hasPoseFrame) return;
 
         const now = performance.now();
+        const spd = getSparringSpeedFactor();
         const dx = curNoseX - (sparTurn.baseNoseX || strikeStartX || 0.5);
         const dy = curNoseY - (sparTurn.baseNoseY || strikeStartY || 0.45);
 
         // 1. رصد هجوم اللاعب المباشر عبر الكاميرا
-        const playerThrewLeft = curLeftWrist && curLeftWrist.vis > 0.55 && curLeftWrist.speed > 0.022 && curLeftWrist.ext > 0.16;
-        const playerThrewRight = curRightWrist && curRightWrist.vis > 0.55 && curRightWrist.speed > 0.022 && curRightWrist.ext > 0.16;
-        const playerAttacked = (playerThrewLeft || playerThrewRight) && (now - sparTurn.lastPlayerPunchAt > 750);
+        const playerThrewLeft = curLeftWrist && curLeftWrist.vis > 0.55 && curLeftWrist.speed > 0.020 && curLeftWrist.ext > 0.15;
+        const playerThrewRight = curRightWrist && curRightWrist.vis > 0.55 && curRightWrist.speed > 0.020 && curRightWrist.ext > 0.15;
+        const cooldownMs = Math.round(700 / spd);
+        const playerAttacked = (playerThrewLeft || playerThrewRight) && (now - sparTurn.lastPlayerPunchAt > cooldownMs);
 
         if (playerAttacked) {
             sparTurn.lastPlayerPunchAt = now;
-            const skill = getSparringAiSkill();
 
+            // أ) إذا كان الخصم مكشوفاً بعد تفاديك الناجح (COUNTER_OPEN) -> ضربة كاونتر نظيفة!
             if (sparTurn.phase === 'COUNTER_OPEN' && now <= sparTurn.expiresAt) {
                 sparTurn.phase = 'OPP_STUNNED';
-                sparTurn.oppOffsetZ = -0.22;
+                sparTurn.oppOffsetZ = -0.24;
                 sparStats.score += 25;
                 sparStats.playerActions++;
-                sparStats.oppHp = Math.max(0, sparStats.oppHp - 14);
+                sparStats.oppHp = Math.max(0, sparStats.oppHp - 15);
                 updateSparringHUD();
-                playSparOpponentAnim('STEP_BACK', 1.2);
+                playSparOpponentAnim('STEP_BACK', spd * 1.15);
                 if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
                 document.getElementById('sparring-phase-badge').textContent = '🔥 CLEAN COUNTER!';
-                document.getElementById('sparring-opp-action').textContent = '💥 كاونتر مباشر أصاب الخصم بقوة!';
+                document.getElementById('sparring-opp-action').textContent = '💥 كاونتر مباشر اخترق دفاع الخصم!';
                 document.getElementById('sparring-player-cue').textContent = 'أحسنت! (+25 نقطة)';
                 if (sparStats.oppHp <= 0) {
                     stopSparringSession();
@@ -3838,39 +3899,58 @@
                 return;
             }
 
-            if (sparTurn.phase === 'GUARD_MOVE') {
-                if (Math.random() < skill.evadeChance) {
+            // ب) إذا هاجم اللاعب والخصم في وضع الحماية والمناورة (GUARD_MOVE):
+            // يتفاعل الخصم بواقعية: 40% تفادي (Slip/Step Back) + كاونتر، 35% صد بالقفازات (Block) + كاونتر، 25% إصابة نظيفة!
+            if (sparTurn.phase === 'GUARD_MOVE' || sparTurn.phase === 'OPP_BLOCKING') {
+                const reactionRoll = Math.random();
+
+                if (reactionRoll < 0.40) {
+                    // 1. تفادي (Evade) + هجوم مضاد
                     const evadeMoves = [
-                        { anim: 'SLIP_L', txt: '🛡️ الخصم تفادى لكمتك بانزلاق جانبي (Slip)!' },
-                        { anim: 'SLIP_R', txt: '🛡️ الخصم تفادى لكمتك لليمين (Slip Right)!' },
-                        { anim: 'STEP_BACK', txt: '👣 الخصم تراجع خطوة للخلف وتفادى الضربة!' }
+                        { anim: 'SLIP_L', txt: '🛡️ الخصم تفادى لكمتك بانزلاق لليسار (Slip Left)!' },
+                        { anim: 'SLIP_R', txt: '🛡️ الخصم تفادى لكمتك بانزلاق لليمين (Slip Right)!' },
+                        { anim: 'STEP_BACK', txt: '👣 الخصم تراجع خطوة للخلف وتفادى ضربتك!' }
                     ];
                     const ev = evadeMoves[Math.floor(Math.random() * evadeMoves.length)];
                     sparTurn.phase = 'OPP_EVADING';
-                    playSparOpponentAnim(ev.anim, skill.speed);
+                    playSparOpponentAnim(ev.anim, spd * 1.15);
                     document.getElementById('sparring-phase-badge').textContent = '🛡️ AI EVADED';
                     document.getElementById('sparring-opp-action').textContent = ev.txt;
+                    document.getElementById('sparring-player-cue').textContent = '⚠️ احذر! الخصم تفادى ويرد بهجوم مضاد!';
 
-                    if (Math.random() < skill.counterChance) {
-                        document.getElementById('sparring-player-cue').textContent = '⚠️ احذر! الخصم يستعد لرد كاونتر عليك!';
-                        setTimeout(() => {
-                            if (isSparringActive && sparTurn.phase === 'OPP_EVADING') triggerOpponentAttack(true);
-                        }, 550);
-                    } else {
-                        document.getElementById('sparring-player-cue').textContent = 'تابع الضغط بكومبو متتالي (1-2)!';
-                        sparTurn.phase = 'GUARD_MOVE';
-                    }
+                    setTimeout(() => {
+                        if (isSparringActive && sparTurn.phase === 'OPP_EVADING') triggerOpponentAttack(true);
+                    }, Math.round(520 / spd));
+
+                } else if (reactionRoll < 0.75) {
+                    // 2. صد بالقفازات (High Guard Block) + رد سريع
+                    sparTurn.phase = 'OPP_BLOCKING';
+                    sparTurn.oppOffsetZ = -0.08;
+                    sparStats.score += 5;
+                    sparStats.oppHp = Math.max(0, sparStats.oppHp - 4);
+                    updateSparringHUD();
+                    playSparOpponentAnim('IDLE', spd);
+                    if (typeof playBoxingSFX === 'function') playBoxingSFX('BAG_THUD');
+                    document.getElementById('sparring-phase-badge').textContent = '🧤 AI BLOCKED';
+                    document.getElementById('sparring-opp-action').textContent = '🧤 الخصم صدّ لكمتك بقفازيه ويستعد للرد!';
+                    document.getElementById('sparring-player-cue').textContent = '⚠️ ارفع حمايتك فوراً قبل أن يرد عليك!';
+
+                    setTimeout(() => {
+                        if (isSparringActive && sparTurn.phase === 'OPP_BLOCKING') triggerOpponentAttack(true);
+                    }, Math.round(620 / spd));
+
                 } else {
+                    // 3. إصابة نظيفة اخترقت دفاع الخصم!
                     sparStats.score += 15;
                     sparStats.playerActions++;
-                    sparStats.oppHp = Math.max(0, sparStats.oppHp - 9);
-                    sparTurn.oppOffsetZ = -0.15;
+                    sparStats.oppHp = Math.max(0, sparStats.oppHp - 10);
+                    sparTurn.oppOffsetZ = -0.18;
                     updateSparringHUD();
-                    playSparOpponentAnim('STEP_BACK', 1.1);
+                    playSparOpponentAnim('STEP_BACK', spd * 1.1);
                     if (typeof playBoxingSFX === 'function') playBoxingSFX('PAD_HIT');
                     document.getElementById('sparring-phase-badge').textContent = '🥊 CLEAN HIT!';
-                    document.getElementById('sparring-opp-action').textContent = '💥 لكمتك أصابت الخصم بنجاح!';
-                    document.getElementById('sparring-player-cue').textContent = 'ممتاز! ارفع حمايتك بعد اللكمة (+15)';
+                    document.getElementById('sparring-opp-action').textContent = '💥 لكمتك أصابت الخصم مباشرة!';
+                    document.getElementById('sparring-player-cue').textContent = 'ممتاز! تابع الهجوم أو ارجع للحماية (+15)';
                     if (sparStats.oppHp <= 0) {
                         stopSparringSession();
                         document.getElementById('sparring-opp-action').textContent = '🏆 فوز بالضربة القاضية (KO)!';
@@ -3881,7 +3961,7 @@
             }
         }
 
-        // 2. رصد تفادي اللاعب لهجوم الخصم
+        // 2. رصد تفادي اللاعب لهجوم الخصم (Slip / Roll)
         if (sparTurn.phase === 'OPP_ATTACK' && !sparTurn.resolved) {
             const dodgedStraight = (sparTurn.attackType === 'STRAIGHT' && Math.abs(dx) > 0.075);
             const dodgedHook = (sparTurn.attackType === 'HOOK' && dy > 0.065);
@@ -3889,15 +3969,15 @@
             if (dodgedStraight || dodgedHook) {
                 sparTurn.resolved = true;
                 sparTurn.phase = 'COUNTER_OPEN';
-                sparTurn.expiresAt = now + 2100;
+                sparTurn.expiresAt = now + Math.round(2100 / spd);
                 sparTurn.oppOffsetZ = 0.05;
                 sparStats.score += 10;
                 sparStats.playerActions++;
                 updateSparringHUD();
-                playSparOpponentAnim('IDLE');
+                playSparOpponentAnim('IDLE', spd);
                 if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
                 document.getElementById('sparring-phase-badge').textContent = '⚡ COUNTER WINDOW';
-                document.getElementById('sparring-opp-action').textContent = '✅ تفادي رائع! الخصم مكشوف الآن!';
+                document.getElementById('sparring-opp-action').textContent = '✅ تفادي رائع! دفاع الخصم مفتوح الآن!';
                 document.getElementById('sparring-player-cue').textContent = '💥 اضرب الكاونتر الآن قبل إغلاق دفاعه!';
                 if (typeof speakText === 'function') speakText('Counter!');
             }
@@ -3909,7 +3989,7 @@
         }
 
         // 3. معاقبة إنزال الحماية بهجمة مباغتة من الخصم
-        if (typeof guardViolationCount !== 'undefined' && guardViolationCount >= 40 && sparTurn.phase === 'GUARD_MOVE' && (now - sparTurn.lastGuardPunishAt > 4000)) {
+        if (typeof guardViolationCount !== 'undefined' && guardViolationCount >= 40 && sparTurn.phase === 'GUARD_MOVE' && (now - sparTurn.lastGuardPunishAt > Math.round(3800 / spd))) {
             sparTurn.lastGuardPunishAt = now;
             document.getElementById('sparring-opp-action').textContent = '⚠️ الخصم لاحظ انخفاض يديك ويهاجمك!';
             triggerOpponentAttack(true);
@@ -3958,9 +4038,12 @@
             }
         }, 1000);
 
+        const spd = getSparringSpeedFactor();
+        const sparBadge = document.getElementById('sparring-speed-badge');
+        if (sparBadge) sparBadge.textContent = `${(typeof voiceRate === 'number' ? voiceRate : 0.75).toFixed(2)}x`;
         clearInterval(sparringAiLoopTimer);
-        setTimeout(runSparringAiTurn, 1200);
-        sparringAiLoopTimer = setInterval(runSparringAiTurn, 2900);
+        setTimeout(runSparringAiTurn, Math.round(1100 / spd));
+        sparringAiLoopTimer = setInterval(runSparringAiTurn, Math.round(2800 / spd));
     }
 
     function stopSparringSession() {
