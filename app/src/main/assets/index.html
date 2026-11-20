@@ -132,7 +132,7 @@
         }
         .bottom-nav-inner {
             width: 100%; max-width: 460px;
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px;
+            display: grid; grid-template-columns: repeat(6, 1fr); gap: 3px;
         }
         .nav-item {
             background: transparent; border: none; color: var(--muted);
@@ -140,7 +140,7 @@
             padding: 6px 4px; border-radius: 14px; cursor: pointer; transition: 0.2s;
         }
         .nav-item .nav-icon { font-size: 1.2rem; line-height: 1; }
-        .nav-item .nav-label { font-size: 0.68rem; font-weight: 800; }
+        .nav-item .nav-label { font-size: 0.58rem; font-weight: 800; }
         .nav-item.active {
             background: rgba(0, 191, 255, 0.14);
             color: var(--neon);
@@ -915,6 +915,44 @@
             <button class="btn" id="sparring-start-btn" style="background: var(--accent); color: #000;" onclick="toggleSparringSession()">⚔️ ابدأ النزال</button>
             <button class="btn secondary" onclick="resetSparringSession()">إعادة</button>
         </div>
+    <!-- القسم 6: حركة الرأس والقدمين المعزول (Head Movement & Footwork) -->
+    <div id="sec-headfoot" class="main-section">
+        <div class="panel" style="border-color: rgba(16, 185, 129, 0.4);">
+            <div class="timer-hero" style="padding: 8px 12px; margin-bottom: 8px; border-color: rgba(16, 185, 129, 0.25);">
+                <div class="round-info">
+                    <strong id="hf-round-label">الرأس والقدمين</strong>
+                    <span id="hf-tracking-mode-badge" style="color: var(--success);">رصد تكيّفي (رأس / جسم كامل)</span>
+                </div>
+                <div class="timer" id="hf-timer-display" style="font-size: 1.65rem;">03:00</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr 1.2fr; gap: 5px; margin-bottom: 8px;">
+                <button class="btn secondary small" id="hf-cam-btn" style="border-color: var(--neon); color: var(--neon);" onclick="toggleHeadFootCamera()">📷 الكاميرا</button>
+                <button class="btn secondary small" onclick="calibrateHeadFootStance()">🎯 معايرة</button>
+                <select id="hf-focus-mode" style="padding: 4px 6px; font-size: 0.72rem;" onchange="updateHeadFootModeHint()">
+                    <option value="both" selected>🔄 رأس + قدمين</option>
+                    <option value="head">🧠 الرأس فقط</option>
+                    <option value="foot">👣 القدمين والزوايا</option>
+                </select>
+            </div>
+
+            <div class="stick-box" id="hf-cue-box" style="border-color: var(--success); background: rgba(16, 185, 129, 0.08);">
+                <div class="stick-move-title" id="hf-action-title" style="color: #6ee7b7;">🧠 HEAD & FOOTWORK</div>
+                <div class="stick-dodge-cue" id="hf-cue-text">اضغط ابدأ.. يرصد الرأس إذا ظهر وحده أو الجسم كاملاً إذا ظهر</div>
+                <div class="stick-sub-hint" id="hf-sub-hint">Slip / Roll / Pull Back + Step In / Step Back / Pivot</div>
+            </div>
+
+            <div class="score-grid">
+                <div class="score-card"><span>ناجحة</span><strong id="hf-success-count" style="color: var(--success);">0</strong></div>
+                <div class="score-card"><span>السلسلة</span><strong id="hf-streak-count" style="color: var(--neon);">0</strong></div>
+                <div class="score-card"><span>النقاط</span><strong id="hf-points-count" style="color: var(--accent);">0</strong></div>
+            </div>
+        </div>
+
+        <div class="main-btns">
+            <button class="btn" id="hf-start-btn" style="background: var(--success); color: #000;" onclick="toggleHeadFootSession()">🧠 ابدأ التمرين</button>
+            <button class="btn secondary" onclick="resetHeadFootSession()">إعادة</button>
+        </div>
     </div></div>
 
 <nav class="bottom-nav">
@@ -934,6 +972,10 @@
         <button class="nav-item" id="nav-sparring" onclick="switchSparringSection()">
             <span class="nav-icon">⚔️</span>
             <span class="nav-label">اسبارنج</span>
+        </button>
+        <button class="nav-item" id="nav-headfoot" onclick="switchHeadFootSection()">
+            <span class="nav-icon">🧠</span>
+            <span class="nav-label">الرأس والقدمين</span>
         </button>
         <button class="nav-item" id="nav-settings" onclick="switchMainSection('settings')">
             <span class="nav-icon">⚙️</span>
@@ -1508,6 +1550,7 @@
         const hudOverlay = document.getElementById('stage-hud-overlay');
 
         const isSparringTab = (activeTabName === 'sparring');
+        const isHeadFootTab = (activeTabName === 'headfoot');
         const showBoxer = (!isSparringTab && !isStickOrCounter && !isMittsTab && !isHeavyBagTab && (!isTacticsTab || tacMode === 'mirror' || tacMode === 'pyramid'));
         const showStick = isStickOrCounter || (isTacticsTab && (tacMode === 'pocket' || tacMode === 'archetype'));
         const showPads = isMittsTab || (isTacticsTab && (tacMode === 'feint' || tacMode === 'pocket'));
@@ -1523,6 +1566,12 @@
         if (heavyBagGroup) heavyBagGroup.visible = showHeavyBag;
         if (typeof sparringOpponentGroup !== 'undefined' && sparringOpponentGroup) {
             sparringOpponentGroup.visible = isSparringTab;
+        }
+        if (isHeadFootTab && modelRoot) {
+            modelRoot.visible = true;
+            stageTag.textContent = '🧠 HEAD & FOOTWORK';
+            hudOverlay.style.display = 'none';
+            if (camera) { camera.position.set(0, 1.32, 2.75); camera.lookAt(0, 1.02, 0); }
         }
 
         if (isHeavyBagTab) {
@@ -2394,6 +2443,9 @@
 
         if (nose && lShoulder && rShoulder) {
             hasPoseFrame = true;
+            if (typeof updateAdaptiveBodyVisibility === 'function') {
+                updateAdaptiveBodyVisibility(lm);
+            }
             curShoulderSpan = Math.abs(lShoulder.x - rShoulder.x) || 0.25;
 
             if (poseWorker) {
@@ -4069,6 +4121,270 @@
         document.getElementById('sparring-opp-action').textContent = '⚔️ LIVE SPARRING AI';
         document.getElementById('sparring-player-cue').textContent = 'اضغط ابدأ.. الخصم يرى لكماتك ويتفاداها ويرد عليك!';
     }
-</script>
+
+    // =========================================================================
+    // 🧠 وحدة حركة الرأس والقدمين المعزولة (Head Movement & Footwork Module)
+    // =========================================================================
+    let isHeadFootActive = false;
+    let hfTimerInterval = null;
+    let hfLoopTimer = null;
+    let hfTimeLeft = 180;
+    let hfFullBodyDetected = false;
+
+    let hfStats = { success: 0, streak: 0, points: 0 };
+    let hfState = {
+        active: false,
+        kind: 'SLIP_L', // 'SLIP_L' | 'SLIP_R' | 'ROLL' | 'PULL' | 'STEP_IN' | 'STEP_BACK' | 'PIVOT_L' | 'PIVOT_R'
+        expiresAt: 0,
+        resolved: false,
+        baseNoseX: 0.5,
+        baseNoseY: 0.45,
+        baseAnkleY: null
+    };
+
+    const HF_HEAD_MOVES = [
+        { key: 'SLIP_L', title: '⬅ SLIP LEFT (انزلاق لليسار)', cue: 'حرّك رأسك لليسار بزاوية مع الحفاظ على الحماية', say: 'Slip Left' },
+        { key: 'SLIP_R', title: '➔ SLIP RIGHT (انزلاق لليمين)', cue: 'حرّك رأسك لليمين بزاوية مع الحفاظ على الحماية', say: 'Slip Right' },
+        { key: 'ROLL', title: '⤵ ROLL UNDER (دوران سفلي)', cue: 'انحنِ للأسفل ودُر برأسك تحت الهوك', say: 'Roll' },
+        { key: 'PULL', title: '⏪ PULL BACK (تراجع بالرأس)', cue: 'اسحب رأسك للخلف خارج مدى الضربة', say: 'Pull Back' }
+    ];
+
+    const HF_FOOT_MOVES = [
+        { key: 'STEP_IN', title: '⬆ STEP IN (خطوة دخول)', cue: 'تقدم بخطوة متوازنة نحو الأمام دون فقدان التوازن', say: 'Step In' },
+        { key: 'STEP_BACK', title: '⬇ STEP BACK (خطوة تراجع)', cue: 'ارجع بخطوة متوازنة للخلف مع الحفاظ على الحماية', say: 'Step Back' },
+        { key: 'PIVOT_L', title: '↺ PIVOT LEFT (دوران زاوية لليسار)', cue: 'دُر بقدميك وكتفيك لليسار لقطع الزاوية', say: 'Pivot Left' },
+        { key: 'PIVOT_R', title: '↻ PIVOT RIGHT (دوران زاوية لليمين)', cue: 'دُر بقدميك وكتفيك لليمين لقطع الزاوية', say: 'Pivot Right' }
+    ];
+
+    function updateAdaptiveBodyVisibility(lm) {
+        if (!lm) return;
+        const lHip = lm[23], rHip = lm[24];
+        const lAnkle = lm[27], rAnkle = lm[28];
+        const hasFullBody = Boolean(
+            lHip && rHip && lAnkle && rAnkle &&
+            ((lAnkle.visibility || 0) > 0.55 || (rAnkle.visibility || 0) > 0.55)
+        );
+        hfFullBodyDetected = hasFullBody;
+
+        if (hasFullBody && lAnkle && rAnkle && hfState.baseAnkleY === null) {
+            hfState.baseAnkleY = ((lAnkle.y || 0.85) + (rAnkle.y || 0.85)) / 2;
+        }
+
+        const badge = document.getElementById('hf-tracking-mode-badge');
+        if (badge) {
+            badge.textContent = hasFullBody
+                ? 'رصد الجسم الكامل نشط (Full Body)'
+                : 'رصد الرأس والجزء العلوي نشط (Head Only)';
+        }
+    }
+
+    function updateHeadFootModeHint() {
+        const focus = document.getElementById('hf-focus-mode') ? document.getElementById('hf-focus-mode').value : 'both';
+        const hint = document.getElementById('hf-sub-hint');
+        if (!hint) return;
+        if (focus === 'head') hint.textContent = 'تركيز على Slip Left / Slip Right / Roll / Pull Back';
+        else if (focus === 'foot') hint.textContent = 'تركيز على Step In / Step Back / Pivot L / Pivot R';
+        else hint.textContent = 'دمج حركة الرأس والقدمين حسب ظهورك أمام الكاميرا';
+    }
+
+    function switchHeadFootSection() {
+        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
+        if (typeof isSparringActive !== 'undefined' && isSparringActive && typeof stopSparringSession === 'function') {
+            stopSparringSession();
+        }
+        if (typeof sparringOpponentGroup !== 'undefined' && sparringOpponentGroup) {
+            sparringOpponentGroup.visible = false;
+        }
+
+        if (typeof currentMainSection !== 'undefined') currentMainSection = 'headfoot';
+        if (typeof activeTabName !== 'undefined') activeTabName = 'headfoot';
+
+        document.querySelectorAll('.main-section').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        document.getElementById('sec-headfoot').classList.add('active');
+        document.getElementById('nav-headfoot').classList.add('active');
+
+        if (typeof updateStageEntityVisibility === 'function') updateStageEntityVisibility();
+        if (typeof resize3DRenderer === 'function') resize3DRenderer();
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        ['nav-arena', 'nav-drills', 'nav-lab', 'nav-sparring', 'nav-settings'].forEach(btnId => {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.addEventListener('click', () => {
+                    if (isHeadFootActive) stopHeadFootSession();
+                });
+            }
+        });
+    });
+
+    async function toggleHeadFootCamera() {
+        if (typeof isCamRefActive !== 'undefined' && isCamRefActive) {
+            if (typeof stopCameraReferee === 'function') stopCameraReferee();
+            document.getElementById('hf-cam-btn').textContent = '📷 الكاميرا';
+        } else {
+            if (typeof startCameraReferee === 'function') await startCameraReferee();
+            document.getElementById('hf-cam-btn').textContent = '⏹ إيقاف';
+        }
+    }
+
+    function calibrateHeadFootStance() {
+        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
+            hfState.baseNoseX = curNoseX;
+            hfState.baseNoseY = curNoseY;
+            hfState.baseAnkleY = null;
+            if (typeof strikeStartX !== 'undefined') strikeStartX = curNoseX;
+            if (typeof strikeStartY !== 'undefined') strikeStartY = curNoseY;
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
+            document.getElementById('hf-cue-text').textContent = '🎯 تمت معايرة وضعية الرأس والوقفة بنجاح';
+        }
+    }
+
+    function updateHeadFootHUD() {
+        document.getElementById('hf-success-count').textContent = hfStats.success;
+        document.getElementById('hf-streak-count').textContent = hfStats.streak;
+        document.getElementById('hf-points-count').textContent = hfStats.points;
+
+        const m = Math.floor(hfTimeLeft / 60).toString().padStart(2, '0');
+        const s = (hfTimeLeft % 60).toString().padStart(2, '0');
+        document.getElementById('hf-timer-display').textContent = `${m}:${s}`;
+    }
+
+    function pickNextHeadFootMove() {
+        const focus = document.getElementById('hf-focus-mode') ? document.getElementById('hf-focus-mode').value : 'both';
+        let pool = [];
+        if (focus === 'head') pool = HF_HEAD_MOVES;
+        else if (focus === 'foot') pool = HF_FOOT_MOVES;
+        else {
+            // إذا ظهر الجسم كاملاً ندمج الرأس والقدمين، وإذا ظهر الرأس فقط نرجّح حركات الرأس مع إرشادات القدمين
+            pool = hfFullBodyDetected ? [...HF_HEAD_MOVES, ...HF_FOOT_MOVES] : [...HF_HEAD_MOVES, ...HF_HEAD_MOVES, ...HF_FOOT_MOVES];
+        }
+        return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function runHeadFootCycle() {
+        if (!isHeadFootActive) return;
+
+        if (hfState.active && !hfState.resolved) {
+            hfStats.streak = 0;
+            updateHeadFootHUD();
+        }
+
+        const chosen = pickNextHeadFootMove();
+        const rateFactor = (typeof voiceRate === 'number' && voiceRate > 0) ? Math.max(0.45, voiceRate / 0.75) : 1.0;
+
+        hfState.active = true;
+        hfState.resolved = false;
+        hfState.kind = chosen.key;
+        hfState.expiresAt = performance.now() + Math.round(2400 / rateFactor);
+
+        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
+            hfState.baseNoseX = curNoseX;
+            hfState.baseNoseY = curNoseY;
+        }
+
+        if (typeof executeSingleAction === 'function' && typeof MOVES !== 'undefined' && MOVES[chosen.key]) {
+            executeSingleAction(chosen.key, false);
+        }
+
+        document.getElementById('hf-action-title').textContent = chosen.title;
+        document.getElementById('hf-cue-text').textContent = chosen.cue;
+        if (typeof speakText === 'function') speakText(chosen.say);
+    }
+
+    setInterval(() => {
+        if (!isHeadFootActive || !hfState.active || hfState.resolved) return;
+        if (typeof hasPoseFrame === 'undefined' || !hasPoseFrame) return;
+
+        const dx = curNoseX - (hfState.baseNoseX || 0.5);
+        const dy = curNoseY - (hfState.baseNoseY || 0.45);
+        const k = hfState.kind;
+        let matched = false;
+
+        if (k === 'SLIP_L' && Math.abs(dx) > 0.075) matched = true;
+        else if (k === 'SLIP_R' && Math.abs(dx) > 0.075) matched = true;
+        else if (k === 'ROLL' && dy > 0.065) matched = true;
+        else if (k === 'PULL' && (dy < -0.045 || Math.abs(dx) > 0.065)) matched = true;
+        else if ((k === 'STEP_IN' || k === 'STEP_BACK') && (Math.abs(dy) > 0.045 || (typeof curShoulderSpan !== 'undefined' && Math.abs(curShoulderSpan - (strikeStartSpan || 0.25)) > 0.035))) matched = true;
+        else if ((k === 'PIVOT_L' || k === 'PIVOT_R') && (Math.abs(dx) > 0.07 || (typeof curShoulderSlope !== 'undefined' && Math.abs(curShoulderSlope) > 0.06))) matched = true;
+
+        if (matched) {
+            hfState.resolved = true;
+            hfStats.success++;
+            hfStats.streak++;
+            hfStats.points += 10 + Math.min(10, hfStats.streak * 2);
+            updateHeadFootHUD();
+            if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
+            document.getElementById('hf-cue-text').textContent = `✅ أداء ممتاز (${k})! استمر في السلسلة`;
+        }
+    }, 100);
+
+    function toggleHeadFootSession() {
+        if (isHeadFootActive) stopHeadFootSession();
+        else startHeadFootSession();
+    }
+
+    async function startHeadFootSession() {
+        if (typeof stopAllActiveModes === 'function') stopAllActiveModes();
+        isHeadFootActive = true;
+        if (typeof updateStageEntityVisibility === 'function') updateStageEntityVisibility();
+
+        if (typeof isCamRefActive !== 'undefined' && !isCamRefActive && typeof startCameraReferee === 'function') {
+            await startCameraReferee();
+            document.getElementById('hf-cam-btn').textContent = '⏹ إيقاف';
+        }
+
+        if (typeof hasPoseFrame !== 'undefined' && hasPoseFrame) {
+            hfState.baseNoseX = curNoseX;
+            hfState.baseNoseY = curNoseY;
+        }
+
+        document.getElementById('hf-start-btn').textContent = '⏹ إيقاف التمرين';
+        document.getElementById('hf-start-btn').classList.add('danger');
+        if (typeof playBoxingSFX === 'function') playBoxingSFX('BELL');
+        if (typeof speakText === 'function') speakText('Head movement and footwork start!');
+
+        const rateFactor = (typeof voiceRate === 'number' && voiceRate > 0) ? Math.max(0.45, voiceRate / 0.75) : 1.0;
+
+        clearInterval(hfTimerInterval);
+        hfTimerInterval = setInterval(() => {
+            if (!isHeadFootActive) return;
+            if (hfTimeLeft > 0) {
+                hfTimeLeft--;
+                updateHeadFootHUD();
+            } else {
+                stopHeadFootSession();
+                if (typeof speakText === 'function') speakText('Round complete!');
+            }
+        }, 1000);
+
+        clearInterval(hfLoopTimer);
+        setTimeout(runHeadFootCycle, Math.round(800 / rateFactor));
+        hfLoopTimer = setInterval(runHeadFootCycle, Math.round(2600 / rateFactor));
+    }
+
+    function stopHeadFootSession() {
+        isHeadFootActive = false;
+        hfState.active = false;
+        clearInterval(hfTimerInterval);
+        clearInterval(hfLoopTimer);
+        hfTimerInterval = null;
+        hfLoopTimer = null;
+        if (typeof returnToIdle === 'function') returnToIdle();
+        document.getElementById('hf-start-btn').textContent = '🧠 ابدأ التمرين';
+        document.getElementById('hf-start-btn').classList.remove('danger');
+    }
+
+    function resetHeadFootSession() {
+        stopHeadFootSession();
+        hfTimeLeft = 180;
+        hfStats = { success: 0, streak: 0, points: 0 };
+        hfState.baseAnkleY = null;
+        updateHeadFootHUD();
+        document.getElementById('hf-action-title').textContent = '🧠 HEAD & FOOTWORK';
+        document.getElementById('hf-cue-text').textContent = 'اضغط ابدأ.. يرصد الرأس إذا ظهر وحده أو الجسم كاملاً إذا ظهر';
+    }
+</script></script>
 </body>
 </html>
