@@ -834,6 +834,39 @@
             </select>
         </div>
 
+        <div class="panel" style="border: 1.5px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.04);">
+            <div class="setting-header" style="color: var(--success); margin-bottom: 6px;">
+                <span>🎙️ المدرب الصوتي التفاعلي والأوامر بدون لمس:</span>
+                <span id="voice-cmd-status-badge" style="color: var(--muted); font-size: 0.68rem;">● متوقف</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 6px; margin-bottom: 8px;">
+                <button class="btn secondary small" id="voice-cmd-toggle-btn" style="border-color: var(--success); color: var(--success);" onclick="toggleVoiceCommands()">🎤 تفعيل الأوامر الصوتية</button>
+                <select id="voice-coach-lang" onchange="updateVoiceCoachPrefs()">
+                    <option value="en" selected>🇺🇸 نطق إنجليزي (Pro)</option>
+                    <option value="ar">🇸🇦 نطق عربي تفاعلي</option>
+                    <option value="both">🌐 ثنائي (EN + AR)</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+                <select id="voice-coach-pitch" onchange="updateVoiceCoachPrefs()">
+                    <option value="1.05" selected>🔥 نبرة مدرب حماسية</option>
+                    <option value="1.0">🎯 نبرة متوازنة</option>
+                    <option value="0.88">🥊 نبرة عميقة قوية</option>
+                </select>
+                <select id="voice-coach-feedback" onchange="updateVoiceCoachPrefs()">
+                    <option value="on" selected>🗣️ تشجيع وتنبيه لحظي</option>
+                    <option value="off">🔇 أوامر الحركة فقط</option>
+                </select>
+            </div>
+
+            <div id="voice-cmd-live-box" style="background: #05080f; border: 1px solid var(--border); border-radius: 10px; padding: 7px 10px; font-size: 0.7rem; color: var(--muted);">
+                الأوامر المدعومة: <strong style="color:#fff;">"ابدأ"</strong> • <strong style="color:#fff;">"توقف"</strong> • <strong style="color:#fff;">"أسرع"</strong> • <strong style="color:#fff;">"أبطأ"</strong> • <strong style="color:#fff;">"التالي"</strong> • <strong style="color:#fff;">"النتيجة"</strong>
+                <div id="voice-cmd-last-heard" style="color: var(--neon); font-weight: 800; margin-top: 3px;">آخر أمر مسموع: --</div>
+            </div>
+        </div>
+
         <div class="panel">
             <div class="setting-header" style="color: var(--neon); margin-bottom: 6px;"><span>🤖 مساعد المدرب الذكي (Gemini AI):</span></div>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
@@ -3393,16 +3426,233 @@
         document.getElementById('tv-combo-text').textContent = txt;
     }
 
+    let voiceCoachLang = localStorage.getItem('boxing_voice_lang') || 'en';
+    let voiceCoachPitch = parseFloat(localStorage.getItem('boxing_voice_pitch') || '1.05');
+    let voiceCoachFeedback = localStorage.getItem('boxing_voice_feedback') || 'on';
+
+    const AR_COACH_DICT = {
+        'Jab': 'جاب يسار',
+        'Cross': 'كروس يمين',
+        'Lead Hook': 'هوك يسار',
+        'Rear Hook': 'هوك يمين',
+        'Lead Uppercut': 'أبركت يسار',
+        'Rear Uppercut': 'أبركت يمين',
+        'Slip Left': 'تفادي يسار',
+        'Slip Right': 'تفادي يمين',
+        'Roll': 'دوران سفلي',
+        'Roll Left': 'دوران لليسار',
+        'Roll Right': 'دوران لليمين',
+        'Pull Back': 'تراجع للخلف',
+        'Step In': 'خطوة للأمام',
+        'Step Back': 'خطوة للخلف',
+        'Pivot Left': 'دوران زاوية لليسار',
+        'Pivot Right': 'دوران زاوية لليمين',
+        'Guard up!': 'ارفع يديك! احمِ ذقنك',
+        'Counter!': 'رد بهجوم مضاد الآن!',
+        'Rest time.': 'وقت الراحة، التقط أنفاسك',
+        'Workout complete!': 'أحسنت! انتهى التمرين بنجاح',
+        'Round complete!': 'انتهت الجولة بنجاح',
+        'Last 30 seconds! Non-stop speed!': 'آخر ثلاثين ثانية! سرعة متواصلة بدون توقف!'
+    };
+
+    function translateCoachPhraseToArabic(txt) {
+        if (!txt) return '';
+        let out = txt;
+        Object.keys(AR_COACH_DICT).sort((a, b) => b.length - a.length).forEach(enKey => {
+            if (out.includes(enKey)) {
+                out = out.split(enKey).join(AR_COACH_DICT[enKey]);
+            }
+        });
+        out = out.replace(/Round\s+(\d+)\.\s*Fight!/gi, 'الجولة $1، ابدأ القتال!');
+        out = out.replace(/Round\s+(\d+)\.\s*Let's go!/gi, 'الجولة $1، هيا انطلق!');
+        return out;
+    }
+
+    function updateVoiceCoachPrefs() {
+        const lEl = document.getElementById('voice-coach-lang');
+        const pEl = document.getElementById('voice-coach-pitch');
+        const fEl = document.getElementById('voice-coach-feedback');
+        if (lEl) voiceCoachLang = lEl.value;
+        if (pEl) voiceCoachPitch = parseFloat(pEl.value);
+        if (fEl) voiceCoachFeedback = fEl.value;
+        localStorage.setItem('boxing_voice_lang', voiceCoachLang);
+        localStorage.setItem('boxing_voice_pitch', String(voiceCoachPitch));
+        localStorage.setItem('boxing_voice_feedback', voiceCoachFeedback);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const lEl = document.getElementById('voice-coach-lang');
+        const pEl = document.getElementById('voice-coach-pitch');
+        const fEl = document.getElementById('voice-coach-feedback');
+        if (lEl) lEl.value = voiceCoachLang;
+        if (pEl) pEl.value = String(voiceCoachPitch);
+        if (fEl) fEl.value = voiceCoachFeedback;
+    });
+
     function speakText(txt) {
+        if (!txt) return;
+        let finalText = txt;
+        let targetLang = 'en-US';
+
+        if (voiceCoachLang === 'ar') {
+            finalText = translateCoachPhraseToArabic(txt);
+            targetLang = 'ar-SA';
+        } else if (voiceCoachLang === 'both') {
+            const arPart = translateCoachPhraseToArabic(txt);
+            finalText = (arPart !== txt) ? `${txt} .. ${arPart}` : txt;
+            targetLang = 'ar-SA';
+        }
+
         if (window.AndroidTTS && window.AndroidTTS.speak) {
             if (window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
-            window.AndroidTTS.speak(txt);
+            window.AndroidTTS.speak(finalText);
         } else if ('speechSynthesis' in window) {
             window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(txt);
-            u.lang = 'en-US';
+            const u = new SpeechSynthesisUtterance(finalText);
+            u.lang = targetLang;
             u.rate = voiceRate;
+            u.pitch = voiceCoachPitch || 1.05;
             window.speechSynthesis.speak(u);
+        }
+    }
+
+    // =========================================================================
+    // 🎤 محرك الأوامر الصوتية التفاعلية بدون لمس (Hands-Free Voice Commands)
+    // =========================================================================
+    let isVoiceCmdListening = false;
+    let speechRecog = null;
+
+    function toggleVoiceCommands() {
+        if (isVoiceCmdListening) stopVoiceCommands();
+        else startVoiceCommands();
+    }
+
+    function startVoiceCommands() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const badge = document.getElementById('voice-cmd-status-badge');
+        const btn = document.getElementById('voice-cmd-toggle-btn');
+
+        if (!SpeechRecognition) {
+            alert('متصفح/نظام هذا الجهاز لا يدعم التعرف الصوتي المباشر (SpeechRecognition).');
+            return;
+        }
+
+        try {
+            if (!speechRecog) {
+                speechRecog = new SpeechRecognition();
+                speechRecog.continuous = true;
+                speechRecog.interimResults = false;
+                speechRecog.lang = voiceCoachLang === 'en' ? 'en-US' : 'ar-SA';
+
+                speechRecog.onresult = (event) => {
+                    const lastIdx = event.results.length - 1;
+                    const transcript = (event.results[lastIdx][0].transcript || '').trim();
+                    if (transcript) handleSpokenCoachCommand(transcript);
+                };
+
+                speechRecog.onerror = (e) => {
+                    if (e.error === 'not-allowed') {
+                        isVoiceCmdListening = false;
+                        if (badge) { badge.textContent = '● مرفوض الصلاحية'; badge.style.color = 'var(--danger)'; }
+                        if (btn) { btn.textContent = '🎤 تفعيل الأوامر الصوتية'; btn.classList.remove('danger'); }
+                    }
+                };
+
+                speechRecog.onend = () => {
+                    if (isVoiceCmdListening) {
+                        try { speechRecog.start(); } catch (err) {}
+                    }
+                };
+            }
+
+            speechRecog.lang = voiceCoachLang === 'en' ? 'en-US' : 'ar-SA';
+            speechRecog.start();
+            isVoiceCmdListening = true;
+            if (badge) { badge.textContent = '● يستمع الآن...'; badge.style.color = 'var(--success)'; }
+            if (btn) { btn.textContent = '⏹ إيقاف الأوامر الصوتية'; btn.classList.add('danger'); }
+            speakText(voiceCoachLang === 'en' ? 'Voice commands active' : 'تم تفعيل الأوامر الصوتية');
+        } catch (err) {
+            alert('تعذر تفعيل الميكروفون للأوامر الصوتية: ' + (err.message || err));
+        }
+    }
+
+    function stopVoiceCommands() {
+        isVoiceCmdListening = false;
+        if (speechRecog) {
+            try { speechRecog.stop(); } catch (e) {}
+        }
+        const badge = document.getElementById('voice-cmd-status-badge');
+        const btn = document.getElementById('voice-cmd-toggle-btn');
+        if (badge) { badge.textContent = '● متوقف'; badge.style.color = 'var(--muted)'; }
+        if (btn) { btn.textContent = '🎤 تفعيل الأوامر الصوتية'; btn.classList.remove('danger'); }
+    }
+
+    function handleSpokenCoachCommand(rawText) {
+        const cmd = rawText.toLowerCase();
+        const heardEl = document.getElementById('voice-cmd-last-heard');
+        if (heardEl) heardEl.textContent = `آخر أمر مسموع: "${rawText}"`;
+
+        // 1. أمر البدء (Start / ابدأ)
+        if (cmd.includes('ابدأ') || cmd.includes('ابدا') || cmd.includes('start') || cmd.includes('fight') || cmd.includes('go')) {
+            if (activeTabName === 'train' && !isRunning) startSession();
+            else if (activeTabName === 'mitts' && !isMittsRunning) startMittsSession();
+            else if (activeTabName === 'heavybag' && !isHeavyBagRunning) startHeavyBagSession();
+            else if (activeTabName === 'stick' && !isStickRunning) startStickSession();
+            else if (activeTabName === 'counter' && !isCounterRunning) startCounterSession();
+            else if (activeTabName === 'tactics' && !isTacticsRunning) startTacticsSession();
+            else if (activeTabName === 'sparring' && typeof isSparringActive !== 'undefined' && !isSparringActive) startSparringSession();
+            else if (activeTabName === 'headfoot' && typeof isHeadFootActive !== 'undefined' && !isHeadFootActive) startHeadFootSession();
+            return;
+        }
+
+        // 2. أمر الإيقاف (Stop / توقف / إيقاف)
+        if (cmd.includes('توقف') || cmd.includes('إيقاف') || cmd.includes('ايقاف') || cmd.includes('وقف') || cmd.includes('stop') || cmd.includes('pause')) {
+            stopAllActiveModes();
+            if (typeof isSparringActive !== 'undefined' && isSparringActive) stopSparringSession();
+            if (typeof isHeadFootActive !== 'undefined' && isHeadFootActive) stopHeadFootSession();
+            speakText(voiceCoachLang === 'en' ? 'Stopped' : 'تم الإيقاف');
+            return;
+        }
+
+        // 3. أمر التسريع (Faster / أسرع)
+        if (cmd.includes('أسرع') || cmd.includes('اسرع') || cmd.includes('faster') || cmd.includes('speed up')) {
+            const newRate = Math.min(1.40, +(voiceRate + 0.10).toFixed(2));
+            const slider = document.getElementById('voice-rate');
+            if (slider) slider.value = newRate;
+            changeVoiceRate(newRate);
+            speakText(voiceCoachLang === 'en' ? 'Faster speed' : 'تمت زيادة السرعة');
+            return;
+        }
+
+        // 4. أمر التبطيء (Slower / أبطأ)
+        if (cmd.includes('أبطأ') || cmd.includes('ابطا') || cmd.includes('slower') || cmd.includes('slow down')) {
+            const newRate = Math.max(0.25, +(voiceRate - 0.10).toFixed(2));
+            const slider = document.getElementById('voice-rate');
+            if (slider) slider.value = newRate;
+            changeVoiceRate(newRate);
+            speakText(voiceCoachLang === 'en' ? 'Slower speed' : 'تم تقليل السرعة');
+            return;
+        }
+
+        // 5. أمر التالي / تغيير الكومبو (Next / التالي / غير)
+        if (cmd.includes('التالي') || cmd.includes('غير') || cmd.includes('next') || cmd.includes('combo')) {
+            if (activeTabName === 'train' && isRunning) { isComboBusy = false; lastComboExecutedAt = 0; executeNextCombo(); }
+            else if (activeTabName === 'mitts' && isMittsRunning) { isMittsBusy = false; executeNextMittCombo(); }
+            else if (activeTabName === 'heavybag' && isHeavyBagRunning) { isHeavyBagBusy = false; executeNextHeavyBagCombo(); }
+            else if (activeTabName === 'headfoot' && typeof isHeadFootActive !== 'undefined' && isHeadFootActive) { runHeadFootCycle(); }
+            return;
+        }
+
+        // 6. أمر النتيجة / التقرير اللحظي (Score / النتيجة)
+        if (cmd.includes('النتيجة') || cmd.includes('نتيجة') || cmd.includes('تقرير') || cmd.includes('score') || cmd.includes('status')) {
+            let summary = '';
+            if (activeTabName === 'mitts') summary = `Hits ${mittsCamHitsCount} of ${mittsPunchesCount}`;
+            else if (activeTabName === 'stick') summary = `Points ${refPoints}, dodges ${refSuccessCount}`;
+            else if (activeTabName === 'counter') summary = `Counter hits ${cntHitsCount}, points ${cntPoints}`;
+            else if (activeTabName === 'sparring' && typeof sparStats !== 'undefined') summary = `Your score ${sparStats.score}, opponent health ${sparStats.oppHp} percent`;
+            else if (activeTabName === 'headfoot' && typeof hfStats !== 'undefined') summary = `Successful moves ${hfStats.success}, streak ${hfStats.streak}`;
+            else summary = `Round ${currentRound} of ${totalRounds}`;
+            speakText(summary);
         }
     }
 
