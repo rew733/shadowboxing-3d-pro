@@ -832,6 +832,11 @@
                 <option value="3d" selected>🎮 عرض 3D كامل</option>
                 <option value="audio">🔋 وضع الصوت فقط (توفير البطارية)</option>
             </select>
+            <select id="visual-tracking-profile" style="margin-top: 8px;" onchange="updateVisualTrackingProfile(this.value)">
+                <option value="fast">⚡ تتبع الكاميرا: استجابة فائقة</option>
+                <option value="balanced" selected>🎯 تتبع الكاميرا: متوازن (سرعة + بطارية)</option>
+                <option value="eco">🍃 تتبع الكاميرا: موفر للبطارية</option>
+            </select>
         </div>
 
         <div class="panel" style="border: 1.5px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.04);">
@@ -2371,6 +2376,7 @@
     }
 
     let isCamRefActive = false; let camStream = null; let poseDetector = null; let poseLoopReq = null;
+    let visualTrackingProfile = localStorage.getItem('boxing_visual_profile') || 'balanced'; // 'fast' | 'balanced' | 'eco'
     let strikeStartX = 0.5, strikeStartY = 0.45, strikeStartSpan = 0.25;
     let curNoseX = 0.5, curNoseY = 0.45, curShoulderSpan = 0.25;
     let curLeftWrist = null, curRightWrist = null; let prevLeftWrist = null, prevRightWrist = null;
@@ -2419,6 +2425,27 @@
     async function toggleCameraReferee() { if (isCamRefActive) stopCameraReferee(); else await startCameraReferee(); }
     let isPoseProcessingFrame = false;
 
+    function getPoseIntervalMs() {
+        if (visualTrackingProfile === 'fast') return 85;
+        if (visualTrackingProfile === 'eco') return 155;
+        return 115;
+    }
+
+    function updateVisualTrackingProfile(prof) {
+        visualTrackingProfile = prof || 'balanced';
+        localStorage.setItem('boxing_visual_profile', visualTrackingProfile);
+        const pipTag = document.getElementById('cam-pip-status');
+        if (pipTag && isCamRefActive) {
+            const labelMap = { fast: 'FAST-TRACK', balanced: 'BAL-TRACK', eco: 'ECO-TRACK' };
+            pipTag.textContent = labelMap[visualTrackingProfile] || 'BAL-TRACK';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const pSel = document.getElementById('visual-tracking-profile');
+        if (pSel) pSel.value = visualTrackingProfile;
+    });
+
     async function toggleCameraReferee() { if (isCamRefActive) stopCameraReferee(); else await startCameraReferee(); }
     async function startCameraReferee() {
         const pipBox = document.getElementById('cam-pip-box');
@@ -2460,12 +2487,12 @@
                 poseDetector.onResults(onPoseResults);
             }
             let lastPoseInferenceAt = 0;
-            const POSE_INTERVAL_MS = 110; // ~9 FPS كافية لرصد حركات الملاكمة بسرعة مع تقليل استهلاك البطارية والحرارة
 
             const processFrame = async () => {
                 if (!isCamRefActive) return;
                 const nowMs = performance.now();
-                if (poseDetector && videoEl.readyState >= 2 && !isPoseProcessingFrame && (nowMs - lastPoseInferenceAt >= POSE_INTERVAL_MS)) {
+                const poseInterval = getPoseIntervalMs();
+                if (poseDetector && videoEl.readyState >= 2 && !isPoseProcessingFrame && (nowMs - lastPoseInferenceAt >= poseInterval)) {
                     isPoseProcessingFrame = true;
                     lastPoseInferenceAt = nowMs;
                     try {
