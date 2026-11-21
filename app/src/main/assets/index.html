@@ -2411,7 +2411,6 @@
             await videoEl.play();
             isCamRefActive = true;
             isPoseProcessingFrame = false;
-            lastPoseInferenceAt = 0;
             if (typeof renderer !== 'undefined' && renderer) renderer.setPixelRatio(1.0);
             pipBox.style.display = 'block';
             updateCamToggleButtonsUI(true);
