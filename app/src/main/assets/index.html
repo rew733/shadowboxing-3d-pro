@@ -2596,12 +2596,12 @@
     let rightStickMesh = null;
     let stickState = { active: false, evaluated: false, type: 'IDLE', hand: 'LEFT', progress: 0, duration: 1.0 };
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT', hand: 'LEFT', name: 'JAB STICK ➔ CENTER', dodge: '➔ SLIP RIGHT', say: 'Slip Right', rotZ: 0.10 },
-        { type: 'THRUST_RIGHT', hand: 'RIGHT', name: 'CROSS STICK ➔ CENTER', dodge: '⬅ SLIP LEFT', say: 'Slip Left', rotZ: -0.10 },
-        { type: 'SWEEP_FROM_LEFT', hand: 'LEFT', name: 'LEFT HOOK (FROM LEFT)', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', rotZ: 0.35 },
-        { type: 'SWEEP_FROM_RIGHT', hand: 'RIGHT', name: 'RIGHT HOOK (FROM RIGHT)', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', rotZ: -0.35 },
-        { type: 'UPPER_LEFT', hand: 'LEFT', name: 'LEFT UPPERCUT STICK', dodge: '⬆➔ SLIP / STEP BACK', say: 'Uppercut Slip Right', rotZ: 0.20 },
-        { type: 'UPPER_RIGHT', hand: 'RIGHT', name: 'RIGHT UPPERCUT STICK', dodge: '⬆⬅ SLIP / STEP BACK', say: 'Uppercut Slip Left', rotZ: -0.20 }
+        { type: 'THRUST_LEFT', hand: 'LEFT', name: 'JAB STICK ➔ CENTER', dodge: '➔ SLIP RIGHT', say: 'Slip Right', rotZ: 0 },
+        { type: 'THRUST_RIGHT', hand: 'RIGHT', name: 'CROSS STICK ➔ CENTER', dodge: '⬅ SLIP LEFT', say: 'Slip Left', rotZ: 0 },
+        { type: 'SWEEP_FROM_LEFT', hand: 'LEFT', name: 'LEFT HOOK STICK', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', rotZ: 0 },
+        { type: 'SWEEP_FROM_RIGHT', hand: 'RIGHT', name: 'RIGHT HOOK STICK', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', rotZ: 0 },
+        { type: 'UPPER_LEFT', hand: 'LEFT', name: 'LEFT UPPERCUT STICK', dodge: '⬆➔ SLIP / STEP BACK', say: 'Uppercut Slip Right', rotZ: 0 },
+        { type: 'UPPER_RIGHT', hand: 'RIGHT', name: 'RIGHT UPPERCUT STICK', dodge: '⬆⬅ SLIP / STEP BACK', say: 'Uppercut Slip Left', rotZ: 0 }
     ];
     let isStickRunning = false; let stickLoopTimer = null; let stickBag = [];
 
@@ -2626,15 +2626,14 @@
 
     function build3DSparringStick() {
         stickGroup = new THREE.Group();
-        // عصا اليسار (+X = يسار المشاهد)
+        // وضع البداية: العصاتان مستقيمتان متوازيتان للأمام تماماً (rotation = 0,0,0)
         leftStickMesh = createSingleFoamStick(0xf43f5e, 0x9f1239);
-        leftStickMesh.position.set(0.28, 1.34, 0.05);
-        leftStickMesh.rotation.set(0.12, -0.22, 0.12);
+        leftStickMesh.position.set(-0.28, 1.34, 0.05);
+        leftStickMesh.rotation.set(0, 0, 0);
 
-        // عصا اليمين (-X = يمين المشاهد)
         rightStickMesh = createSingleFoamStick(0x00BFFF, 0x0369a1);
-        rightStickMesh.position.set(-0.28, 1.34, 0.05);
-        rightStickMesh.rotation.set(0.12, 0.22, -0.12);
+        rightStickMesh.position.set(0.28, 1.34, 0.05);
+        rightStickMesh.rotation.set(0, 0, 0);
 
         stickGroup.add(leftStickMesh, rightStickMesh);
         stickGroup.visible = false;
@@ -2643,10 +2642,10 @@
 
     function resetDualSticksToGuard() {
         if (!leftStickMesh || !rightStickMesh) return;
-        leftStickMesh.position.set(0.28, 1.34, 0.05);
-        leftStickMesh.rotation.set(0.12, -0.22, 0.12);
-        rightStickMesh.position.set(-0.28, 1.34, 0.05);
-        rightStickMesh.rotation.set(0.12, 0.22, -0.12);
+        leftStickMesh.position.set(-0.28, 1.34, 0.05);
+        leftStickMesh.rotation.set(0, 0, 0);
+        rightStickMesh.position.set(0.28, 1.34, 0.05);
+        rightStickMesh.rotation.set(0, 0, 0);
     }
 
     function updateStickAnimation(delta) {
@@ -2662,51 +2661,52 @@
             resetDualSticksToGuard();
             return;
         }
-        const c = Math.sin(stickState.progress * Math.PI);
+        const p = stickState.progress;
+        const c = Math.sin(p * Math.PI);
         const activeStick = (stickState.hand === 'LEFT') ? leftStickMesh : rightStickMesh;
         const idleStick = (stickState.hand === 'LEFT') ? rightStickMesh : leftStickMesh;
         if (!activeStick || !idleStick) return;
 
-        // العصا الأخرى تبقى في وضع الحماية الخلفي
+        // العصا الأخرى تبقى مستقيمة في وضع الحماية
         idleStick.position.z = 0.05 - 0.05 * c;
-        activeStick.position.z = 0.05 + 1.32 * c;
+        idleStick.rotation.set(0, 0, 0);
 
         if (stickState.type === 'THRUST_LEFT') {
-            // جاب يسار: تبدأ من اليسار (+0.28) وتتجه بزاوية نحو المنتصف (0.0)
-            activeStick.position.x = 0.28 - 0.26 * c;
+            // جاب يسار: تبدأ مستقيمة عند -0.28 وتندفع متوجهة نحو المنتصف (0)
+            activeStick.position.x = -0.28 + 0.28 * c;
             activeStick.position.y = 1.34;
-            activeStick.rotation.y = -0.22 - 0.18 * c;
-            activeStick.rotation.x = 0.12;
+            activeStick.position.z = 0.05 + 1.32 * c;
+            activeStick.rotation.set(0, 0.24 * c, 0);
         } else if (stickState.type === 'THRUST_RIGHT') {
-            // كروس يمين: تبدأ من اليمين (-0.28) وتتجه بزاوية نحو المنتصف (0.0)
-            activeStick.position.x = -0.28 + 0.26 * c;
+            // كروس يمين: تبدأ مستقيمة عند +0.28 وتندفع متوجهة نحو المنتصف (0)
+            activeStick.position.x = 0.28 - 0.28 * c;
             activeStick.position.y = 1.34;
-            activeStick.rotation.y = 0.22 + 0.18 * c;
-            activeStick.rotation.x = 0.12;
+            activeStick.position.z = 0.05 + 1.32 * c;
+            activeStick.rotation.set(0, -0.24 * c, 0);
         } else if (stickState.type === 'SWEEP_FROM_LEFT') {
-            // هوك يسار: تبدأ من جهة اليسار (+0.42) وتندفع عرضياً نحو اليمين (-0.26)
-            activeStick.position.x = 0.42 - 0.68 * stickState.progress;
+            // هوك يسار (معكوس البداية): تبدأ من جهة اليسار (-0.45) وتلف عرضياً نحو اليمين (+0.28)
+            activeStick.position.x = -0.45 + 0.73 * p;
             activeStick.position.y = 1.34;
-            activeStick.rotation.y = -0.65 + 1.30 * stickState.progress;
-            activeStick.rotation.x = 0.12;
+            activeStick.position.z = 0.05 + 1.28 * c;
+            activeStick.rotation.set(0, 0.65 - 1.30 * p, 0);
         } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
-            // هوك يمين: تبدأ من جهة اليمين (-0.42) وتندفع عرضياً نحو اليسار (+0.26)
-            activeStick.position.x = -0.42 + 0.68 * stickState.progress;
+            // هوك يمين (معكوس البداية): تبدأ من جهة اليمين (+0.45) وتلف عرضياً نحو اليسار (-0.28)
+            activeStick.position.x = 0.45 - 0.73 * p;
             activeStick.position.y = 1.34;
-            activeStick.rotation.y = 0.65 - 1.30 * stickState.progress;
-            activeStick.rotation.x = 0.12;
+            activeStick.position.z = 0.05 + 1.28 * c;
+            activeStick.rotation.set(0, -0.65 + 1.30 * p, 0);
         } else if (stickState.type === 'UPPER_LEFT') {
-            // أبركت يسار: تبدأ من الأسفل يسار وترتفع للأعلى نحو المنتصف
-            activeStick.position.x = 0.22 - 0.16 * c;
-            activeStick.position.y = 1.12 + 0.34 * c;
-            activeStick.rotation.x = -0.35 * c;
-            activeStick.rotation.y = -0.15;
+            // أبركت يسار: تبدأ من الأسفل (y = 0.62) وتصعد بقوة للأعلى نحو المنتصف (y = 1.38, x = 0)
+            activeStick.position.x = -0.24 + 0.24 * c;
+            activeStick.position.y = 0.62 + 0.76 * c;
+            activeStick.position.z = 0.05 + 1.25 * c;
+            activeStick.rotation.set(-0.55 * (1 - c * 0.5), 0.18 * c, 0);
         } else if (stickState.type === 'UPPER_RIGHT') {
-            // أبركت يمين: تبدأ من الأسفل يمين وترتفع للأعلى نحو المنتصف
-            activeStick.position.x = -0.22 + 0.16 * c;
-            activeStick.position.y = 1.12 + 0.34 * c;
-            activeStick.rotation.x = -0.35 * c;
-            activeStick.rotation.y = 0.15;
+            // أبركت يمين: تبدأ من الأسفل (y = 0.62) وتصعد بقوة للأعلى نحو المنتصف (y = 1.38, x = 0)
+            activeStick.position.x = 0.24 - 0.24 * c;
+            activeStick.position.y = 0.62 + 0.76 * c;
+            activeStick.position.z = 0.05 + 1.25 * c;
+            activeStick.rotation.set(-0.55 * (1 - c * 0.5), -0.18 * c, 0);
         }
     }
 
@@ -2736,9 +2736,6 @@
         stickState.evaluated = false;
         stickState.duration = 1.05 / speedMult;
         stickState.active = true;
-
-        const targetStick = (pat.hand === 'LEFT') ? leftStickMesh : rightStickMesh;
-        if (targetStick) targetStick.rotation.z = pat.rotZ;
 
         document.getElementById('live-move-badge').textContent = pat.name;
         syncComboText(pat.dodge);
