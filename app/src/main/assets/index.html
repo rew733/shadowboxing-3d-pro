@@ -1248,7 +1248,7 @@
     function initPoseWorker() {
         const workerCode = `
             class PredictiveKalman1D {
-                constructor(q = 0.025, r = 0.10) {
+                constructor(q = 0.065, r = 0.06) {
                     this.q = q; this.r = r; this.x = 0; this.v = 0; this.p = 1; this.initialized = false;
                 }
                 filter(measurement) {
@@ -1262,7 +1262,7 @@
                     this.x = this.x + k * (measurement - this.x);
                     this.p = (1 - k) * this.p;
                     this.v = (this.x - prevX);
-                    const predictedPos = this.x + (this.v * 1.6);
+                    const predictedPos = this.x + (this.v * 2.2);
                     return { pos: this.x, pred: predictedPos, vel: this.v };
                 }
             }
@@ -1322,8 +1322,8 @@
         if (!wristObj || (wristObj.vis !== undefined && wristObj.vis < 0.50)) return false;
         const distNow = Math.hypot(wristObj.x - targetX, wristObj.y - targetY);
         const distPred = predObj ? Math.hypot(predObj.x - targetX, predObj.y - targetY) : distNow;
-        const nearTarget = (distNow < 0.18 || distPred < 0.18);
-        const hasPunchMotion = (wristObj.speed > 0.016) && (wristObj.ext > 0.13);
+        const nearTarget = (distNow < 0.22 || distPred < 0.22);
+        const hasPunchMotion = (wristObj.speed > 0.010) && (wristObj.ext > 0.10);
         return nearTarget && hasPunchMotion;
     }
 
@@ -2384,6 +2384,9 @@
     }
 
     async function toggleCameraReferee() { if (isCamRefActive) stopCameraReferee(); else await startCameraReferee(); }
+    let isPoseProcessingFrame = false;
+
+    async function toggleCameraReferee() { if (isCamRefActive) stopCameraReferee(); else await startCameraReferee(); }
     async function startCameraReferee() {
         const pipBox = document.getElementById('cam-pip-box');
         const videoEl = document.getElementById('pose-video');
@@ -2396,37 +2399,56 @@
 
         try {
             camStream = await navigator.mediaDevices.getUserMedia({
-                video: { facingMode: 'user' },
+                video: {
+                    facingMode: 'user',
+                    width: { ideal: 320 },
+                    height: { ideal: 240 },
+                    frameRate: { ideal: 30, max: 30 }
+                },
                 audio: false
             });
             videoEl.srcObject = camStream;
             await videoEl.play();
             isCamRefActive = true;
+            isPoseProcessingFrame = false;
             pipBox.style.display = 'block';
             updateCamToggleButtonsUI(true);
             updateStageEntityVisibility();
 
             if (!poseDetector && typeof Pose !== 'undefined') {
                 poseDetector = new Pose({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5.1675469404/${file}` });
-                poseDetector.setOptions({ modelComplexity: 0, smoothLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+                poseDetector.setOptions({
+                    modelComplexity: 0,
+                    smoothLandmarks: true,
+                    minDetectionConfidence: 0.45,
+                    minTrackingConfidence: 0.45
+                });
                 poseDetector.onResults(onPoseResults);
             }
             const processFrame = async () => {
                 if (!isCamRefActive) return;
-                if (poseDetector && videoEl.readyState >= 2) {
-                    try { await poseDetector.send({ image: videoEl }); } catch (e) {}
+                if (poseDetector && videoEl.readyState >= 2 && !isPoseProcessingFrame) {
+                    isPoseProcessingFrame = true;
+                    try {
+                        await poseDetector.send({ image: videoEl });
+                    } catch (e) {
+                    } finally {
+                        isPoseProcessingFrame = false;
+                    }
                 }
                 poseLoopReq = requestAnimationFrame(processFrame);
             };
             processFrame();
         } catch (err) {
             isCamRefActive = false;
+            isPoseProcessingFrame = false;
             updateCamToggleButtonsUI(false);
             alert('تعذر تشغيل الكاميرا: ' + (err.message || err));
         }
     }
     function stopCameraReferee() {
         isCamRefActive = false;
+        isPoseProcessingFrame = false;
         if (poseLoopReq) cancelAnimationFrame(poseLoopReq);
         if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
         document.getElementById('cam-pip-box').style.display = 'none';
@@ -2531,11 +2553,11 @@
     function evaluatePlayerDefenseMove() {
         const dx = curNoseX - strikeStartX; const dy = curNoseY - strikeStartY;
         const t = stickState.type; let dodged = false;
-        if (t === 'THRUST_LEFT' && dx > 0.085) dodged = true;
-        else if (t === 'THRUST_RIGHT' && dx < -0.085) dodged = true;
-        else if ((t === 'SWEEP_FROM_LEFT' || t === 'SWEEP_FROM_RIGHT') && dy > 0.075) dodged = true;
-        else if ((t === 'UPPER_LEFT' || t === 'UPPER_RIGHT') && (Math.abs(dx) > 0.075 || dy < -0.045)) dodged = true;
-        else if (t === 'THRUST_CENTER' && dy > 0.07) dodged = true;
+        if (t === 'THRUST_LEFT' && dx > 0.065) dodged = true;
+        else if (t === 'THRUST_RIGHT' && dx < -0.065) dodged = true;
+        else if ((t === 'SWEEP_FROM_LEFT' || t === 'SWEEP_FROM_RIGHT') && dy > 0.055) dodged = true;
+        else if ((t === 'UPPER_LEFT' || t === 'UPPER_RIGHT') && (Math.abs(dx) > 0.06 || dy < -0.035)) dodged = true;
+        else if (t === 'THRUST_CENTER' && dy > 0.055) dodged = true;
 
         if (dodged) {
             stickState.evaluated = true;
@@ -3947,9 +3969,9 @@
         const dy = curNoseY - (sparTurn.baseNoseY || strikeStartY || 0.45);
 
         // 1. رصد هجوم اللاعب المباشر عبر الكاميرا
-        const playerThrewLeft = curLeftWrist && curLeftWrist.vis > 0.55 && curLeftWrist.speed > 0.020 && curLeftWrist.ext > 0.15;
-        const playerThrewRight = curRightWrist && curRightWrist.vis > 0.55 && curRightWrist.speed > 0.020 && curRightWrist.ext > 0.15;
-        const cooldownMs = Math.round(700 / spd);
+        const playerThrewLeft = curLeftWrist && curLeftWrist.vis > 0.45 && curLeftWrist.speed > 0.011 && curLeftWrist.ext > 0.11;
+        const playerThrewRight = curRightWrist && curRightWrist.vis > 0.45 && curRightWrist.speed > 0.011 && curRightWrist.ext > 0.11;
+        const cooldownMs = Math.round(450 / spd);
         const playerAttacked = (playerThrewLeft || playerThrewRight) && (now - sparTurn.lastPlayerPunchAt > cooldownMs);
 
         if (playerAttacked) {
@@ -4071,7 +4093,7 @@
             document.getElementById('sparring-opp-action').textContent = '⚠️ الخصم لاحظ انخفاض يديك ويهاجمك!';
             triggerOpponentAttack(true);
         }
-    }, 100);
+    }, 50);
 
     function toggleSparringSession() {
         if (isSparringActive) stopSparringSession();
@@ -4343,7 +4365,7 @@
             if (typeof triggerHapticFeedback === 'function') triggerHapticFeedback(35);
             document.getElementById('hf-cue-text').textContent = `✅ أداء ممتاز (${k})! استمر في السلسلة`;
         }
-    }, 100);
+    }, 50);
 
     function toggleHeadFootSession() {
         if (isHeadFootActive) stopHeadFootSession();
