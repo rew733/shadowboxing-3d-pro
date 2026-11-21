@@ -3516,8 +3516,69 @@
         if (fEl) fEl.value = voiceCoachFeedback;
     });
 
+    let ttsQueue = [];
+    let isTtsSpeaking = false;
+    let lastSpokenAt = 0;
+
+    function pickArabicVoice() {
+        if (!('speechSynthesis' in window) || !window.speechSynthesis.getVoices) return null;
+        const voices = window.speechSynthesis.getVoices() || [];
+        return voices.find(v => (v.lang || '').toLowerCase().startsWith('ar')) || null;
+    }
+
+    function flushTtsQueue() {
+        if (!('speechSynthesis' in window)) return;
+        if (isTtsSpeaking || ttsQueue.length === 0) return;
+
+        const nextItem = ttsQueue.shift();
+        if (!nextItem || !nextItem.text) {
+            flushTtsQueue();
+            return;
+        }
+
+        isTtsSpeaking = true;
+        const u = new SpeechSynthesisUtterance(nextItem.text);
+        u.lang = nextItem.lang || 'ar-SA';
+        u.rate = Math.max(0.65, Math.min(1.35, voiceRate || 0.85));
+        u.pitch = voiceCoachPitch || 1.05;
+
+        if (u.lang.toLowerCase().startsWith('ar')) {
+            const arVoice = pickArabicVoice();
+            if (arVoice) u.voice = arVoice;
+        }
+
+        let finished = false;
+        const done = () => {
+            if (finished) return;
+            finished = true;
+            isTtsSpeaking = false;
+            setTimeout(flushTtsQueue, 70);
+        };
+
+        u.onend = done;
+        u.onerror = done;
+
+        // Safety timer in case Android WebView fails to fire onend on a chunk
+        const safetyMs = Math.max(1400, nextItem.text.length * 140);
+        const safetyTimer = setTimeout(done, safetyMs);
+        const origOnEnd = u.onend;
+        u.onend = () => { clearTimeout(safetyTimer); origOnEnd(); };
+
+        try {
+            window.speechSynthesis.speak(u);
+        } catch (e) {
+            clearTimeout(safetyTimer);
+            done();
+        }
+    }
+
     function speakText(txt) {
         if (!txt) return;
+        const now = performance.now();
+        // تجنب إغراق محرك الصوت باستدعاءات متقاربة جداً تقطع الكلمة الأولى في أندرويد
+        if (now - lastSpokenAt < 180 && ttsQueue.length > 1) return;
+        lastSpokenAt = now;
+
         let finalText = txt;
         let targetLang = 'en-US';
 
@@ -3533,13 +3594,27 @@
         if (window.AndroidTTS && window.AndroidTTS.speak) {
             if (window.AndroidTTS.setRate) window.AndroidTTS.setRate(voiceRate);
             window.AndroidTTS.speak(finalText);
-        } else if ('speechSynthesis' in window) {
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(finalText);
-            u.lang = targetLang;
-            u.rate = voiceRate;
-            u.pitch = voiceCoachPitch || 1.05;
-            window.speechSynthesis.speak(u);
+            return;
+        }
+
+        if ('speechSynthesis' in window) {
+            // تقسيم العبارات الطويلة إلى مقاطع قصيرة متسلسلة حتى لا يقطع محرك الصوت العربي بعد أول كلمة
+            const parts = finalText
+                .split(/[,،.!؟]+|\.\.+/)
+                .map(s => s.trim())
+                .filter(Boolean);
+
+            const segments = parts.length > 0 ? parts : [finalText.trim()];
+            ttsQueue = [];
+            segments.forEach(seg => {
+                ttsQueue.push({ text: seg, lang: targetLang });
+            });
+
+            if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+                try { window.speechSynthesis.cancel(); } catch (e) {}
+                isTtsSpeaking = false;
+            }
+            flushTtsQueue();
         }
     }
 
