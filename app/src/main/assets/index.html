@@ -2411,6 +2411,8 @@
             await videoEl.play();
             isCamRefActive = true;
             isPoseProcessingFrame = false;
+            lastPoseInferenceAt = 0;
+            if (typeof renderer !== 'undefined' && renderer) renderer.setPixelRatio(1.0);
             pipBox.style.display = 'block';
             updateCamToggleButtonsUI(true);
             updateStageEntityVisibility();
@@ -2425,10 +2427,15 @@
                 });
                 poseDetector.onResults(onPoseResults);
             }
+            let lastPoseInferenceAt = 0;
+            const POSE_INTERVAL_MS = 110; // ~9 FPS كافية لرصد حركات الملاكمة بسرعة مع تقليل استهلاك البطارية والحرارة
+
             const processFrame = async () => {
                 if (!isCamRefActive) return;
-                if (poseDetector && videoEl.readyState >= 2 && !isPoseProcessingFrame) {
+                const nowMs = performance.now();
+                if (poseDetector && videoEl.readyState >= 2 && !isPoseProcessingFrame && (nowMs - lastPoseInferenceAt >= POSE_INTERVAL_MS)) {
                     isPoseProcessingFrame = true;
+                    lastPoseInferenceAt = nowMs;
                     try {
                         await poseDetector.send({ image: videoEl });
                     } catch (e) {
@@ -2449,6 +2456,7 @@
     function stopCameraReferee() {
         isCamRefActive = false;
         isPoseProcessingFrame = false;
+        if (typeof renderer !== 'undefined' && renderer) renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         if (poseLoopReq) cancelAnimationFrame(poseLoopReq);
         if (camStream) { camStream.getTracks().forEach(t => t.stop()); camStream = null; }
         document.getElementById('cam-pip-box').style.display = 'none';
@@ -3217,7 +3225,7 @@
             depth: true
         });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
         renderer.outputEncoding = THREE.sRGBEncoding;
         renderer.shadowMap.enabled = false;
         container.appendChild(renderer.domElement);
