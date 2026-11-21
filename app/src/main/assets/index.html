@@ -113,8 +113,8 @@
         }
         .cam-pip-box.hit-ok { border-color: var(--success); box-shadow: 0 0 18px rgba(16, 185, 129, 0.95); }
         .cam-pip-box.guard-down { border-color: var(--danger); box-shadow: 0 0 18px rgba(239, 68, 68, 0.95); }
-        #pose-video { display: none; }
-        #pose-canvas { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+        #pose-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); display: block; z-index: 1; background: #05080f; }
+        #pose-canvas { position: relative; z-index: 2; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); background: transparent; }
         .cam-pip-tag {
             position: absolute; bottom: 0; left: 0; right: 0;
             background: rgba(0,0,0,0.8); color: var(--neon); font-size: 0.50rem;
@@ -2437,7 +2437,6 @@
     function onPoseResults(results) {
         const canvasEl = document.getElementById('pose-canvas'); const ctx = canvasEl.getContext('2d');
         ctx.clearRect(0, 0, canvasEl.width, canvasEl.height);
-        if (results.image) ctx.drawImage(results.image, 0, 0, canvasEl.width, canvasEl.height);
         if (!results.poseLandmarks) return;
 
         const lm = results.poseLandmarks;
@@ -2535,6 +2534,7 @@
         if (t === 'THRUST_LEFT' && dx > 0.085) dodged = true;
         else if (t === 'THRUST_RIGHT' && dx < -0.085) dodged = true;
         else if ((t === 'SWEEP_FROM_LEFT' || t === 'SWEEP_FROM_RIGHT') && dy > 0.075) dodged = true;
+        else if ((t === 'UPPER_LEFT' || t === 'UPPER_RIGHT') && (Math.abs(dx) > 0.075 || dy < -0.045)) dodged = true;
         else if (t === 'THRUST_CENTER' && dy > 0.07) dodged = true;
 
         if (dodged) {
@@ -2596,10 +2596,12 @@
     let rightStickMesh = null;
     let stickState = { active: false, evaluated: false, type: 'IDLE', hand: 'LEFT', progress: 0, duration: 1.0 };
     const STICK_PATTERNS = [
-        { type: 'THRUST_LEFT', hand: 'LEFT', name: 'JAB STICK (LEFT)', dodge: '➔ SLIP RIGHT', say: 'Slip Right', rotZ: 0.12 },
-        { type: 'THRUST_RIGHT', hand: 'RIGHT', name: 'CROSS STICK (RIGHT)', dodge: '⬅ SLIP LEFT', say: 'Slip Left', rotZ: -0.12 },
-        { type: 'SWEEP_FROM_LEFT', hand: 'LEFT', name: 'LEFT HOOK STICK', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', rotZ: 0.45 },
-        { type: 'SWEEP_FROM_RIGHT', hand: 'RIGHT', name: 'RIGHT HOOK STICK', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', rotZ: -0.45 }
+        { type: 'THRUST_LEFT', hand: 'LEFT', name: 'JAB STICK ➔ CENTER', dodge: '➔ SLIP RIGHT', say: 'Slip Right', rotZ: 0.10 },
+        { type: 'THRUST_RIGHT', hand: 'RIGHT', name: 'CROSS STICK ➔ CENTER', dodge: '⬅ SLIP LEFT', say: 'Slip Left', rotZ: -0.10 },
+        { type: 'SWEEP_FROM_LEFT', hand: 'LEFT', name: 'LEFT HOOK (FROM LEFT)', dodge: '⤵⬅ ROLL LEFT', say: 'Roll Left', rotZ: 0.35 },
+        { type: 'SWEEP_FROM_RIGHT', hand: 'RIGHT', name: 'RIGHT HOOK (FROM RIGHT)', dodge: '⤵➔ ROLL RIGHT', say: 'Roll Right', rotZ: -0.35 },
+        { type: 'UPPER_LEFT', hand: 'LEFT', name: 'LEFT UPPERCUT STICK', dodge: '⬆➔ SLIP / STEP BACK', say: 'Uppercut Slip Right', rotZ: 0.20 },
+        { type: 'UPPER_RIGHT', hand: 'RIGHT', name: 'RIGHT UPPERCUT STICK', dodge: '⬆⬅ SLIP / STEP BACK', say: 'Uppercut Slip Left', rotZ: -0.20 }
     ];
     let isStickRunning = false; let stickLoopTimer = null; let stickBag = [];
 
@@ -2624,15 +2626,15 @@
 
     function build3DSparringStick() {
         stickGroup = new THREE.Group();
-        // عصا اليسار (تمثل اليد الأمامية / Jab & Lead Hook)
+        // عصا اليسار (+X = يسار المشاهد)
         leftStickMesh = createSingleFoamStick(0xf43f5e, 0x9f1239);
         leftStickMesh.position.set(0.28, 1.34, 0.05);
-        leftStickMesh.rotation.set(0.12, -0.12, 0.12);
+        leftStickMesh.rotation.set(0.12, -0.22, 0.12);
 
-        // عصا اليمين (تمثل اليد الخلفية / Cross & Rear Hook)
+        // عصا اليمين (-X = يمين المشاهد)
         rightStickMesh = createSingleFoamStick(0x00BFFF, 0x0369a1);
         rightStickMesh.position.set(-0.28, 1.34, 0.05);
-        rightStickMesh.rotation.set(0.12, 0.12, -0.12);
+        rightStickMesh.rotation.set(0.12, 0.22, -0.12);
 
         stickGroup.add(leftStickMesh, rightStickMesh);
         stickGroup.visible = false;
@@ -2642,9 +2644,9 @@
     function resetDualSticksToGuard() {
         if (!leftStickMesh || !rightStickMesh) return;
         leftStickMesh.position.set(0.28, 1.34, 0.05);
-        leftStickMesh.rotation.set(0.12, -0.12, 0.12);
+        leftStickMesh.rotation.set(0.12, -0.22, 0.12);
         rightStickMesh.position.set(-0.28, 1.34, 0.05);
-        rightStickMesh.rotation.set(0.12, 0.12, -0.12);
+        rightStickMesh.rotation.set(0.12, 0.22, -0.12);
     }
 
     function updateStickAnimation(delta) {
@@ -2665,23 +2667,46 @@
         const idleStick = (stickState.hand === 'LEFT') ? rightStickMesh : leftStickMesh;
         if (!activeStick || !idleStick) return;
 
-        // إبقاء العصا الأخرى في وضع الحماية مع حركة تنفس خفيفة
-        idleStick.position.z = 0.05 - 0.06 * c;
+        // العصا الأخرى تبقى في وضع الحماية الخلفي
+        idleStick.position.z = 0.05 - 0.05 * c;
+        activeStick.position.z = 0.05 + 1.32 * c;
 
-        // اندفاع العصا المهاجمة نحو رأس اللاعب
-        activeStick.position.z = 0.05 + 1.38 * c;
-        if (stickState.type === 'SWEEP_FROM_LEFT') {
-            activeStick.position.x = 0.36 - 0.55 * c;
-            activeStick.rotation.y = -0.85 + 1.7 * stickState.progress;
+        if (stickState.type === 'THRUST_LEFT') {
+            // جاب يسار: تبدأ من اليسار (+0.28) وتتجه بزاوية نحو المنتصف (0.0)
+            activeStick.position.x = 0.28 - 0.26 * c;
+            activeStick.position.y = 1.34;
+            activeStick.rotation.y = -0.22 - 0.18 * c;
+            activeStick.rotation.x = 0.12;
+        } else if (stickState.type === 'THRUST_RIGHT') {
+            // كروس يمين: تبدأ من اليمين (-0.28) وتتجه بزاوية نحو المنتصف (0.0)
+            activeStick.position.x = -0.28 + 0.26 * c;
+            activeStick.position.y = 1.34;
+            activeStick.rotation.y = 0.22 + 0.18 * c;
+            activeStick.rotation.x = 0.12;
+        } else if (stickState.type === 'SWEEP_FROM_LEFT') {
+            // هوك يسار: تبدأ من جهة اليسار (+0.42) وتندفع عرضياً نحو اليمين (-0.26)
+            activeStick.position.x = 0.42 - 0.68 * stickState.progress;
+            activeStick.position.y = 1.34;
+            activeStick.rotation.y = -0.65 + 1.30 * stickState.progress;
+            activeStick.rotation.x = 0.12;
         } else if (stickState.type === 'SWEEP_FROM_RIGHT') {
-            activeStick.position.x = -0.36 + 0.55 * c;
-            activeStick.rotation.y = 0.85 - 1.7 * stickState.progress;
-        } else if (stickState.type === 'THRUST_LEFT') {
-            activeStick.position.x = 0.24 - 0.08 * c;
-            activeStick.rotation.y = -0.05;
-        } else {
-            activeStick.position.x = -0.24 + 0.08 * c;
-            activeStick.rotation.y = 0.05;
+            // هوك يمين: تبدأ من جهة اليمين (-0.42) وتندفع عرضياً نحو اليسار (+0.26)
+            activeStick.position.x = -0.42 + 0.68 * stickState.progress;
+            activeStick.position.y = 1.34;
+            activeStick.rotation.y = 0.65 - 1.30 * stickState.progress;
+            activeStick.rotation.x = 0.12;
+        } else if (stickState.type === 'UPPER_LEFT') {
+            // أبركت يسار: تبدأ من الأسفل يسار وترتفع للأعلى نحو المنتصف
+            activeStick.position.x = 0.22 - 0.16 * c;
+            activeStick.position.y = 1.12 + 0.34 * c;
+            activeStick.rotation.x = -0.35 * c;
+            activeStick.rotation.y = -0.15;
+        } else if (stickState.type === 'UPPER_RIGHT') {
+            // أبركت يمين: تبدأ من الأسفل يمين وترتفع للأعلى نحو المنتصف
+            activeStick.position.x = -0.22 + 0.16 * c;
+            activeStick.position.y = 1.12 + 0.34 * c;
+            activeStick.rotation.x = -0.35 * c;
+            activeStick.rotation.y = 0.15;
         }
     }
 
